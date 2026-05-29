@@ -17,6 +17,23 @@ const DIST_DIR   = path.join(ROOT, 'dist');
 const BUILDER    = path.join(BASE_DIR, '_tools/builder/build-static.js');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// A course is "HTML-first" if it has index.html at its root.
+// These are copied directly to dist/<slug>/ without running the markdown builder.
+function isHtmlCourse(slug) {
+  return fs.existsSync(path.join(COURSES_DIR, slug, 'index.html'));
+}
+
+function copyHtmlCourse(slug) {
+  const src  = path.join(COURSES_DIR, slug);
+  const dest = path.join(DIST_DIR, slug);
+  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  for (const file of fs.readdirSync(src)) {
+    if (!file.endsWith('.html')) continue;
+    fs.copyFileSync(path.join(src, file), path.join(dest, file));
+  }
+}
+
 function getCourseSlugs() {
   if (!fs.existsSync(COURSES_DIR)) return [];
   return fs.readdirSync(COURSES_DIR).filter(f =>
@@ -90,13 +107,18 @@ async function main() {
   const skipped = [];
 
   for (const slug of slugs) {
+    if (isHtmlCourse(slug)) {
+      console.log(`\n  Copying HTML course: ${slug}`);
+      copyHtmlCourse(slug);
+      built.push(slug);
+      continue;
+    }
     if (!fs.existsSync(path.join(COURSES_DIR, slug, '_course/course.json'))) {
       console.log(`  ⚠  Skipping ${slug} — _course/course.json not found (not yet generated)`);
       skipped.push(slug);
       continue;
     }
     console.log(`\n  Building: ${slug}`);
-    // base script auto-detects courses/ sibling, so slug is enough
     execSync(`node "${BUILDER}" "${slug}"`, { cwd: ROOT, stdio: 'inherit' });
     built.push(slug);
   }
@@ -107,7 +129,16 @@ async function main() {
     return { slug, title: meta?.title || slug, description: meta?.description || '', level: meta?.level || '' };
   });
 
-  fs.writeFileSync(path.join(DIST_DIR, 'index.html'), buildLandingPage(entries), 'utf8');
+  // If a root index.html exists, use it as the landing page for GitHub Pages too
+  const rootIndex = path.join(ROOT, 'index.html');
+  if (fs.existsSync(rootIndex)) {
+    // Rewrite course links from relative `courses/<slug>/` to `<slug>/` for dist
+    let html = fs.readFileSync(rootIndex, 'utf8');
+    html = html.replace(/href="courses\//g, 'href="');
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), html, 'utf8');
+  } else {
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), buildLandingPage(entries), 'utf8');
+  }
 
   console.log(`\n✅  Built ${built.length} course${built.length !== 1 ? 's' : ''} → dist/`);
   if (skipped.length) console.log(`   Skipped (not generated): ${skipped.join(', ')}`);

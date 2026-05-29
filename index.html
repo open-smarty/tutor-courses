@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Courses</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+  <header class="bg-gradient-to-br from-slate-900 to-blue-900 text-white px-6 py-14 text-center">
+    <h1 class="text-4xl font-bold tracking-tight">Course Hub</h1>
+    <p class="text-slate-300 mt-2 text-lg">Open a course below — works offline, no server needed</p>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-12">
+
+    <div class="grid sm:grid-cols-2 gap-6">
+
+      <!-- BDAT 614 -->
+      <a href="courses/bdat-614/index.html"
+         class="group block bg-white rounded-2xl p-6 shadow-sm border border-slate-100
+                hover:shadow-md hover:border-blue-200 transition">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-xs font-bold tracking-widest uppercase text-blue-500 mb-1">BDAT 614</p>
+            <h2 class="text-xl font-bold text-slate-900 group-hover:text-blue-700 transition">
+              Statistical Quality Control
+            </h2>
+            <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+              14 lessons covering SPC, control charts, process capability, Six Sigma, DMAIC, TQM, and Big Data applications.
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center justify-between">
+          <div class="flex flex-wrap gap-2">
+            <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Statistics</span>
+            <span class="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">Python</span>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">14 lessons</span>
+          </div>
+          <span class="text-blue-600 font-semibold text-sm group-hover:translate-x-1 transition-transform inline-block">Open →</span>
+        </div>
+      </a>
+
+      <!-- Placeholder card for future courses -->
+      <div class="block bg-slate-100 rounded-2xl p-6 border border-dashed border-slate-300 flex flex-col items-center justify-center text-center min-h-[160px]">
+        <p class="text-slate-400 text-sm font-medium">More courses coming</p>
+        <p class="text-slate-300 text-xs mt-1">Add a course with <code class="font-mono">npm run add-course</code></p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="text-center text-slate-400 text-xs py-10">
+    Open any <code class="font-mono">.html</code> file directly in your browser — no server required.
+  </footer>
+
+</body>
+</html>
