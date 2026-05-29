@@ -1,0 +1,25 @@
+{
+  "_note": "This is the schema for .progress/progress.json — stored locally, never committed.",
+  "courseId": "string",
+  "startedAt": "ISO8601 date string",
+  "lastActiveAt": "ISO8601 date string",
+  "completedLessons": ["lesson-id strings"],
+  "quizScores": {
+    "<quiz-id>": {
+      "score": "number (0-100)",
+      "attempts": "number",
+      "passed": "boolean",
+      "completedAt": "ISO8601 date string"
+    }
+  },
+  "taskResults": {
+    "<task-id>": {
+      "completed": "boolean",
+      "score": "number or null",
+      "completedAt": "ISO8601 date string"
+    }
+  },
+  "reflections": {
+    "<lesson-id>": "student's written reflection text"
+  }
+}

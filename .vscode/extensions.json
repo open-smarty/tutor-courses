@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ritwickdey.liveserver",
+    "bierner.markdown-preview-github-styles",
+    "yzhang.markdown-all-in-one",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.live-server"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "_note": "Claude Code maintains this file. Each key is '<module-id>-<lesson-id>'. Each value is an array of clarification entries for that lesson.",
+  "_example": {
+    "module-01-lesson-01": [
+      {
+        "title": "Why does the head not show on the page?",
+        "file": "_course/clarifications/module-01-lesson-01/why-head-is-invisible.md"
+      }
+    ]
+  }
+}

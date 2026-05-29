@@ -1,0 +1,23 @@
+{
+  "_note": "This file documents the quiz format. Actual quizzes follow this schema.",
+  "id": "module-id-lesson-id",
+  "title": "Quiz: Lesson Title",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct": 0,
+      "explanation": "Why option A is correct."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "True or false: this statement is a statement.",
+      "correct": true,
+      "explanation": "Why this is true."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "",
+  "title": "Course Title",
+  "description": "Course description will appear here after generation.",
+  "author": "",
+  "version": "1.0.0",
+  "created": "",
+  "subject": "",
+  "level": "beginner",
+  "estimatedHours": 0,
+  "prerequisites": [],
+  "apiSubmission": {
+    "enabled": false,
+    "endpoint": "",
+    "courseId": ""
+  },
+  "modules": []
+}

@@ -1,0 +1,19 @@
+{
+  "liveServer.settings.port": 5500,
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.file": "index.html",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
+  "markdown.preview.openMarkdownLinks": "inPreview",
+  "files.exclude": {
+    "node_modules": true
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "index.html": "CLAUDE.md, README.md, package.json, .gitignore"
+  }
+}
