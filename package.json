@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "add-course": "node scripts/add-course.js",
-    "list-courses": "node scripts/list-courses.js",
-    "update-base": "git subtree pull --prefix=base tutor main --squash"
+    "add-course":    "node scripts/add-course.js",
+    "list-courses":  "node scripts/list-courses.js",
+    "build":         "node scripts/build-all.js",
+    "build-course":  "node base/_tools/builder/build-static.js",
+    "dev":           "node base/_tools/preview/serve.js",
+    "check":         "node base/_tools/grader/check.js",
+    "install-base":  "npm install --prefix base",
+    "update-base":   "git subtree pull --prefix=base tutor main --squash"
   }
 }
