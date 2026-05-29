@@ -1,0 +1,10 @@
+{
+  "name": "tutor-courses",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "add-course": "node scripts/add-course.js",
+    "list-courses": "node scripts/list-courses.js",
+    "update-base": "git subtree pull --prefix=base tutor main --squash"
+  }
+}
