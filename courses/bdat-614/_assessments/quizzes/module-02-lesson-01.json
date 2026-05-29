@@ -1,0 +1,60 @@
+{
+  "id": "module-02-lesson-01",
+  "title": "Quiz: Variables Control Charts — Xbar-R and Xbar-S",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "For an Xbar-R chart with subgroup size n=4, R̄ = 3.2 mm, and A₂ = 0.729, and x̄̄ = 50.0 mm — what is the UCL of the Xbar chart?",
+      "options": [
+        "50.0 + 0.729 × 3.2 = 52.33 mm",
+        "50.0 + 3.267 × 3.2 = 60.45 mm",
+        "50.0 + 0.729 × 50.0 = 86.45 mm",
+        "50.0 + 3 × 3.2 = 59.6 mm"
+      ],
+      "correct": 0,
+      "explanation": "UCL for the Xbar chart = x̄̄ + A₂ × R̄ = 50.0 + 0.729 × 3.2 = 52.33 mm. The constant A₂ depends on subgroup size n."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Which chart in a control chart pair monitors process SPREAD (variability)?",
+      "options": [
+        "The Xbar chart",
+        "The R or S chart",
+        "Both charts equally",
+        "Neither — control charts only monitor the mean"
+      ],
+      "correct": 1,
+      "explanation": "The R chart (or S chart) monitors process spread/variability within subgroups. The Xbar chart monitors the process location (mean). Both are always used together."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "An Xbar chart that shows all points within control limits proves the process is producing conforming products.",
+      "correct": false,
+      "explanation": "An in-control Xbar chart means the process location is statistically stable — not that products meet specification. Process capability (Cp, Cpk) determines whether the process meets specifications."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "According to the Western Electric rules, eight consecutive points on the same side of the centre line indicate:",
+      "options": [
+        "Normal common-cause variation",
+        "A probable process shift — an out-of-control signal",
+        "An error in the control chart constants",
+        "The subgroup size is too large"
+      ],
+      "correct": 1,
+      "explanation": "Eight consecutive points on the same side of the CL is a Western Electric run rule — it signals a probable process shift even if no single point exceeds the 3σ limits."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The Xbar-S chart is preferred over Xbar-R when the subgroup size is greater than 10.",
+      "correct": true,
+      "explanation": "For larger subgroups (n > 10), the within-subgroup standard deviation S is a more efficient estimator of process spread than the range R, so the Xbar-S chart is used."
+    }
+  ]
+}

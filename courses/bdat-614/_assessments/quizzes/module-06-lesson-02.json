@@ -1,0 +1,60 @@
+{
+  "id": "module-06-lesson-02",
+  "title": "Quiz: Big Data Applications in SQC — EWMA, CUSUM, and ML",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "An EWMA chart uses λ = 0.05. What does this small value of λ mean?",
+      "options": [
+        "Recent observations are weighted more heavily — sensitive to large sudden shifts",
+        "More smoothing — the chart is more sensitive to small, sustained shifts",
+        "The chart is equivalent to a Shewhart chart",
+        "Control limits are wider than a standard 3σ chart"
+      ],
+      "correct": 1,
+      "explanation": "A small λ applies heavy smoothing — old observations contribute significantly to the EWMA. This makes the chart very sensitive to small, persistent shifts in the mean, but slower to react to sudden large shifts."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The CUSUM chart detects small shifts faster than the Shewhart chart because it:",
+      "options": [
+        "Uses wider control limits",
+        "Accumulates deviations from the target over time",
+        "Requires a larger sample size",
+        "Uses the range instead of the standard deviation"
+      ],
+      "correct": 1,
+      "explanation": "CUSUM accumulates the sum of deviations from the target. Even if each individual deviation is small, the accumulated sum grows with each observation, eventually crossing the decision interval H and signalling a shift."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In a Lean Six Sigma Big Data architecture, Apache Kafka is used to stream data into a real-time SPC system, enabling sub-second control chart updates.",
+      "correct": true,
+      "explanation": "Kafka is a high-throughput distributed streaming platform. Paired with Spark Streaming or Flink, it enables real-time computation of EWMA, CUSUM, or other control statistics as each new data point arrives."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A hybrid SPC + ML anomaly detection system uses control charts for interpretability and an Isolation Forest for:",
+      "options": [
+        "Setting control limits",
+        "Detecting complex, multivariate anomalies that univariate charts miss",
+        "Computing DPMO from streaming data",
+        "Replacing the EWMA when sample size is small"
+      ],
+      "correct": 1,
+      "explanation": "Isolation Forest and similar ML models (Autoencoders, One-Class SVM) detect anomalies in high-dimensional data where correlations between many variables create patterns that a single univariate chart cannot capture."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Traditional Shewhart control charts are always preferable to EWMA in Big Data environments because they are simpler and more widely understood.",
+      "correct": false,
+      "explanation": "EWMA and CUSUM are preferred in Big Data when small, persistent shifts must be detected quickly. The Shewhart chart is better for detecting large, sudden shifts and is simpler to explain, but it has poor average run length (ARL) performance for small shifts."
+    }
+  ]
+}

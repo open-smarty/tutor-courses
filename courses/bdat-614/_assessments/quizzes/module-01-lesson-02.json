@@ -1,0 +1,60 @@
+{
+  "id": "module-01-lesson-02",
+  "title": "Quiz: Process Variation — Sources and Types",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A filling machine consistently produces volumes between 498 ml and 502 ml with no identifiable cause. This is an example of:",
+      "options": [
+        "Special-cause variation",
+        "Common-cause variation",
+        "Measurement error",
+        "Environmental variation"
+      ],
+      "correct": 1,
+      "explanation": "Variation that is always present, due to many small unknown factors, and predictable is common-cause variation. The process is 'in control' — no single cause can be identified."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "An API suddenly starts returning error codes because a cloud provider updated their authentication method. Which 6M category caused this variation?",
+      "options": [
+        "Machine",
+        "Environment",
+        "Material",
+        "Man"
+      ],
+      "correct": 1,
+      "explanation": "The cloud provider's change is an external Environmental factor. The change happened outside the team's direct control and altered the operating conditions of the process."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Special-cause variation can be reduced by changing the fundamental design of the process.",
+      "correct": false,
+      "explanation": "Special-cause variation is eliminated by identifying and removing the specific assignable cause. Changing the fundamental process design addresses common-cause variation, which is a management-level decision."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The 5 Whys technique is used to:",
+      "options": [
+        "Calculate control chart limits",
+        "Trace a defect back to its root cause",
+        "Rank defect types by frequency",
+        "Estimate process capability"
+      ],
+      "correct": 1,
+      "explanation": "The 5 Whys is a root-cause analysis technique. By repeatedly asking 'why?' you move past symptoms to the underlying root cause of a problem."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "In a Big Data pipeline, corrupted records arriving from an upstream source would be classified as a 'Material' variation in the 6M framework.",
+      "correct": true,
+      "explanation": "In the 6M framework, 'Material' refers to the inputs to the process — in a data pipeline, this is the data itself. Corrupted or poor-quality input data is a Material variation source."
+    }
+  ]
+}

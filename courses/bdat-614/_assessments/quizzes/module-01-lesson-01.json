@@ -1,0 +1,60 @@
+{
+  "id": "module-01-lesson-01",
+  "title": "Quiz: What is Quality?",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Juran defines quality as:",
+      "options": [
+        "Conformance to requirements",
+        "Fitness for use",
+        "Zero defects",
+        "Loss to society"
+      ],
+      "correct": 1,
+      "explanation": "Juran's definition focuses on whether the product satisfies the user's needs — 'fitness for use'. Crosby defined quality as conformance to requirements; Taguchi introduced the 'loss to society' concept."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A hospital drug that works perfectly but has packaging that makes patients doubt its effectiveness is a failure in which Garvin dimension?",
+      "options": [
+        "Conformance",
+        "Performance",
+        "Perceived Quality",
+        "Reliability"
+      ],
+      "correct": 2,
+      "explanation": "Perceived Quality is about what customers believe based on indirect cues (brand, appearance, reputation) — not actual performance. The drug performs well but is perceived poorly."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Quality Assurance (QA) is reactive — it finds and fixes defects after they occur.",
+      "correct": false,
+      "explanation": "QA is proactive — it builds systems and standards to prevent defects. Quality Control (QC) is the reactive activity of detecting and correcting defects."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A data pipeline delivers results on schedule and with no missing records, but 8% of values are out of valid range. Which quality dimension is primarily violated?",
+      "options": [
+        "Timeliness",
+        "Completeness",
+        "Validity",
+        "Consistency"
+      ],
+      "correct": 2,
+      "explanation": "Values out of valid range violate the Validity dimension of data quality. Completeness (missing records) and Timeliness (on schedule) are both fine here."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "ISO 9001 is a Quality Assurance standard focused on building systems that prevent defects.",
+      "correct": true,
+      "explanation": "ISO 9001 is an internationally recognised QA standard that specifies requirements for a quality management system — it is process-focused and preventive, not just inspection-based."
+    }
+  ]
+}

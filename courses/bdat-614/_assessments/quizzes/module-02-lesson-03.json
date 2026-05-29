@@ -1,0 +1,66 @@
+{
+  "id": "module-02-lesson-03",
+  "title": "Quiz: Attribute Control Charts — p, np, c, u",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A quality engineer inspects 200 circuit boards per shift and counts the number of defective boards. The sample size is constant. Which chart should be used?",
+      "options": [
+        "p-chart",
+        "np-chart",
+        "c-chart",
+        "u-chart"
+      ],
+      "correct": 1,
+      "explanation": "The np-chart counts the number of defective items (not proportion) when the sample size is constant. Here n=200 per shift is constant, and the count of defectives is tracked."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A website monitoring tool counts the number of broken links per webpage. Each page has a different number of links. Which chart is appropriate?",
+      "options": [
+        "np-chart",
+        "p-chart",
+        "c-chart",
+        "u-chart"
+      ],
+      "correct": 3,
+      "explanation": "Broken links are defects (one page can have multiple), and the inspection area (number of links) varies per page. The u-chart handles defects per unit with variable sample size."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The p-chart and u-chart both use variable control limits when the sample size changes from period to period.",
+      "correct": true,
+      "explanation": "Both the p-chart and u-chart compute UCL and LCL individually for each sample because the limits depend on the sample size nᵢ. When n varies, so do the limits."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The c-chart and u-chart are both based on which probability distribution?",
+      "options": [
+        "Normal distribution",
+        "Binomial distribution",
+        "Poisson distribution",
+        "Exponential distribution"
+      ],
+      "correct": 2,
+      "explanation": "The c-chart and u-chart model count data (number of defects) using the Poisson distribution, which is appropriate when counting rare events in a fixed space or time."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "An ETL pipeline processes a different number of records each day. You want to monitor the rate of invalid records. The correct chart and its centre line are:",
+      "options": [
+        "c-chart, centre line = total invalid records",
+        "u-chart, centre line = total invalid / total records processed",
+        "p-chart, centre line = number invalid / 100",
+        "np-chart, centre line = average records per day"
+      ],
+      "correct": 1,
+      "explanation": "Invalid records are defects (not pass/fail items), and the sample size (records per day) varies. Use the u-chart. The centre line ū = total defects / total units inspected."
+    }
+  ]
+}

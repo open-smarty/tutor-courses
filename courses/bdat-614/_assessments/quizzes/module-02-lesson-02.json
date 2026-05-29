@@ -1,0 +1,60 @@
+{
+  "id": "module-02-lesson-02",
+  "title": "Quiz: Individuals and Moving Range (I-MR) Charts",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Given x̄ = 100 ms and MR̄ = 10 ms, what is the UCL for the I-Chart?",
+      "options": [
+        "100 + 3 × 10 = 130 ms",
+        "100 + 2.66 × 10 = 126.6 ms",
+        "100 + 3.267 × 10 = 132.67 ms",
+        "100 + 1.128 × 10 = 111.28 ms"
+      ],
+      "correct": 1,
+      "explanation": "The I-Chart UCL = x̄ + E₂ × MR̄ = 100 + 2.66 × 10 = 126.6 ms. The constant E₂ = 2.66 is derived from d₂ = 1.128 for n=1."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "What does the Moving Range in an I-MR chart measure?",
+      "options": [
+        "The mean of consecutive observations",
+        "The absolute difference between consecutive individual observations",
+        "The standard deviation within a subgroup",
+        "The range within a subgroup of 5 measurements"
+      ],
+      "correct": 1,
+      "explanation": "MRᵢ = |xᵢ − xᵢ₋₁|. It captures the short-term, point-to-point variability when subgroups of size n=1 are used."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The I-MR chart is the best choice when manufacturing one batch per day and only one quality measurement is available per batch.",
+      "correct": true,
+      "explanation": "When it is impossible or impractical to form subgroups (e.g., one batch per day), the I-MR chart is the correct choice — it handles individual observations."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Why is the I-MR chart particularly valuable in Big Data streaming environments?",
+      "options": [
+        "It handles very large subgroup sizes efficiently",
+        "It can process one observation at a time, making real-time monitoring possible",
+        "It requires no control chart constants",
+        "It is immune to outliers in the data"
+      ],
+      "correct": 1,
+      "explanation": "In streaming systems (Kafka, Spark Streaming), data arrives one point at a time. The I-MR chart evaluates each new observation immediately, enabling real-time out-of-control detection."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The LCL for the MR-Chart is always set to zero, even if the formula gives a negative number.",
+      "correct": true,
+      "explanation": "Negative moving ranges are impossible (it is an absolute difference), so the MR-Chart LCL is always 0. D₃ = 0 for n=1, reflecting this."
+    }
+  ]
+}

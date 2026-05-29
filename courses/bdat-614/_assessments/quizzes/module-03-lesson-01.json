@@ -1,0 +1,60 @@
+{
+  "id": "module-03-lesson-01",
+  "title": "Quiz: Process Capability Analysis — Cp and Cpk",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A process has USL = 110, LSL = 90, μ = 100, σ = 3. What is Cp?",
+      "options": [
+        "(110 − 90) / (6 × 3) = 1.11",
+        "(110 − 90) / (3 × 3) = 2.22",
+        "(110 − 100) / (3 × 3) = 1.11",
+        "(110 − 90) / (2 × 3) = 3.33"
+      ],
+      "correct": 0,
+      "explanation": "Cp = (USL − LSL) / 6σ = (110 − 90) / (6 × 3) = 20/18 = 1.11. Cp measures the ratio of the spec width to the natural process spread (6σ)."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Using the same process (USL=110, LSL=90, μ=100, σ=3), what is Cpk?",
+      "options": [
+        "1.11",
+        "min(1.11, 1.11) = 1.11",
+        "min(10/9, 10/9) = 1.11",
+        "All of the above — they are the same"
+      ],
+      "correct": 3,
+      "explanation": "Cpk = min((USL−μ)/3σ, (μ−LSL)/3σ) = min(10/9, 10/9) = 1.11. Since μ=100 is exactly centred, Cp = Cpk = 1.11."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "It is valid to perform process capability analysis on an unstable (out-of-control) process.",
+      "correct": false,
+      "explanation": "Process capability analysis assumes the process is in statistical control (stable). Calculating Cp/Cpk on an unstable process gives misleading results — the control chart must confirm stability first."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A process has Cp = 1.60 but Cpk = 0.90. The best immediate action is:",
+      "options": [
+        "Reduce process variation by upgrading equipment",
+        "Recentre the process mean toward the midpoint of the spec limits",
+        "Widen the specification limits",
+        "Stop production — the process is not capable"
+      ],
+      "correct": 1,
+      "explanation": "High Cp but low Cpk means the process is capable of fitting inside the specs but is off-centred. Simply recentring the mean (without changing variability) will improve Cpk immediately."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "A Cpk of exactly 1.00 means that the process produces approximately 2700 defects per million opportunities (DPMO).",
+      "correct": true,
+      "explanation": "Cpk = 1.00 corresponds to ±3σ — a process centred at 3σ from the nearest spec limit. The area beyond 3σ in a normal distribution is about 0.0027, or roughly 2700 DPMO."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-02",
+  "title": "Quiz: DMAIC Framework and Root Cause Analysis Tools",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A Six Sigma team discovers that 78% of customer returns are caused by just 2 of 12 product defect types. Which tool revealed this finding?",
+      "options": [
+        "Fishbone diagram",
+        "SIPOC diagram",
+        "Pareto chart",
+        "Control chart"
+      ],
+      "correct": 2,
+      "explanation": "The Pareto chart ranks defects by frequency and shows the cumulative percentage. Finding that 78% of returns come from 2 defect types is a classic Pareto (80/20) finding."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The Control phase of DMAIC is primarily concerned with:",
+      "options": [
+        "Identifying the root cause of variation",
+        "Collecting baseline performance data",
+        "Sustaining the gains made in the Improve phase",
+        "Defining the scope of the problem"
+      ],
+      "correct": 2,
+      "explanation": "The Control phase sustains improvements by implementing control charts, control plans, and dashboards to ensure the process does not regress after the project closes."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A Fishbone (Ishikawa) diagram alone is sufficient to identify the true root cause of a quality problem.",
+      "correct": false,
+      "explanation": "The Fishbone diagram generates hypotheses about possible causes — it is a brainstorming tool. Confirmation requires data collection and statistical analysis (hypothesis tests, regression, etc.) in the Analyze phase."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In the DMAIC Measure phase, a team discovers their measurement system has 38% GR&R. What should they do?",
+      "options": [
+        "Proceed with capability analysis — 38% is close to 30%",
+        "Improve the measurement system before collecting baseline performance data",
+        "Skip the Measure phase and move to Analyze",
+        "Widen the specification limits to compensate"
+      ],
+      "correct": 1,
+      "explanation": "A measurement system with > 30% GR&R is unacceptable. Data collected with it is unreliable. The team must fix the measurement system in the Measure phase before any further analysis is valid."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "A data engineering team's ETL pipeline has a high error rate. They draw a Fishbone and identify 'analysts use different transformation scripts' as a cause. Which 6M bone does this belong to?",
+      "options": [
+        "Man",
+        "Machine",
+        "Method",
+        "Material"
+      ],
+      "correct": 2,
+      "explanation": "Different transformation scripts represent inconsistent Methods (procedures/processes). When the method is not standardised, variation and errors increase."
+    }
+  ]
+}

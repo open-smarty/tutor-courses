@@ -1,0 +1,60 @@
+{
+  "id": "module-05-lesson-03",
+  "title": "Quiz: Lean Six Sigma — Waste Elimination and Quality Tools",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A data team generates a daily summary report that is never read by anyone. Which Lean waste category is this?",
+      "options": [
+        "Defects",
+        "Overproduction",
+        "Waiting",
+        "Overprocessing"
+      ],
+      "correct": 1,
+      "explanation": "Producing output that is not needed or used is Overproduction — one of the 8 Lean wastes. Resources are consumed without delivering value."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Process Cycle Efficiency (PCE) is calculated as:",
+      "options": [
+        "Total time / Value-adding time × 100%",
+        "Value-adding time / Total time × 100%",
+        "NVA time / Total time × 100%",
+        "VA time / NVA time × 100%"
+      ],
+      "correct": 1,
+      "explanation": "PCE = Value-adding time / Total lead time × 100%. A Lean target is typically > 25% PCE; most traditional processes run at 5–15%."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Poka-Yoke (mistake-proofing) is designed to make it impossible or very difficult to create a defect, rather than detecting defects after they occur.",
+      "correct": true,
+      "explanation": "Poka-Yoke is a preventive Lean tool — it designs the process so errors cannot be made (e.g., a USB plug that only fits one way). This is more effective than inspection-based defect detection."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In a Big Data pipeline, data records sitting idle in a landing zone for 4 hours waiting for a scheduled batch job is an example of which Lean waste?",
+      "options": [
+        "Transportation",
+        "Inventory",
+        "Defects",
+        "Motion"
+      ],
+      "correct": 1,
+      "explanation": "Idle data waiting to be processed is the data equivalent of Inventory waste — work in progress that has been started but is not yet complete, consuming storage and delaying value delivery."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Lean Six Sigma combines Lean's focus on speed and waste elimination with Six Sigma's focus on variation reduction and defect elimination.",
+      "correct": true,
+      "explanation": "Lean Six Sigma integrates both approaches: Lean tools (VSM, 5S, Kanban) eliminate waste and improve flow, while Six Sigma tools (control charts, DMAIC, DOE) reduce variation and defects."
+    }
+  ]
+}

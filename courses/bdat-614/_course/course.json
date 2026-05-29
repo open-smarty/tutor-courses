@@ -1,0 +1,256 @@
+{
+  "id": "bdat-614",
+  "title": "Statistical Quality Control and Improvement",
+  "description": "A comprehensive introduction to statistical quality control (SQC) for MSc Big Data Analytics students. Covers control charts, process capability, acceptance sampling, Six Sigma, DMAIC, TQM, and real-time Big Data applications. All exercises use Python.",
+  "author": "Prof. Louis Asiedu",
+  "version": "1.0.0",
+  "subject": "statistics",
+  "level": "intermediate",
+  "estimatedHours": 35,
+  "prerequisites": ["Basic statistics (mean, std dev, normal distribution)", "Introductory Python (numpy, matplotlib)"],
+  "apiSubmission": {
+    "enabled": false,
+    "endpoint": "",
+    "courseId": ""
+  },
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Foundations of Quality and Process Variation",
+      "description": "Introduces the concept of quality, its dimensions, and how process variation is classified and sourced.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "What is Quality? Definitions and Dimensions",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-01/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-01/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-01-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-01-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "lesson-02",
+          "title": "Process Variation — Sources and Types",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-01/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-01/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-01-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-01-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 30
+        }
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Statistical Process Control and Control Charts",
+      "description": "Builds control charts for both variables (measurement) data and attribute (count) data. Introduces SPC rules and Big Data extensions.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Variables Control Charts — Xbar-R and Xbar-S",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 45
+        },
+        {
+          "id": "lesson-02",
+          "title": "Individuals and Moving Range (I-MR) Charts",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "lesson-03",
+          "title": "Attribute Control Charts — p, np, c, and u Charts",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-03/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-03/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-03.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Process Capability and Measurement Systems",
+      "description": "Evaluates whether a process meets specification limits (Cp, Cpk) and whether the measurement system can be trusted (Gauge R&R).",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Process Capability Analysis — Cp and Cpk",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-03/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-03/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-03-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-03-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-02",
+          "title": "Measurement System Analysis — Gauge R&R",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-03/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-03/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-03-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-03-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Continuous Improvement Frameworks",
+      "description": "Introduces the Shewhart Cycle (PDCA/PDSA) and the DMAIC problem-solving framework with key quality tools.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "The Shewhart Cycle — PDCA and PDSA",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-04/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-04/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-04-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-04-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "lesson-02",
+          "title": "DMAIC Framework and Root Cause Analysis Tools",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-04/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-04/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-04-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-04-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Acceptance Sampling and Six Sigma",
+      "description": "Covers lot-acceptance decisions using sampling plans and OC curves, then introduces Six Sigma and Lean Six Sigma.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Acceptance Sampling Plans and OC Curves",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "lesson-02",
+          "title": "Six Sigma — DPMO, Performance Levels, and DMAIC Roadmap",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-03",
+          "title": "Lean Six Sigma — Waste Elimination and Quality Tools",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-03/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-03/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-03/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-03.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 35
+        }
+      ]
+    },
+    {
+      "id": "module-06",
+      "title": "Total Quality Management and Big Data in SQC",
+      "description": "Covers TQM philosophy and Deming's principles, then explores how Big Data and machine learning transform SQC into real-time intelligent monitoring.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Total Quality Management (TQM) and Cost of Poor Quality",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-06/lesson-01/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-06/lesson-01/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-06-lesson-01.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-06-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-02",
+          "title": "Big Data Applications in SQC — EWMA, CUSUM, and ML Integration",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-614/_course/lessons/module-06/lesson-02/lesson.md",
+            "exercise": "courses/bdat-614/_course/lessons/module-06/lesson-02/exercise.py",
+            "solution": "courses/bdat-614/_course/lessons/module-06/lesson-02/solution.py"
+          },
+          "quiz": "courses/bdat-614/_assessments/quizzes/module-06-lesson-02.json",
+          "task": "courses/bdat-614/_assessments/tasks/module-06-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 50
+        }
+      ]
+    }
+  ]
+}

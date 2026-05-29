@@ -1,0 +1,60 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Total Quality Management and Cost of Poor Quality",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A data team spends £12,000 per year re-running failed ETL jobs and correcting bad data before it reaches the warehouse. This is which COPQ category?",
+      "options": [
+        "Prevention Costs",
+        "Appraisal Costs",
+        "Internal Failure Costs",
+        "External Failure Costs"
+      ],
+      "correct": 2,
+      "explanation": "Rework and reprocessing before the output reaches the customer is an Internal Failure Cost — the defect was caught internally but still required resources to fix."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Deming's 14 Points include 'Cease dependence on inspection to achieve quality.' Which TQM principle does this support?",
+      "options": [
+        "Fact-Based Decision Making",
+        "Customer Focus",
+        "Process-Centred Approach — build quality into the process",
+        "Total Employee Involvement"
+      ],
+      "correct": 2,
+      "explanation": "This point supports the TQM principle of managing and improving the process. If the process is well-designed, inspection becomes unnecessary — quality is built in, not tested in."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Crosby's phrase 'Quality is Free' means quality improvement has no cost.",
+      "correct": false,
+      "explanation": "'Quality is Free' means the cost of achieving quality (prevention + appraisal) is less than the cost of not achieving it (failures + rework + customer losses). Quality improvement does have a cost, but it pays for itself."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A company loses £200,000 per year in customer churn due to inaccurate product recommendations. This is classified as:",
+      "options": [
+        "Appraisal Cost",
+        "Internal Failure Cost",
+        "External Failure Cost",
+        "Prevention Cost"
+      ],
+      "correct": 2,
+      "explanation": "Customer churn due to quality failures is an External Failure Cost — the defect has reached the customer and caused business harm. This is the most expensive COPQ category."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "TQM requires that quality responsibility be distributed across all employees, not concentrated in a dedicated QC department.",
+      "correct": true,
+      "explanation": "A core TQM principle is Total Employee Involvement — everyone from top management to frontline workers is responsible for quality. This contrasts with traditional approaches where QC is a separate inspection department."
+    }
+  ]
+}
