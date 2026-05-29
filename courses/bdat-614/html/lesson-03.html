@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 3: Xbar-R and Xbar-S Charts — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white transition">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 3 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 2 · Lesson 3</p>
+      <h1 class="text-3xl font-bold mt-2 text-slate-900">Variables Control Charts</h1>
+      <p class="text-slate-500 mt-1">Xbar-R and Xbar-S charts, control limits, Western Electric rules</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Construct Xbar-R and Xbar-S control charts from subgroup data, compute control limits using the correct constants, and identify out-of-control signals.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>A <strong>control chart</strong> is a time-series plot with three horizontal lines:</p>
+      <div class="grid grid-cols-3 gap-3 text-sm text-center">
+        <div class="bg-green-100 rounded-lg p-3"><p class="font-bold text-green-800">Centre Line (CL)</p><p class="text-slate-600 mt-1">Process average</p></div>
+        <div class="bg-red-100 rounded-lg p-3"><p class="font-bold text-red-800">UCL</p><p class="text-slate-600 mt-1">CL + 3σ</p></div>
+        <div class="bg-red-100 rounded-lg p-3"><p class="font-bold text-red-800">LCL</p><p class="text-slate-600 mt-1">CL − 3σ</p></div>
+      </div>
+      <p class="text-sm text-slate-600">Points outside the UCL or LCL signal that the process is likely out of control — a special cause is present.</p>
+
+      <h3 class="font-bold">Xbar-R Chart (subgroup size n = 2–10)</h3>
+      <p class="text-sm text-slate-600">Used for small subgroups. "R" is the within-subgroup range (max − min). Always plot two charts together: Xbar (location) and R (spread).</p>
+
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p class="text-slate-400"># Formulas</p>
+        <p>x̄̄  = mean of subgroup means</p>
+        <p>R̄  = mean of subgroup ranges</p>
+        <p></p>
+        <p class="text-slate-400"># Xbar chart limits</p>
+        <p>UCL = x̄̄ + A₂ × R̄</p>
+        <p>LCL = x̄̄ − A₂ × R̄</p>
+        <p></p>
+        <p class="text-slate-400"># R chart limits</p>
+        <p>UCL = D₄ × R̄</p>
+        <p>LCL = D₃ × R̄</p>
+      </div>
+
+      <h3 class="font-bold">Control Chart Constants</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-3 py-2">n</th><th class="px-3 py-2">A₂</th><th class="px-3 py-2">D₃</th><th class="px-3 py-2">D₄</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 text-center">
+            <tr class="bg-white"><td class="px-3 py-2">2</td><td class="px-3 py-2">1.880</td><td class="px-3 py-2">0</td><td class="px-3 py-2">3.267</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2">3</td><td class="px-3 py-2">1.023</td><td class="px-3 py-2">0</td><td class="px-3 py-2">2.574</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2">4</td><td class="px-3 py-2">0.729</td><td class="px-3 py-2">0</td><td class="px-3 py-2">2.282</td></tr>
+            <tr class="bg-slate-50 font-semibold"><td class="px-3 py-2">5</td><td class="px-3 py-2">0.577</td><td class="px-3 py-2">0</td><td class="px-3 py-2">2.114</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2">10</td><td class="px-3 py-2">0.308</td><td class="px-3 py-2">0.223</td><td class="px-3 py-2">1.777</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Western Electric Out-of-Control Rules</h3>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside bg-white border border-slate-200 rounded-lg p-4">
+        <li>One point beyond 3σ limits</li>
+        <li>Two of three consecutive points beyond 2σ on the same side</li>
+        <li>Four of five consecutive points beyond 1σ on the same side</li>
+        <li>Eight consecutive points on the same side of the centre line</li>
+      </ol>
+
+      <p class="text-sm bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">
+        <strong>Use Xbar-S instead of Xbar-R</strong> when subgroup size n &gt; 10 — the standard deviation S is a more efficient estimator than the range R for larger samples.
+      </p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — Bottle Filling (n = 5)</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-amber-100"><th class="px-3 py-2 text-left">Subgroup</th><th class="px-3 py-2">x̄ᵢ (ml)</th><th class="px-3 py-2">Rᵢ (ml)</th></tr></thead>
+          <tbody class="divide-y divide-amber-100 text-center">
+            <tr class="bg-white"><td class="px-3 py-2 text-left">1</td><td class="px-3 py-2">500.2</td><td class="px-3 py-2">2.1</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">2</td><td class="px-3 py-2">499.8</td><td class="px-3 py-2">1.9</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">3</td><td class="px-3 py-2">500.5</td><td class="px-3 py-2">2.3</td></tr>
+            <tr class="bg-amber-50 font-semibold"><td class="px-3 py-2 text-left">Mean</td><td class="px-3 py-2">500.17</td><td class="px-3 py-2">2.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-slate-700">For n=5: A₂=0.577, D₄=2.114</p>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p>Xbar UCL = 500.17 + 0.577 × 2.10 = <span class="text-yellow-300">501.38</span></p>
+        <p>Xbar LCL = 500.17 − 0.577 × 2.10 = <span class="text-yellow-300">498.96</span></p>
+        <p>R    UCL = 2.114 × 2.10           = <span class="text-yellow-300">4.44</span></p>
+        <p>R    LCL = 0</p>
+      </div>
+      <p class="text-sm text-green-700 font-semibold">All points within limits → process is in control.</p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Open <code class="bg-green-100 px-1 rounded font-mono">exercise.py</code>. Given bolt diameter subgroup data (n=5, 10 subgroups):</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Compute subgroup means and ranges.</li>
+        <li>Compute x̄̄, R̄, and all four control limits.</li>
+        <li>Plot the Xbar chart and R chart using matplotlib.</li>
+        <li>Highlight any out-of-control points in red.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-02/lesson-01/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. For n=4, R̄=3.2, x̄̄=50.0, A₂=0.729 — what is the Xbar UCL?</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> 50.0 + 0.729 × 3.2 = 52.33</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> 50.0 + 3 × 3.2 = 59.6</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> 50.0 + 3.267 × 3.2 = 60.45</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. Eight consecutive points on the same side of the CL indicate:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="a" class="mt-0.5"> Normal common-cause variation</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="b" class="mt-0.5"> A probable process shift (out-of-control signal)</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. An in-control Xbar chart proves the process is producing conforming products.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">Your Xbar chart shows no out-of-control points, but the R chart shows one point above the UCL. Should you be concerned? What does an out-of-control R chart tell you about the process that an in-control Xbar chart cannot?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-02.html" class="text-sm text-slate-500 hover:text-slate-800 transition">← Lesson 2: Process Variation</a>
+      <a href="lesson-04.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: I-MR Charts →</a>
+    </nav>
+  </main>
+  <script>
+    const answers = { q1: 'a', q2: 'b', q3: 'false' };
+    const feedback = {
+      q1: { a: 'Correct! UCL = x̄̄ + A₂ × R̄ = 50.0 + 0.729 × 3.2 = 52.33. Always use the constant A₂ for Xbar limits.', wrong: 'Not quite. Use UCL = x̄̄ + A₂ × R̄. For n=4, A₂=0.729.' },
+      q2: { b: 'Correct! Eight consecutive points on one side of the CL signals a probable process shift — a Western Electric run rule.', wrong: 'Not quite. Eight consecutive points on one side is a run rule — it signals a probable shift even with no point beyond 3σ.' },
+      q3: { false: 'Correct! An in-control chart means the process is statistically stable — not that products meet specification. Use Cp/Cpk for that.', wrong: 'Not quite. In-control means stable, not necessarily capable. Process capability (Cp, Cpk) determines conformance to specs.' },
+    };
+    function checkQuiz() {
+      let score = 0;
+      ['q1','q2','q3'].forEach(q => {
+        const sel = document.querySelector(`input[name="${q}"]:checked`);
+        const fb = document.getElementById(`${q}-fb`);
+        fb.classList.remove('hidden');
+        if (sel && sel.value === answers[q]) { score++; fb.textContent = '✓ ' + feedback[q][answers[q]]; fb.className = 'text-sm text-green-700 bg-green-50 rounded p-2 mt-1'; }
+        else { fb.textContent = '✗ ' + feedback[q].wrong; fb.className = 'text-sm text-red-700 bg-red-50 rounded p-2 mt-1'; }
+      });
+      const s = document.getElementById('quiz-score');
+      s.classList.remove('hidden');
+      s.textContent = `Score: ${score}/3 — ${score===3?'🎉 Perfect!':score===2?'Good — review the missed question.':'Review the concept section and try again.'}`;
+      s.className = `text-sm font-semibold ${score===3?'text-green-700':score>=2?'text-amber-700':'text-red-700'}`;
+    }
+  </script>
+</body>
+</html>

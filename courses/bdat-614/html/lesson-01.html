@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1: What is Quality? — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+  <!-- Top bar -->
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white transition">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 1 of 14</span>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <!-- Lesson header -->
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 1 · Lesson 1</p>
+      <h1 class="text-3xl font-bold mt-2 text-slate-900">What is Quality?</h1>
+      <p class="text-slate-500 mt-1">Definitions, Garvin's 8 Dimensions, QC vs QA</p>
+    </div>
+
+    <!-- Goal -->
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Explain what quality means in production and service contexts, identify its eight dimensions, and distinguish between Quality Control (QC) and Quality Assurance (QA).</p>
+    </div>
+
+    <!-- Concept -->
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold text-slate-800">Concept</h2>
+
+      <p>Quality is not a single thing. Three classic definitions each highlight a different aspect:</p>
+
+      <div class="grid sm:grid-cols-3 gap-3">
+        <div class="bg-white rounded-lg border border-slate-200 p-4">
+          <p class="font-semibold text-slate-700 mb-1">Crosby</p>
+          <p class="text-sm text-slate-600">"Conformance to requirements" — quality means meeting a specification exactly.</p>
+        </div>
+        <div class="bg-white rounded-lg border border-slate-200 p-4">
+          <p class="font-semibold text-slate-700 mb-1">Juran</p>
+          <p class="text-sm text-slate-600">"Fitness for use" — quality means the product does what the customer needs.</p>
+        </div>
+        <div class="bg-white rounded-lg border border-slate-200 p-4">
+          <p class="font-semibold text-slate-700 mb-1">Taguchi</p>
+          <p class="text-sm text-slate-600">"Loss to society" — quality is the degree to which a product avoids causing harm after delivery.</p>
+        </div>
+      </div>
+
+      <h3 class="font-bold text-slate-700 mt-2">Garvin's 8 Dimensions of Quality</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-100 text-slate-600 text-left">
+              <th class="px-4 py-2 font-semibold rounded-tl">Dimension</th>
+              <th class="px-4 py-2 font-semibold rounded-tr">Meaning</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Performance</td><td class="px-4 py-2 text-slate-600">Does it do the primary job?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Features</td><td class="px-4 py-2 text-slate-600">Does it have extra capabilities?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Reliability</td><td class="px-4 py-2 text-slate-600">Does it work consistently over time?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Conformance</td><td class="px-4 py-2 text-slate-600">Does it meet the specification?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Durability</td><td class="px-4 py-2 text-slate-600">How long does it last?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Serviceability</td><td class="px-4 py-2 text-slate-600">How easy is it to fix?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Aesthetics</td><td class="px-4 py-2 text-slate-600">How does it look, feel, sound?</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-medium">Perceived Quality</td><td class="px-4 py-2 text-slate-600">What do customers believe about it?</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4 mt-2">
+        <div class="bg-slate-100 rounded-lg p-4">
+          <p class="font-bold text-slate-700 mb-1">Quality Control (QC)</p>
+          <p class="text-sm text-slate-600">Reactive — detects and corrects defects during or after production. Inspection-based.</p>
+        </div>
+        <div class="bg-slate-100 rounded-lg p-4">
+          <p class="font-bold text-slate-700 mb-1">Quality Assurance (QA)</p>
+          <p class="text-sm text-slate-600">Proactive — builds systems and standards to prevent defects. ISO 9001 is a QA standard.</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <strong class="text-amber-800">Big Data angle:</strong> "Quality" applies to data too. A dataset that is accurate, complete, consistent, timely, and valid is high-quality. Poor data quality leads to incorrect analysis — <em>garbage in, garbage out</em>.
+      </p>
+    </section>
+
+    <!-- Example -->
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — USB Drives</h2>
+      <p class="text-sm text-slate-700">A company manufactures 64 GB USB drives:</p>
+      <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+        <li><strong>Conformance quality:</strong> Each drive must store exactly 64 GB and read at ≥ 400 MB/s. Any drive below spec is a defect.</li>
+        <li><strong>Fitness for use:</strong> A drive that meets the speed spec but fails after 3 months has poor quality.</li>
+        <li><strong>Perceived quality:</strong> If the packaging looks cheap, customers may rate it poorly even if it performs perfectly.</li>
+      </ul>
+      <p class="text-sm text-slate-600 italic">Which dimension matters most depends on the customer — that is exactly why all eight dimensions exist.</p>
+    </section>
+
+    <!-- Task -->
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-3">Open <code class="bg-green-100 px-1 rounded text-green-800 font-mono">exercise.py</code> in the lesson folder. You will:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Match 8 product scenarios to the correct Garvin dimension.</li>
+        <li>Compute a data quality score from a 5-criteria checklist.</li>
+        <li>Print your results.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-01/lesson-01/exercise.py</p>
+    </section>
+
+    <!-- Quiz -->
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6" id="quiz">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+
+      <!-- Q1 -->
+      <div class="space-y-2">
+        <p class="font-medium text-slate-800">1. Juran defines quality as:</p>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q1" value="a" class="mt-1"> <span class="text-sm">Conformance to requirements</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q1" value="b" class="mt-1"> <span class="text-sm">Fitness for use</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q1" value="c" class="mt-1"> <span class="text-sm">Zero defects</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q1" value="d" class="mt-1"> <span class="text-sm">Loss to society</span></label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+
+      <!-- Q2 -->
+      <div class="space-y-2">
+        <p class="font-medium text-slate-800">2. Quality Assurance (QA) is reactive — it finds and fixes defects after they occur.</p>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q2" value="true" class="mt-1"> <span class="text-sm">True</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q2" value="false" class="mt-1"> <span class="text-sm">False</span></label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+
+      <!-- Q3 -->
+      <div class="space-y-2">
+        <p class="font-medium text-slate-800">3. A data pipeline delivers results on time, but 8% of values are out of valid range. Which data quality dimension is violated?</p>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q3" value="a" class="mt-1"> <span class="text-sm">Timeliness</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q3" value="b" class="mt-1"> <span class="text-sm">Completeness</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q3" value="c" class="mt-1"> <span class="text-sm">Validity</span></label>
+        <label class="flex items-start gap-2 cursor-pointer"><input type="radio" name="q3" value="d" class="mt-1"> <span class="text-sm">Consistency</span></label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <!-- Reflection -->
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-slate-700 text-sm">A data pipeline runs on time and produces results, but 5% of records contain null values that downstream models silently treat as zero. Which quality dimensions are violated, and is this a QC problem, a QA problem, or both? Explain your reasoning.</p>
+    </section>
+
+    <!-- Nav -->
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="index.html" class="text-sm text-slate-500 hover:text-slate-800 transition">← Course Home</a>
+      <a href="lesson-02.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Process Variation →</a>
+    </nav>
+
+  </main>
+
+  <script>
+    const answers = { q1: 'b', q2: 'false', q3: 'c' };
+    const feedback = {
+      q1: { b: 'Correct! Juran's definition focuses on whether the product satisfies user needs — "fitness for use". Crosby defined it as conformance to requirements.', wrong: 'Not quite. Juran's definition is "fitness for use" — whether the product satisfies what the customer needs.' },
+      q2: { false: 'Correct! QA is proactive — it builds systems and standards to prevent defects. QC is the reactive activity of detecting and correcting defects.', wrong: 'Not quite. QA is proactive (prevents defects). QC is reactive (detects and fixes defects).' },
+      q3: { c: 'Correct! Values out of valid range violate the Validity dimension. Timeliness and Completeness are both fine here.', wrong: 'Not quite. Values out of valid range violate Validity — they are present and on time, but outside the acceptable range.' },
+    };
+    function checkQuiz() {
+      let score = 0;
+      ['q1','q2','q3'].forEach(q => {
+        const selected = document.querySelector(`input[name="${q}"]:checked`);
+        const fb = document.getElementById(`${q}-fb`);
+        fb.classList.remove('hidden');
+        if (selected && selected.value === answers[q]) {
+          score++;
+          fb.textContent = '✓ ' + feedback[q][answers[q]];
+          fb.className = 'text-sm text-green-700 bg-green-50 rounded p-2 mt-1';
+        } else {
+          fb.textContent = '✗ ' + feedback[q].wrong;
+          fb.className = 'text-sm text-red-700 bg-red-50 rounded p-2 mt-1';
+        }
+      });
+      const s = document.getElementById('quiz-score');
+      s.classList.remove('hidden');
+      s.textContent = `Score: ${score}/3 — ${score === 3 ? '🎉 Perfect!' : score === 2 ? 'Good — review the missed question.' : 'Review the concept section and try again.'}`;
+      s.className = `text-sm font-semibold ${score === 3 ? 'text-green-700' : score >= 2 ? 'text-amber-700' : 'text-red-700'}`;
+    }
+  </script>
+
+</body>
+</html>

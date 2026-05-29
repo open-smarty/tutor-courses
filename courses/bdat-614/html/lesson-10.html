@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 10: Acceptance Sampling — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 10 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 5 · Lesson 10</p>
+      <h1 class="text-3xl font-bold mt-2">Acceptance Sampling Plans</h1>
+      <p class="text-slate-500 mt-1">OC curves, AQL, LTPD, producer's and consumer's risk</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Describe acceptance sampling, design a single sampling plan, compute an OC curve, and interpret producer's risk and consumer's risk.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>Acceptance sampling decides whether to accept or reject a <strong>lot (batch)</strong> of products by inspecting a sample. Used when 100% inspection is too expensive or destructive.</p>
+      <p class="text-sm bg-red-50 border border-red-200 rounded-lg p-3 text-red-800">Acceptance sampling is <strong>not a substitute for SPC</strong> — it does not improve the process. It only makes accept/reject decisions.</p>
+
+      <h3 class="font-bold">Key Terms</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-4 py-2 text-left">Term</th><th class="px-4 py-2 text-left">Meaning</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-white"><td class="px-4 py-2 font-mono font-bold">N</td><td class="px-4 py-2">Lot size</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-mono font-bold">n</td><td class="px-4 py-2">Sample size</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-mono font-bold">c</td><td class="px-4 py-2">Acceptance number — max defectives allowed in sample</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-bold text-green-700">AQL</td><td class="px-4 py-2">Acceptable Quality Level — producer's good quality level</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-bold text-red-700">LTPD</td><td class="px-4 py-2">Lot Tolerance Percent Defective — consumer's bad quality level</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-bold text-orange-700">α</td><td class="px-4 py-2">Producer's risk — P(rejecting a good lot) — Type I error</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-bold text-red-700">β</td><td class="px-4 py-2">Consumer's risk — P(accepting a bad lot) — Type II error</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Single Sampling Plan Decision Rule</h3>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p class="text-slate-400"># Inspect n items. Count defectives d.</p>
+        <p>if d &lt;= c:  ACCEPT the lot</p>
+        <p>if d &gt; c:   REJECT the lot</p>
+      </div>
+
+      <h3 class="font-bold">OC Curve</h3>
+      <p class="text-sm text-slate-600">Plots Pa (probability of accepting the lot) vs. p (true proportion defective). Uses the Binomial distribution:</p>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4">
+        <p>Pa(p) = P(X ≤ c | X ~ Binomial(n, p))</p>
+        <p class="text-slate-400 mt-1"># In Python: scipy.stats.binom.cdf(c, n, p)</p>
+      </div>
+      <p class="text-sm text-slate-600">A <strong>steeper OC curve</strong> means the plan discriminates better between good and bad lots.</p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — N=2000, n=125, c=3</h2>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p>At p=0.01 (AQL):  Pa = P(X≤3 | Binom(125,0.01)) ≈ <span class="text-yellow-300">0.97</span>  α ≈ 3%</p>
+        <p>At p=0.05 (LTPD): Pa = P(X≤3 | Binom(125,0.05)) ≈ <span class="text-yellow-300">0.10</span>  β ≈ 10%</p>
+      </div>
+      <p class="text-sm text-slate-700">Good lots (p=1%) are accepted 97% of the time. Bad lots (p=5%) are rejected 90% of the time.</p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">For a plan with n=100, c=2, AQL=2%, LTPD=8%:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Compute Pa for p from 0 to 0.15 using <code class="font-mono">binom.cdf()</code>.</li>
+        <li>Find Pa at AQL and LTPD.</li>
+        <li>Compute producer's risk α and consumer's risk β.</li>
+        <li>Plot the OC curve with AQL and LTPD marked.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-05/lesson-01/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. Plan: n=50, c=1. You find 3 defectives in the sample. You should:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> Accept — 3 defectives out of the lot is fine</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> Reject — 3 &gt; c=1</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. Producer's risk (α) is the probability of accepting a bad lot.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. Acceptance sampling can be used to improve process quality.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">A supplier says single sampling is unfair — a good lot might be rejected by chance. Is this a valid concern? What does the OC curve tell you about this risk?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-09.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 9: DMAIC</a>
+      <a href="lesson-11.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Six Sigma →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'false',q3:'false'};
+    const feedback={q1:{b:'Correct! Decision rule: if d > c, reject. Here d=3 > c=1, so reject regardless of lot size.',wrong:'Not quite. The rule is: reject if d > c. 3 > 1, so reject.'},q2:{false:'Correct! Producer\'s risk (α) = P(rejecting a GOOD lot) — a Type I error. Consumer\'s risk (β) = P(accepting a BAD lot).',wrong:'Not quite. Producer\'s risk is rejecting a good lot. Consumer\'s risk is accepting a bad lot.'},q3:{false:'Correct! Acceptance sampling only makes accept/reject decisions on existing lots. It does not improve the process at all.',wrong:'Not quite. Acceptance sampling is inspection, not process improvement. Use SPC and DMAIC to improve.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

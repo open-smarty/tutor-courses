@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 13: TQM — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 13 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 6 · Lesson 13</p>
+      <h1 class="text-3xl font-bold mt-2">Total Quality Management</h1>
+      <p class="text-slate-500 mt-1">TQM principles, Deming's 14 Points, Cost of Poor Quality</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Describe the core principles of TQM, apply Deming's 14 Points to a modern data context, and compute the Cost of Poor Quality (COPQ).</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>TQM is a management philosophy where the <strong>entire organisation</strong> — from CEO to frontline — is committed to continuously improving quality. It shifts focus from inspection at the end of a line to <strong>building quality into every process</strong>.</p>
+
+      <h3 class="font-bold">Core TQM Principles</h3>
+      <div class="grid sm:grid-cols-2 gap-3 text-sm">
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Customer Focus</p><p class="text-slate-500 mt-1">All quality decisions start with the customer — internal and external.</p></div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Total Employee Involvement</p><p class="text-slate-500 mt-1">Everyone is responsible for quality, not just the QC department.</p></div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Process-Centred</p><p class="text-slate-500 mt-1">Manage and improve the process — good processes produce good outcomes.</p></div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Continuous Improvement (Kaizen)</p><p class="text-slate-500 mt-1">Never accept the current state as the best possible state.</p></div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Fact-Based Decisions</p><p class="text-slate-500 mt-1">Use data and statistical tools — not intuition alone.</p></div>
+        <div class="bg-white border border-slate-200 rounded-lg p-3"><p class="font-bold text-slate-700">Integrated System</p><p class="text-slate-500 mt-1">All departments work toward common quality goals.</p></div>
+      </div>
+
+      <h3 class="font-bold">Key TQM Contributors</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-4 py-2 text-left">Expert</th><th class="px-4 py-2 text-left">Key Contribution</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-white"><td class="px-4 py-2 font-semibold">W. Edwards Deming</td><td class="px-4 py-2 text-slate-600">14 Points, PDCA cycle, System of Profound Knowledge</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-semibold">Joseph Juran</td><td class="px-4 py-2 text-slate-600">Quality Trilogy (Plan/Control/Improve), Cost of Poor Quality</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-semibold">Philip Crosby</td><td class="px-4 py-2 text-slate-600">"Quality is Free", Zero Defects concept</td></tr>
+            <tr class="bg-white"><td class="px-4 py-2 font-semibold">Kaoru Ishikawa</td><td class="px-4 py-2 text-slate-600">Fishbone Diagram, 7 QC Tools</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Cost of Poor Quality (COPQ)</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-4 py-2 text-left">Category</th><th class="px-4 py-2 text-left">Data Engineering Example</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-green-50"><td class="px-4 py-2 font-bold text-green-700">Prevention</td><td class="px-4 py-2 text-slate-600">Data quality training, automated schema validation, audits</td></tr>
+            <tr class="bg-blue-50"><td class="px-4 py-2 font-bold text-blue-700">Appraisal</td><td class="px-4 py-2 text-slate-600">Daily data quality checks, profiling tool licence</td></tr>
+            <tr class="bg-amber-50"><td class="px-4 py-2 font-bold text-amber-700">Internal Failure</td><td class="px-4 py-2 text-slate-600">Reprocessing failed jobs, correcting bad training data</td></tr>
+            <tr class="bg-red-50"><td class="px-4 py-2 font-bold text-red-700">External Failure</td><td class="px-4 py-2 text-slate-600">Revenue loss from bad recommendations, SLA penalties</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-900">
+        <strong>1:10:100 Rule:</strong> Every £1 spent on prevention saves ~£10 on internal failures and ~£100 on external failures. Prevention is always the cheapest category.
+      </p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — Stale Product Data</h2>
+      <p class="text-sm text-slate-700">A recommendation engine uses 3-month-old product data. Result:</p>
+      <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+        <li><strong>External Failure:</strong> 12% drop in CTR → ~£80,000 revenue loss.</li>
+        <li><strong>Internal Failure:</strong> 40 hours of engineering time to clean and reload data.</li>
+        <li><strong>Prevention cost missing:</strong> Automated data freshness monitoring would have cost £500.</li>
+      </ul>
+      <p class="text-sm font-bold text-red-700">£500 in prevention would have saved £80,000+ in losses.</p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Given annual COPQ data for a data analytics team:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Sum costs per category.</li>
+        <li>Compute total COPQ.</li>
+        <li>Compute prevention % of total.</li>
+        <li>Print a recommendation if prevention is below 5%.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-06/lesson-01/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. Re-running failed ETL jobs to fix bad data before it reaches users is:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> Prevention Cost</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> Appraisal Cost</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> Internal Failure Cost</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. Crosby's "Quality is Free" means quality improvement has no cost.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. TQM requires that quality responsibility be distributed across all employees.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">Deming's Point 3: "Cease dependence on inspection to achieve quality." In data engineering, what would it mean to "build quality in" to a pipeline rather than detect errors after the fact — and why is prevention cheaper than detection?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-12.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 12: Lean Six Sigma</a>
+      <a href="lesson-14.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Big Data SQC →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'c',q2:'false',q3:'true'};
+    const feedback={q1:{c:'Correct! Rework before the output reaches the customer is Internal Failure Cost — caught internally but still costly.',wrong:'Not quite. Fixing bad data before it reaches users is Internal Failure — defects found and corrected inside the process.'},q2:{false:'Correct! "Quality is Free" means the cost of achieving quality is less than the cost of failure. Quality improvement does have a cost — it just pays for itself.',wrong:'Not quite. It means prevention costs less than failure costs — not that improvement has zero cost.'},q3:{true:'Correct! Total Employee Involvement is a core TQM principle — everyone is responsible, not just the QC team.',wrong:'Not quite. TQM specifically requires everyone to own quality — from top management to frontline workers.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

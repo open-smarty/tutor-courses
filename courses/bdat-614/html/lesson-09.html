@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 9: DMAIC & Root Cause Analysis — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 9 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 4 · Lesson 9</p>
+      <h1 class="text-3xl font-bold mt-2">DMAIC Framework</h1>
+      <p class="text-slate-500 mt-1">Root cause analysis — Fishbone diagram and Pareto analysis</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Describe the five DMAIC phases, match quality tools to each phase, and use Pareto analysis to identify the dominant root cause of a quality problem.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>DMAIC is the core problem-solving framework of Six Sigma. It is structured and data-driven:</p>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-800 text-white"><th class="px-4 py-2 text-left">Phase</th><th class="px-4 py-2 text-left">Question</th><th class="px-4 py-2 text-left">Key Tools</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-blue-50"><td class="px-4 py-2 font-bold text-blue-700">Define</td><td class="px-4 py-2">What is the problem?</td><td class="px-4 py-2 text-slate-600">Project Charter, SIPOC, Voice of Customer</td></tr>
+            <tr class="bg-green-50"><td class="px-4 py-2 font-bold text-green-700">Measure</td><td class="px-4 py-2">How is it performing now?</td><td class="px-4 py-2 text-slate-600">Control Charts, Gauge R&R, Baseline DPMO</td></tr>
+            <tr class="bg-amber-50"><td class="px-4 py-2 font-bold text-amber-700">Analyze</td><td class="px-4 py-2">What are the root causes?</td><td class="px-4 py-2 text-slate-600">Fishbone, Pareto, Hypothesis Testing</td></tr>
+            <tr class="bg-orange-50"><td class="px-4 py-2 font-bold text-orange-700">Improve</td><td class="px-4 py-2">How can we fix it?</td><td class="px-4 py-2 text-slate-600">DOE, Kaizen, Pilot</td></tr>
+            <tr class="bg-purple-50"><td class="px-4 py-2 font-bold text-purple-700">Control</td><td class="px-4 py-2">How do we sustain gains?</td><td class="px-4 py-2 text-slate-600">Control Charts, Control Plans, Dashboards</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Fishbone (Ishikawa) Diagram</h3>
+      <p class="text-sm text-slate-600">Visual tool for the Analyze phase. Maps all possible causes of a problem (the "effect") by the 6M categories. The problem is the "fish head"; each M is a bone. Use it to brainstorm hypotheses — then confirm with data.</p>
+      <div class="bg-slate-100 rounded-lg p-4 text-xs font-mono text-center text-slate-600">
+        [Man] [Machine] → → → → → → → [EFFECT: High Error Rate]<br>
+        [Material] [Method] ↗
+      </div>
+
+      <h3 class="font-bold">Pareto Chart — The 80/20 Rule</h3>
+      <p class="text-sm text-slate-600">Ranks causes by frequency with a cumulative % line. Approximately <strong>80% of problems come from 20% of causes</strong>. Fix the top 2–3 causes and you resolve most of the problem.</p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — Customer Complaints</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-amber-100"><th class="px-3 py-2 text-left">Defect Type</th><th class="px-3 py-2">Count</th><th class="px-3 py-2">Cumulative %</th></tr></thead>
+          <tbody class="divide-y divide-amber-100 text-center">
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Wrong delivery address</td><td>200</td><td class="text-green-700 font-semibold">40%</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Damaged packaging</td><td>150</td><td class="text-green-700 font-semibold">70% ← Fix these two first</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Missing item</td><td>75</td><td>85%</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Wrong product</td><td>50</td><td>95%</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Other</td><td>25</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-slate-700">Fix "Wrong delivery address" and "Damaged packaging" first — together they are 70% of all complaints with minimum effort.</p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Open <code class="bg-green-100 px-1 rounded font-mono">exercise.py</code>:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Build a Pareto chart from software defect data.</li>
+        <li>Identify which defect types account for ≥ 80% of all defects.</li>
+        <li>Assign 6 potential causes to the correct Fishbone 6M bone.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-04/lesson-02/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. Finding that 78% of customer returns come from just 2 defect types was revealed by:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> Fishbone diagram</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> Pareto chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> Control chart</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. A Fishbone diagram alone is sufficient to identify the true root cause.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. The Control phase of DMAIC is primarily about:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="a" class="mt-0.5"> Identifying root causes</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="b" class="mt-0.5"> Sustaining the gains from the Improve phase</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="c" class="mt-0.5"> Collecting baseline data</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">A team creates a detailed Fishbone diagram and identifies 20 potential causes. They have no data to verify which are real. What should they do next, and why is the Fishbone alone not sufficient?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-08.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 8: Shewhart Cycle</a>
+      <a href="lesson-10.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Acceptance Sampling →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'false',q3:'b'};
+    const feedback={q1:{b:'Correct! The Pareto chart ranks defects by frequency and shows cumulative %. Finding 78% from 2 types is a classic Pareto finding.',wrong:'Not quite. The Pareto chart reveals the 80/20 pattern in defect frequency.'},q2:{false:'Correct! Fishbone generates hypotheses. Confirmation requires statistical analysis — hypothesis tests, regression, and data collection.',wrong:'Not quite. Fishbone is a brainstorming tool. Root causes must be statistically confirmed with data.'},q3:{b:'Correct! The Control phase sustains gains by implementing control charts, control plans, and dashboards so the process does not regress.',wrong:'Not quite. Control = sustain. Analyze = root causes. Measure = baseline.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 7: Gauge R&R — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 7 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 3 · Lesson 7</p>
+      <h1 class="text-3xl font-bold mt-2">Measurement System Analysis</h1>
+      <p class="text-slate-500 mt-1">Gauge Repeatability and Reproducibility (R&R)</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Explain what Gauge R&R measures, compute % GR&R, and determine whether a measurement system is acceptable for SPC or capability studies.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>Before trusting any control chart or capability index, ask: <strong>can you trust the measurements themselves?</strong> A faulty gauge makes a good process look out of control and hides real problems.</p>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p class="font-bold text-blue-800 mb-1">Repeatability (EV)</p>
+          <p class="text-sm text-slate-600">Same operator, same part, same gauge — how consistent is the equipment?<br><em>"Can the gauge give consistent results?"</em></p>
+        </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <p class="font-bold text-purple-800 mb-1">Reproducibility (AV)</p>
+          <p class="text-sm text-slate-600">Different operators, same part — how much do operators differ?<br><em>"Do different people get the same result?"</em></p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p>σ²_GaugeR&R = σ²_Repeatability + σ²_Reproducibility</p>
+        <p>TV = √(σ²_Process + σ²_GaugeR&R)</p>
+        <p></p>
+        <p>%GR&R = (σ_GaugeR&R / σ_Total) × 100</p>
+      </div>
+
+      <h3 class="font-bold">Acceptance Criteria</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-4 py-2 text-left">% GR&R</th><th class="px-4 py-2">Interpretation</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-green-50"><td class="px-4 py-2 font-bold text-green-700">&lt; 10%</td><td class="px-4 py-2">Excellent — measurement system is adequate</td></tr>
+            <tr class="bg-amber-50"><td class="px-4 py-2 font-bold text-amber-700">10–30%</td><td class="px-4 py-2">Acceptable (depends on application)</td></tr>
+            <tr class="bg-red-50"><td class="px-4 py-2 font-bold text-red-700">&gt; 30%</td><td class="px-4 py-2">Unacceptable — improve measurement system first!</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-slate-600">Also check <strong>ndc (Number of Distinct Categories) ≥ 5</strong>. If ndc &lt; 5, the gauge cannot reliably distinguish between parts.</p>
+
+      <p class="text-sm bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">
+        <strong>Big Data angle:</strong> In streaming systems, sensors and APIs are the "gauge". A sensor with 38% GR&R contaminates every downstream model and dashboard — "garbage in, garbage out." Run MSA before building any analytics system.
+      </p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — ANOVA Gauge R&R Study</h2>
+      <p class="text-sm text-slate-700">Study design: 4 parts × 3 operators × 2 replicates = 24 measurements.</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-amber-100"><th class="px-3 py-2 text-left">Source</th><th class="px-3 py-2">DF</th><th class="px-3 py-2">SS</th><th class="px-3 py-2">F</th></tr></thead>
+          <tbody class="divide-y divide-amber-100 text-center">
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Parts</td><td>3</td><td>2.845</td><td>142.3</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Operators</td><td>2</td><td>0.285</td><td>21.4</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 text-left">Repeatability</td><td>12</td><td>0.080</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-3 text-sm space-y-1">
+        <p>% Repeatability = 18.2%,  % Reproducibility = 9.8%</p>
+        <p class="font-bold">% GR&R = 28.0%  →  <span class="text-amber-700">Marginally Acceptable</span></p>
+        <p>ndc = 4.8  →  below 5 (warning)</p>
+        <p class="text-slate-600 mt-1">Action: calibrate gauges, standardise procedures. Re-run the study.</p>
+      </div>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Given Gauge R&R data (4 parts, 3 operators, 2 replicates):</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Build a 3D numpy array from the measurement data.</li>
+        <li>Compute repeatability and reproducibility variances.</li>
+        <li>Compute % GR&R and interpret the result.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-03/lesson-02/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. A Gauge R&R study finds % GR&R = 35%. This means:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> The measurement system is excellent</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> 35% of total variation comes from the measurement system — unacceptable</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> 35% of parts are defective</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. Repeatability is the variation from different operators measuring the same part.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. ndc (Number of Distinct Categories) should be:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="a" class="mt-0.5"> ≥ 2</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="b" class="mt-0.5"> ≥ 5</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="c" class="mt-0.5"> ≥ 10</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">An analyst says: "Our sensors have 28% GR&R, but with millions of data points the average will be accurate — it doesn't matter." Is the analyst correct? What specific problem does high %GR&R cause even with large sample sizes?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-06.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 6: Cp and Cpk</a>
+      <a href="lesson-08.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Shewhart Cycle →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'false',q3:'b'};
+    const feedback={q1:{b:'Correct! %GR&R>30% means over 30% of all observed variation is from the measurement system itself — it is unacceptable.',wrong:'Not quite. %GR&R measures what fraction of total variation comes from the measurement system.'},q2:{false:'Correct! Repeatability = same operator, same part — equipment variation. Reproducibility = different operators, same part.',wrong:'Not quite. That describes reproducibility. Repeatability is the same operator on the same part.'},q3:{b:'Correct! ndc≥5 means the gauge can distinguish at least 5 distinct categories of parts. Below 5, the gauge cannot reliably discriminate.',wrong:'Not quite. The AIAG requirement is ndc≥5.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

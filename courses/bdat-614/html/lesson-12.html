@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 12: Lean Six Sigma — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 12 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 5 · Lesson 12</p>
+      <h1 class="text-3xl font-bold mt-2">Lean Six Sigma</h1>
+      <p class="text-slate-500 mt-1">8 Lean wastes, Value Stream Mapping, Lean tools</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Describe how Lean combines with Six Sigma, identify the 8 Lean wastes, and apply Value Stream Mapping to identify non-value-adding steps.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <div class="grid sm:grid-cols-3 gap-3 text-sm text-center">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3"><p class="font-bold text-blue-800">Six Sigma alone</p><p class="text-slate-600 mt-1">Reduces variation — but may leave slow, wasteful processes intact</p></div>
+        <div class="bg-green-50 border border-green-200 rounded-lg p-3"><p class="font-bold text-green-800">Lean alone</p><p class="text-slate-600 mt-1">Speeds up processes — but may still produce defective output</p></div>
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3"><p class="font-bold text-purple-800">Lean Six Sigma</p><p class="text-slate-600 mt-1">Both: fast AND defect-free</p></div>
+      </div>
+
+      <h3 class="font-bold">The 8 Lean Wastes (TIM WOODS)</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-3 py-2 text-left">Letter</th><th class="px-3 py-2 text-left">Waste</th><th class="px-3 py-2 text-left">Data Engineering Example</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">T</td><td class="px-3 py-2">Transportation</td><td class="px-3 py-2 text-slate-600">Moving data between unnecessary systems</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">I</td><td class="px-3 py-2">Inventory</td><td class="px-3 py-2 text-slate-600">Records waiting in landing zone queues</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">M</td><td class="px-3 py-2">Motion</td><td class="px-3 py-2 text-slate-600">Analysts switching between 6 tools to do one task</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">W</td><td class="px-3 py-2">Waiting</td><td class="px-3 py-2 text-slate-600">Pipeline jobs waiting for upstream data for 4 hours</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">O</td><td class="px-3 py-2">Overproduction</td><td class="px-3 py-2 text-slate-600">Generating daily reports nobody reads</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">O</td><td class="px-3 py-2">Overprocessing</td><td class="px-3 py-2 text-slate-600">Running 12 validation steps when 4 suffice</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">D</td><td class="px-3 py-2">Defects</td><td class="px-3 py-2 text-slate-600">Invalid records requiring rework</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2 font-bold text-blue-700">S</td><td class="px-3 py-2">Unused Talent</td><td class="px-3 py-2 text-slate-600">Analysts doing manual work that could be automated</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Value Stream Mapping (VSM)</h3>
+      <p class="text-sm text-slate-600">Diagrams every step from supplier to customer and labels each as:</p>
+      <div class="grid grid-cols-3 gap-2 text-sm text-center">
+        <div class="bg-green-100 rounded p-2"><p class="font-bold text-green-800">VA</p><p class="text-xs text-slate-600">Value-Adding — customer would pay for this</p></div>
+        <div class="bg-red-100 rounded p-2"><p class="font-bold text-red-800">NVA</p><p class="text-xs text-slate-600">Non-Value-Adding — waste, eliminate it</p></div>
+        <div class="bg-amber-100 rounded p-2"><p class="font-bold text-amber-800">NNVA</p><p class="text-xs text-slate-600">Required but not value-adding — minimise</p></div>
+      </div>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4">
+        <p>Process Cycle Efficiency = VA time / Total time × 100%</p>
+        <p class="text-slate-400"># Typical: 5–15%.  Lean target: &gt; 25%</p>
+      </div>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — Data Pipeline VSM</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-amber-100"><th class="px-3 py-2 text-left">Step</th><th class="px-3 py-2">Time</th><th class="px-3 py-2">Type</th></tr></thead>
+          <tbody class="divide-y divide-amber-100">
+            <tr class="bg-white"><td class="px-3 py-2">Ingest from source</td><td class="px-3 py-2 text-center">5 min</td><td class="px-3 py-2 text-center text-green-700 font-bold">VA</td></tr>
+            <tr class="bg-red-50"><td class="px-3 py-2">Wait in queue</td><td class="px-3 py-2 text-center">45 min</td><td class="px-3 py-2 text-center text-red-700 font-bold">NVA — Waiting</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2">Validate schema</td><td class="px-3 py-2 text-center">3 min</td><td class="px-3 py-2 text-center text-green-700 font-bold">VA</td></tr>
+            <tr class="bg-red-50"><td class="px-3 py-2">Manual approval</td><td class="px-3 py-2 text-center">30 min</td><td class="px-3 py-2 text-center text-red-700 font-bold">NVA — Overprocessing</td></tr>
+            <tr class="bg-white"><td class="px-3 py-2">Load to warehouse</td><td class="px-3 py-2 text-center">4 min</td><td class="px-3 py-2 text-center text-green-700 font-bold">VA</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm font-semibold">Total = 87 min. VA = 12 min. <span class="text-red-700">PCE = 14% — 86% is waste.</span></p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Given 10 process steps with times:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Classify each step as VA, NVA, or NNVA.</li>
+        <li>Compute Process Cycle Efficiency.</li>
+        <li>Map each NVA step to a Lean waste category (TIM WOODS).</li>
+        <li>Print a lean improvement recommendation.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-05/lesson-03/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. A data team generates a daily report that nobody reads. This is the __ Lean waste.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> Defects</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> Overproduction</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> Waiting</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. PCE = Value-adding time / Total time × 100%</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. Poka-Yoke is designed to detect defects after they occur.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">A Six Sigma engineer says "focus only on defects." A Lean practitioner says "speed is more important." Which approach would you recommend to a Big Data team improving an analytics pipeline — and why does Lean Six Sigma offer something neither alone provides?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-11.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 11: Six Sigma</a>
+      <a href="lesson-13.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: TQM →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'true',q3:'false'};
+    const feedback={q1:{b:'Correct! Producing output that nobody needs or uses is Overproduction — one of the 8 Lean wastes.',wrong:'Not quite. Generating unused output is Overproduction.'},q2:{true:'Correct! PCE = VA time / Total lead time × 100%. Most processes run at 5–15%; Lean targets > 25%.',wrong:'Not quite. PCE = VA time / Total time × 100%.'},q3:{false:'Correct! Poka-Yoke is mistake-proofing — it prevents defects from occurring, rather than detecting them after the fact.',wrong:'Not quite. Poka-Yoke prevents errors (e.g., a USB plug that only fits one way). Detection is QC, not Lean.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

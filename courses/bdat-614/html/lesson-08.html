@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 8: Shewhart Cycle — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 8 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 4 · Lesson 8</p>
+      <h1 class="text-3xl font-bold mt-2">The Shewhart Cycle</h1>
+      <p class="text-slate-500 mt-1">PDCA and PDSA — iterative continuous improvement</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Describe the four phases of the Shewhart Cycle, explain the difference between PDCA and PDSA, and apply the cycle to a realistic improvement scenario.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>Walter Shewhart (1930s) introduced this scientific, iterative approach to improvement. Deming later popularised it worldwide. The cycle never truly ends — each iteration builds on the last.</p>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-blue-50 border-2 border-blue-300 rounded-xl p-5">
+          <p class="font-bold text-blue-900 text-lg mb-3">1 — PLAN</p>
+          <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+            <li>Identify the problem</li>
+            <li>Collect baseline data</li>
+            <li>Set SMART objectives</li>
+            <li>Develop action plan and prediction</li>
+          </ul>
+        </div>
+        <div class="bg-green-50 border-2 border-green-300 rounded-xl p-5">
+          <p class="font-bold text-green-900 text-lg mb-3">2 — DO</p>
+          <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+            <li>Execute on a <strong>small scale</strong> (pilot)</li>
+            <li>Document observations</li>
+            <li>Limit risk — don't change everything at once</li>
+          </ul>
+        </div>
+        <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-5">
+          <p class="font-bold text-amber-900 text-lg mb-3">3 — STUDY / CHECK</p>
+          <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+            <li>Measure and collect data</li>
+            <li>Analyse with control charts and statistics</li>
+            <li>Compare against objectives</li>
+            <li>Understand <em>why</em> results occurred</li>
+          </ul>
+        </div>
+        <div class="bg-purple-50 border-2 border-purple-300 rounded-xl p-5">
+          <p class="font-bold text-purple-900 text-lg mb-3">4 — ACT</p>
+          <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+            <li>If it worked: <strong>standardise</strong> the change</li>
+            <li>If it didn't: <strong>adjust</strong> and restart</li>
+            <li>Start the next improvement cycle</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bg-slate-100 rounded-lg p-4 text-sm">
+        <p><strong>PDCA vs PDSA:</strong> Deming preferred <strong>Study</strong> over <strong>Check</strong>. "Check" implies a pass/fail test. "Study" demands understanding <em>why</em> the results happened — the learning that makes the next cycle better. PDSA is now the preferred form.</p>
+      </div>
+
+      <p class="text-sm bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">
+        <strong>Control charts in PDSA:</strong> They are essential in the Study phase — they distinguish real improvements from random variation. Without a control chart, you cannot tell if a change actually worked.
+      </p>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — ETL Pipeline Error Rate</h2>
+      <div class="space-y-2 text-sm text-slate-700">
+        <div class="flex gap-3"><span class="font-bold text-blue-700 w-14 shrink-0">PLAN</span><p>Baseline error rate = 2.8%. Target: &lt; 0.5%. Hypothesis: 80% of errors from 2 data sources with 12% missing values.</p></div>
+        <div class="flex gap-3"><span class="font-bold text-green-700 w-14 shrink-0">DO</span><p>Deploy improved null-handling rules to staging pipeline for 2 weeks on 10% of records.</p></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-14 shrink-0">STUDY</span><p>p-chart confirms error rate drops to 0.4% (statistically significant, p &lt; 0.05). Root cause confirmed.</p></div>
+        <div class="flex gap-3"><span class="font-bold text-purple-700 w-14 shrink-0">ACT</span><p>Deploy to production. Update runbook. Start next cycle targeting the remaining 0.4%.</p></div>
+      </div>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Open <code class="bg-green-100 px-1 rounded font-mono">exercise.py</code>:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Map 8 actions to the correct PDSA phase (Plan/Do/Study/Act).</li>
+        <li>Run a two-sample t-test on before/after data to determine if an improvement is statistically significant.</li>
+        <li>Print a conclusion and decision.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-04/lesson-01/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. Running a new algorithm on 5% of production traffic for one week is the __ phase.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> Plan</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> Do</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> Study</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. The Shewhart Cycle ends once a successful improvement is standardised in the Act phase.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. Which SQC tool is most directly used in the Study phase?</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="a" class="mt-0.5"> Fishbone diagram</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="b" class="mt-0.5"> Control chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="c" class="mt-0.5"> SIPOC diagram</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">Why does Deming prefer "Study" over "Check"? What is the risk of treating the third phase as just a box to tick rather than as genuine learning? Give a concrete example from data analytics.</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-07.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 7: Gauge R&R</a>
+      <a href="lesson-09.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: DMAIC & Root Cause →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'false',q3:'b'};
+    const feedback={q1:{b:'Correct! Running on a limited subset is the Do phase — a small-scale pilot to test the change safely.',wrong:'Not quite. Executing the plan on a small scale is the Do phase.'},q2:{false:'Correct! The cycle is iterative — each Act phase starts a new cycle. Continuous improvement (Kaizen) never ends.',wrong:'Not quite. The cycle restarts from a higher baseline after each Act phase.'},q3:{b:'Correct! Control charts are essential in Study — they determine if a change produced real improvement or just random variation.',wrong:'Not quite. Control charts are the primary Study phase tool — they distinguish signal from noise.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

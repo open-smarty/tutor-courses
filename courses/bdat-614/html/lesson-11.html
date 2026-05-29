@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 11: Six Sigma — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 11 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 5 · Lesson 11</p>
+      <h1 class="text-3xl font-bold mt-2">Six Sigma</h1>
+      <p class="text-slate-500 mt-1">DPMO, performance levels, and the DMAIC roadmap</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Calculate DPMO from process data, interpret Six Sigma performance levels, and describe the Six Sigma DMAIC roadmap and roles.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>Six Sigma is a data-driven methodology aimed at near-perfect quality. Goal: <strong>3.4 Defects Per Million Opportunities (DPMO)</strong>. Originated at Motorola (1986, Bill Smith), popularised by GE under Jack Welch.</p>
+
+      <h3 class="font-bold">Computing DPMO</h3>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p>DPMO = (Defects / (Units × Opportunities per Unit)) × 1,000,000</p>
+        <p class="text-slate-400 mt-2"># Example: 150 invalid fields in 50,000 records × 10 fields each</p>
+        <p>DPMO = 150 / (50,000 × 10) × 1,000,000 = <span class="text-yellow-300">300</span>  ≈ just above 5σ</p>
+      </div>
+
+      <h3 class="font-bold">Six Sigma Performance Levels</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-800 text-white text-center"><th class="px-4 py-2 text-left">Sigma Level</th><th class="px-4 py-2">DPMO</th><th class="px-4 py-2">Process Yield</th></tr></thead>
+          <tbody class="divide-y divide-slate-100 text-center">
+            <tr class="bg-green-50"><td class="px-4 py-2 text-left font-bold text-green-700">6σ</td><td>3.4</td><td>99.99966%</td></tr>
+            <tr class="bg-green-50"><td class="px-4 py-2 text-left font-semibold text-green-600">5σ</td><td>233</td><td>99.977%</td></tr>
+            <tr class="bg-amber-50"><td class="px-4 py-2 text-left font-semibold text-amber-700">4σ</td><td>6,210</td><td>99.38%</td></tr>
+            <tr class="bg-orange-50"><td class="px-4 py-2 text-left font-semibold text-orange-700">3σ</td><td>66,807</td><td>93.32%</td></tr>
+            <tr class="bg-red-50"><td class="px-4 py-2 text-left font-semibold text-red-700">2σ</td><td>308,537</td><td>69.15%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-bold">Six Sigma Roles</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex gap-3 bg-white border border-slate-200 rounded-lg p-3"><span class="font-bold text-slate-700 w-32 shrink-0">Champion</span><span class="text-slate-600">Senior manager who sponsors the project and removes obstacles</span></div>
+        <div class="flex gap-3 bg-white border border-slate-200 rounded-lg p-3"><span class="font-bold text-slate-700 w-32 shrink-0">Master Black Belt</span><span class="text-slate-600">Expert trainer and mentor for Black Belts</span></div>
+        <div class="flex gap-3 bg-white border border-slate-200 rounded-lg p-3"><span class="font-bold text-black w-32 shrink-0">Black Belt</span><span class="text-slate-600">Full-time project leader — runs 3–6 DMAIC projects/year</span></div>
+        <div class="flex gap-3 bg-white border border-slate-200 rounded-lg p-3"><span class="font-bold text-green-700 w-32 shrink-0">Green Belt</span><span class="text-slate-600">Part-time project team member with Six Sigma training</span></div>
+      </div>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — Bank Loan Misclassification</h2>
+      <p class="text-sm text-slate-700">A bank's loan system incorrectly classifies 6,200 applications per million (4σ). Management targets 5σ (233 DPMO).</p>
+      <ul class="text-sm text-slate-700 space-y-1 list-disc list-inside">
+        <li><strong>Define:</strong> Reduce misclassification rate from 6,200 DPMO to 233.</li>
+        <li><strong>Measure:</strong> Baseline DPMO confirmed. Gauge R&R on data sources validates measurement.</li>
+        <li><strong>Analyze:</strong> 85% of misclassifications come from 2 data sources with 12% missing values.</li>
+        <li><strong>Improve:</strong> New imputation strategy for those 2 sources. Validated on holdout set.</li>
+        <li><strong>Control:</strong> p-chart monitors ongoing misclassification rate. DPMO drops to 210.</li>
+      </ul>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">For three processes (medical devices, data pipeline, order fulfilment):</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>Compute DPMO for each process.</li>
+        <li>Estimate the sigma level.</li>
+        <li>Compute how many fewer defects per day are needed to reach the next sigma level.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-05/lesson-02/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. A process has 45 defects/day, 1,500 units/day, 3 opportunities/unit. DPMO =</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> 45/1500 × 1,000,000 = 30,000</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> 45/(1500×3) × 1,000,000 = 10,000</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. A 3σ process has a DPMO of approximately:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="a" class="mt-0.5"> 3.4</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="b" class="mt-0.5"> 6,210</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="c" class="mt-0.5"> 66,807</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. A Six Sigma Black Belt works full-time on quality improvement projects.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">A manager says "we are already at 99.38% accuracy — that is excellent." A Six Sigma engineer says "that is only 4σ — we have 6,210 DPMO." Who is right? In what context does the gap between 4σ and 6σ actually matter — give a specific example.</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-10.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 10: Acceptance Sampling</a>
+      <a href="lesson-12.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Lean Six Sigma →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'c',q3:'true'};
+    const feedback={q1:{b:'Correct! DPMO = defects/(units×opp)×1M = 45/(1500×3)×1M = 10,000 DPMO ≈ 3.8σ.',wrong:'Not quite. DPMO accounts for opportunities per unit: defects/(units×opp)×1,000,000.'},q2:{c:'Correct! 3σ = 66,807 DPMO = 93.32% yield. Many traditional processes operate at this level.',wrong:'Not quite. 3.4 DPMO is 6σ; 6,210 is 4σ; 66,807 is 3σ.'},q3:{true:'Correct! Black Belts are full-time project leaders, typically running 3–6 DMAIC projects per year.',wrong:'Not quite. Black Belts are full-time. Green Belts are part-time team members.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>

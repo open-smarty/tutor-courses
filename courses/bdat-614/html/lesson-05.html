@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 5: Attribute Control Charts — BDAT 614</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+  <header class="bg-blue-900 text-white px-6 py-3 flex items-center justify-between text-sm">
+    <a href="index.html" class="text-blue-300 hover:text-white">← BDAT 614</a>
+    <span class="text-blue-300">Lesson 5 of 14</span>
+  </header>
+  <main class="max-w-3xl mx-auto px-6 py-10 space-y-8">
+
+    <div>
+      <p class="text-blue-600 font-semibold text-xs uppercase tracking-widest">Module 2 · Lesson 5</p>
+      <h1 class="text-3xl font-bold mt-2">Attribute Control Charts</h1>
+      <p class="text-slate-500 mt-1">p, np, c, and u charts — counting defectives and defects</p>
+    </div>
+
+    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-r-lg p-5">
+      <p class="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">Goal</p>
+      <p class="text-blue-900">Select the correct attribute chart for a given situation, compute its control limits, and explain the difference between a defective and a defect.</p>
+    </div>
+
+    <section class="space-y-5">
+      <h2 class="text-xl font-bold">Concept</h2>
+      <p>When quality is measured by <strong>counting</strong> rather than measuring, use attribute charts. First, understand the distinction:</p>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p class="font-bold text-red-800 mb-1">Defective (nonconforming unit)</p>
+          <p class="text-sm text-slate-600">An entire item passes or fails — binary. A transaction that errors out. A bottle with the wrong label.</p>
+        </div>
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <p class="font-bold text-orange-800 mb-1">Defect (nonconformity)</p>
+          <p class="text-sm text-slate-600">A specific flaw — one item can have multiple defects. Null values in a record. Scratches on a surface.</p>
+        </div>
+      </div>
+
+      <h3 class="font-bold">Chart Selection Guide</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead><tr class="bg-slate-100"><th class="px-4 py-2 text-left font-semibold">Chart</th><th class="px-4 py-2 font-semibold">What is Counted</th><th class="px-4 py-2 font-semibold">Sample Size</th></tr></thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-bold text-blue-700">p-chart</td><td class="px-4 py-2">Proportion of defectives</td><td class="px-4 py-2">Variable ✓</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-bold text-blue-700">np-chart</td><td class="px-4 py-2">Number of defectives</td><td class="px-4 py-2">Constant only</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-bold text-purple-700">c-chart</td><td class="px-4 py-2">Number of defects</td><td class="px-4 py-2">Constant only</td></tr>
+            <tr class="bg-white hover:bg-slate-50"><td class="px-4 py-2 font-bold text-purple-700">u-chart</td><td class="px-4 py-2">Defects per unit</td><td class="px-4 py-2">Variable ✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="space-y-3">
+        <h3 class="font-bold">p-Chart Formulas (proportion defective, variable n)</h3>
+        <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+          <p>p̄ = total defectives / total inspected</p>
+          <p>UCL = p̄ + 3 × √(p̄(1−p̄)/nᵢ)  ← per sample</p>
+          <p>LCL = max(0, p̄ − 3 × √(p̄(1−p̄)/nᵢ))</p>
+        </div>
+        <h3 class="font-bold">u-Chart Formulas (defects per unit, variable n)</h3>
+        <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+          <p>ū = total defects / total units inspected</p>
+          <p>UCL = ū + 3 × √(ū/nᵢ)   ← per sample</p>
+          <p>LCL = max(0, ū − 3 × √(ū/nᵢ))</p>
+        </div>
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">Both p and u charts use <strong>variable limits</strong> — the UCL and LCL change each period when nᵢ varies. np and c charts use constant limits when n is fixed.</p>
+      </div>
+    </section>
+
+    <section class="bg-amber-50 border border-amber-200 rounded-xl p-6 space-y-3">
+      <h2 class="font-bold text-amber-900 text-lg">Example — API Failure Monitoring (np-chart)</h2>
+      <p class="text-sm text-slate-700">A web service samples 200 requests per hour (constant n=200). Failures per hour: 4, 6, 2, 8, 5, 3, 7, 4.</p>
+      <div class="bg-slate-900 text-green-300 font-mono text-sm rounded-lg p-4 space-y-1">
+        <p>p̄ = 39/(8×200) = 0.0244</p>
+        <p>np̄ = 0.0244 × 200 = 4.875</p>
+        <p>UCL = 4.875 + 3 × √(4.875 × 0.9756) = <span class="text-yellow-300">11.4</span></p>
+        <p>LCL = max(0, 4.875 − 6.54) = <span class="text-yellow-300">0</span></p>
+      </div>
+      <p class="text-sm text-green-700 font-semibold">Max failure count = 8 &lt; 11.4 → process in control.</p>
+    </section>
+
+    <section class="bg-green-50 border border-green-200 rounded-xl p-6">
+      <h2 class="font-bold text-green-900 text-lg mb-3">Task — Python Exercise</h2>
+      <p class="text-sm text-slate-700 mb-2">Open <code class="bg-green-100 px-1 rounded font-mono">exercise.py</code>. Build:</p>
+      <ol class="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+        <li>A <strong>p-chart</strong> for daily call centre complaint data (variable sample size, 20 days).</li>
+        <li>A <strong>u-chart</strong> for pipeline error rates (variable batch sizes, 10 days).</li>
+        <li>Plot both with variable limits and highlight out-of-control points.</li>
+      </ol>
+      <p class="mt-3 text-xs text-slate-500 font-mono bg-green-100 rounded px-3 py-2">../_course/lessons/module-02/lesson-03/exercise.py</p>
+    </section>
+
+    <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+      <h2 class="font-bold text-slate-900 text-lg">Quick Quiz</h2>
+      <div class="space-y-2">
+        <p class="font-medium">1. You inspect 200 circuit boards per shift and count defective boards. Sample size is constant. Use:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="a" class="mt-0.5"> p-chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="b" class="mt-0.5"> np-chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q1" value="c" class="mt-0.5"> c-chart</label>
+        <p class="text-sm hidden" id="q1-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">2. A data pipeline processes different-sized batches each day. You track invalid records per batch. Use:</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="a" class="mt-0.5"> c-chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="b" class="mt-0.5"> np-chart</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q2" value="c" class="mt-0.5"> u-chart</label>
+        <p class="text-sm hidden" id="q2-fb"></p>
+      </div>
+      <div class="space-y-2">
+        <p class="font-medium">3. The c-chart and u-chart are based on the Poisson distribution.</p>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="true" class="mt-0.5"> True</label>
+        <label class="flex gap-2 cursor-pointer text-sm"><input type="radio" name="q3" value="false" class="mt-0.5"> False</label>
+        <p class="text-sm hidden" id="q3-fb"></p>
+      </div>
+      <button onclick="checkQuiz()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Check Answers</button>
+      <p class="text-sm font-semibold hidden" id="quiz-score"></p>
+    </section>
+
+    <section class="bg-purple-50 border border-purple-200 rounded-xl p-6">
+      <h2 class="font-bold text-purple-900 text-lg mb-2">Reflection</h2>
+      <p class="text-sm text-slate-700">An analyst monitors invalid records in a daily ETL pipeline. Each day a different number of records arrives. Should they use a c-chart or u-chart? Why does the choice matter?</p>
+    </section>
+
+    <nav class="flex justify-between items-center pt-6 border-t border-slate-200">
+      <a href="lesson-04.html" class="text-sm text-slate-500 hover:text-slate-800">← Lesson 4: I-MR Charts</a>
+      <a href="lesson-06.html" class="bg-blue-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition">Next: Process Capability →</a>
+    </nav>
+  </main>
+  <script>
+    const answers={q1:'b',q2:'c',q3:'true'};
+    const feedback={q1:{b:'Correct! np-chart counts defective items when sample size is constant. n=200 is fixed, so np-chart is correct.',wrong:'Not quite. When counting defectives with a constant sample size, use the np-chart.'},q2:{c:'Correct! Invalid records are defects (not binary pass/fail), and batch size varies — use the u-chart with variable limits.',wrong:'Not quite. Defects with a variable inspection area need the u-chart.'},q3:{true:'Correct! The c-chart and u-chart model rare event counts using the Poisson distribution.',wrong:'Not quite. The c-chart and u-chart are based on the Poisson distribution. The p/np-charts use the Binomial.'}};
+    function checkQuiz(){let s=0;['q1','q2','q3'].forEach(q=>{const sel=document.querySelector(`input[name="${q}"]:checked`);const fb=document.getElementById(`${q}-fb`);fb.classList.remove('hidden');if(sel&&sel.value===answers[q]){s++;fb.textContent='✓ '+feedback[q][answers[q]];fb.className='text-sm text-green-700 bg-green-50 rounded p-2 mt-1';}else{fb.textContent='✗ '+feedback[q].wrong;fb.className='text-sm text-red-700 bg-red-50 rounded p-2 mt-1';}});const sc=document.getElementById('quiz-score');sc.classList.remove('hidden');sc.textContent=`Score: ${s}/3 — ${s===3?'🎉 Perfect!':s===2?'Good — review the missed question.':'Review the concept section.'}`;sc.className=`text-sm font-semibold ${s===3?'text-green-700':s>=2?'text-amber-700':'text-red-700'}`;}
+  </script>
+</body>
+</html>
