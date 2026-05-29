@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.progress/
+tmp/
+_assessments/submissions/*.json
+!_assessments/submissions/.gitkeep
+*.zip
+.DS_Store
+Thumbs.db
+notes.txt

@@ -1,0 +1,27 @@
+{
+  "name": "Tutor",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ritwickdey.liveserver",
+        "bierner.markdown-preview-github-styles",
+        "yzhang.markdown-all-in-one",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.live-server"
+      ],
+      "settings": {
+        "liveServer.settings.port": 5500
+      }
+    }
+  },
+  "postCreateCommand": "npm install",
+  "forwardPorts": [5500],
+  "portsAttributes": {
+    "5500": {
+      "label": "Course Preview",
+      "onAutoForward": "openBrowser"
+    }
+  }
+}

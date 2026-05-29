@@ -1,0 +1,44 @@
+{
+  "_note": "Rubric schema for project assessments. Copy and adapt for each project.",
+  "id": "module-id-project",
+  "title": "Project Rubric: [Project Name]",
+  "totalPoints": 100,
+  "criteria": [
+    {
+      "id": "c1",
+      "name": "Correctness",
+      "description": "Does it work as described?",
+      "weight": 40,
+      "levels": {
+        "excellent": { "points": 40, "description": "Works completely and correctly." },
+        "good": { "points": 30, "description": "Works mostly, minor issues." },
+        "partial": { "points": 20, "description": "Partially works, key parts missing." },
+        "insufficient": { "points": 0, "description": "Does not work." }
+      }
+    },
+    {
+      "id": "c2",
+      "name": "Code Quality",
+      "description": "Is the code readable and well-structured?",
+      "weight": 30,
+      "levels": {
+        "excellent": { "points": 30, "description": "Clean, well-organized, easy to follow." },
+        "good": { "points": 20, "description": "Mostly clean, minor issues." },
+        "partial": { "points": 10, "description": "Works but hard to read." },
+        "insufficient": { "points": 0, "description": "Very difficult to understand." }
+      }
+    },
+    {
+      "id": "c3",
+      "name": "Reflection",
+      "description": "Did the student explain their thinking?",
+      "weight": 30,
+      "levels": {
+        "excellent": { "points": 30, "description": "Clear explanation, shows understanding." },
+        "good": { "points": 20, "description": "Adequate explanation." },
+        "partial": { "points": 10, "description": "Brief or superficial explanation." },
+        "insufficient": { "points": 0, "description": "No explanation provided." }
+      }
+    }
+  ]
+}

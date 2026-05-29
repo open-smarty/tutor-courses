@@ -1,0 +1,94 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup Repo",
+      "type": "shell",
+      "command": "bash setup.sh",
+      "windows": {
+        "command": "powershell -ExecutionPolicy Bypass -File setup.ps1"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Preview Server",
+      "type": "shell",
+      "command": "npm start",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Check Lesson",
+      "type": "shell",
+      "command": "npm run check ${input:moduleId} ${input:lessonId}",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Show Progress",
+      "type": "shell",
+      "command": "npm run progress",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Export Course",
+      "type": "shell",
+      "command": "npm run export",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Submit Results",
+      "type": "shell",
+      "command": "npm run submit",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "moduleId",
+      "description": "Module ID (e.g. module-01)",
+      "default": "module-01",
+      "type": "promptString"
+    },
+    {
+      "id": "lessonId",
+      "description": "Lesson ID (e.g. lesson-01)",
+      "default": "lesson-01",
+      "type": "promptString"
+    }
+  ]
+}

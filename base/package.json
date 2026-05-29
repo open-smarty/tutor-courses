@@ -1,0 +1,23 @@
+{
+  "name": "tutor",
+  "version": "1.0.0",
+  "description": "A repo-based self-paced learning system",
+  "private": true,
+  "scripts": {
+    "setup": "node _tools/setup/setup.js",
+    "start": "node _tools/preview/serve.js",
+    "build": "node _tools/builder/build-static.js",
+    "check": "node _tools/grader/check.js",
+    "progress": "node _tools/progress/index.js",
+    "export": "node _tools/exporter/export-course.js",
+    "submit": "node _tools/api-client/submit.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "marked": "^12.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
