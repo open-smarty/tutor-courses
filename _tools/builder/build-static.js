@@ -1,164 +1,147 @@
 #!/usr/bin/env node
 /**
  * Static site builder.
- * Reads the live index.html + all course data, then produces dist/index.html —
- * a single self-contained file that works offline (no server, no VS Code).
  *
- * Strategy: override window.fetch in the output so the existing index.html JS
- * continues to work unchanged. All course data is embedded as JSON.
+ * Single-course mode (default — running inside a standalone tutor fork):
+ *   npm run build
  *
- * Usage: npm run build
+ * Multi-course mode (auto-detected when a sibling courses/ directory exists):
+ *   npm run build-course -- intro-to-python
+ *   node _tools/builder/build-static.js --course-dir intro-to-python
+ *
+ * When --course-dir is a slug (no slashes), it is resolved relative to the
+ * sibling courses/ directory.  An absolute or relative path is used as-is.
+ * --out-dir follows the same resolution: slug → sibling dist/<slug>/, otherwise as-is.
  */
 
 const fs   = require('fs');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '../..');
+// ─── Context detection ────────────────────────────────────────────────────────
+const TEMPLATE_DIR   = path.resolve(__dirname, '../..');          // tutor base
+const PARENT_DIR     = path.resolve(TEMPLATE_DIR, '..');          // repo root above base
+const SIBLING_COURSES = path.join(PARENT_DIR, 'courses');
+const IS_MULTI       = fs.existsSync(SIBLING_COURSES) && fs.statSync(SIBLING_COURSES).isDirectory();
+
+// ─── Arg parsing ──────────────────────────────────────────────────────────────
+const argv = process.argv.slice(2);
+let courseDirArg = null;
+let outDirArg    = null;
+for (let i = 0; i < argv.length; i++) {
+  if (argv[i] === '--course-dir') { courseDirArg = argv[++i]; continue; }
+  if (argv[i] === '--out-dir')    { outDirArg    = argv[++i]; continue; }
+  // First bare positional arg treated as course-dir slug in multi-course mode
+  if (!courseDirArg && IS_MULTI && !argv[i].startsWith('-')) courseDirArg = argv[i];
+}
+
+function resolveArg(val, siblingSubdir) {
+  if (!val) return null;
+  if (path.isAbsolute(val) || val.startsWith('.')) return path.resolve(val);
+  return path.join(PARENT_DIR, siblingSubdir, val);
+}
+
+const COURSE_DIR = resolveArg(courseDirArg, 'courses') || TEMPLATE_DIR;
+const OUT_DIR    = resolveArg(outDirArg,    'dist')
+                || (IS_MULTI && courseDirArg
+                      ? path.join(PARENT_DIR, 'dist', path.basename(COURSE_DIR))
+                      : path.join(TEMPLATE_DIR, 'dist'));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function read(rel) {
-  const full = path.join(ROOT, rel);
-  return fs.existsSync(full) ? fs.readFileSync(full, 'utf8') : null;
-}
-
-function readJson(rel) {
-  const raw = read(rel);
-  if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
-}
+const readFrom     = (base, rel) => { const f = path.join(base, rel); return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null; };
+const readJsonFrom = (base, rel) => { const r = readFrom(base, rel); if (!r) return null; try { return JSON.parse(r); } catch { return null; } };
+const readCourse   = rel => readFrom(COURSE_DIR, rel);
+const readTemplate = rel => readFrom(TEMPLATE_DIR, rel);
+const readCourseJson = rel => readJsonFrom(COURSE_DIR, rel);
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-
 async function main() {
   console.log('\n🔨  Building static site...\n');
 
-  // 1. Load course
-  const course = readJson('_course/course.json');
-  if (!course) {
-    console.error('  ✗  _course/course.json not found. Generate the course first.\n');
-    process.exit(1);
-  }
-  if (!course.modules || course.modules.length === 0) {
-    console.error('  ✗  Course has no modules yet. Generate the course content first.\n');
-    process.exit(1);
-  }
+  const course = readCourseJson('_course/course.json');
+  if (!course) { console.error('  ✗  _course/course.json not found. Generate the course first.\n'); process.exit(1); }
+  if (!course.modules?.length) { console.error('  ✗  Course has no modules yet. Generate the course content first.\n'); process.exit(1); }
   console.log(`  Course: ${course.title}`);
 
-  // 2. Collect all lesson markdown (raw — marked.js in the browser renders it)
   const lessons = {};
   const quizzes = {};
   let lessonCount = 0;
 
   for (const mod of course.modules) {
     for (const lesson of (mod.lessons || [])) {
-      if (lesson.files && lesson.files.lesson) {
-        const content = read(lesson.files.lesson);
+      if (lesson.files?.lesson) {
+        const content = readCourse(lesson.files.lesson);
         if (content) { lessons[lesson.files.lesson] = content; lessonCount++; }
       }
       if (lesson.quiz) {
-        const q = readJson(lesson.quiz);
+        const q = readCourseJson(lesson.quiz);
         if (q) quizzes[lesson.quiz] = q;
       }
     }
   }
   console.log(`  Lessons: ${lessonCount}`);
 
-  // 3. Collect clarifications
   let clarificationsIndex = {};
   const clarifications = {};
-
-  const clarIdx = readJson('_course/clarifications/index.json');
+  const clarIdx = readCourseJson('_course/clarifications/index.json');
   if (clarIdx) {
     clarificationsIndex = clarIdx;
-    for (const key of Object.keys(clarIdx)) {
-      for (const entry of (clarIdx[key] || [])) {
-        if (entry.file) {
-          const content = read(entry.file);
-          if (content) clarifications[entry.file] = content;
-        }
+    for (const entries of Object.values(clarIdx)) {
+      for (const entry of (entries || [])) {
+        if (entry.file) { const c = readCourse(entry.file); if (c) clarifications[entry.file] = c; }
       }
     }
   }
 
-  // 4. Try to inline marked.js for offline support
-  const markedCandidates = [
-    'node_modules/marked/marked.min.js',
-    'node_modules/marked/src/marked.js',
-  ];
   let markedJs = null;
-  for (const p of markedCandidates) {
-    const src = read(p);
+  for (const p of ['node_modules/marked/marked.min.js', 'node_modules/marked/src/marked.js']) {
+    const src = readTemplate(p);
     if (src) { markedJs = src; break; }
   }
 
-  // 5. Read index.html as the base template
-  const template = read('index.html');
-  if (!template) {
-    console.error('  ✗  index.html not found.\n');
-    process.exit(1);
-  }
+  const template = readTemplate('index.html');
+  if (!template) { console.error('  ✗  index.html not found.\n'); process.exit(1); }
 
-  // 6. Build the fetch-override + data injection script
   const data = { course, lessons, quizzes, clarificationsIndex, clarifications };
-  const dataJson = JSON.stringify(data);
 
   const injectedScript = `
 <script>
 /* ── Tutor static build: embedded course data + fetch override ── */
 (function () {
-  var D = ${dataJson};
+  var D = ${JSON.stringify(data)};
   var _f = window.fetch;
   function mock(body, isJson) {
     return Promise.resolve({
-      ok: true,
-      status: 200,
+      ok: true, status: 200,
       text: function () { return Promise.resolve(isJson ? JSON.stringify(body) : body); },
       json: function () { return Promise.resolve(isJson ? body : JSON.parse(body)); }
     });
   }
   window.fetch = function (url) {
-    if (url === '_course/course.json')                  return mock(D.course, true);
-    if (url === '_course/clarifications/index.json')    return mock(D.clarificationsIndex, true);
-    if (D.lessons      && url in D.lessons)             return mock(D.lessons[url],      false);
-    if (D.quizzes      && url in D.quizzes)             return mock(D.quizzes[url],      true);
-    if (D.clarifications && url in D.clarifications)    return mock(D.clarifications[url], false);
+    if (url === '_course/course.json')               return mock(D.course, true);
+    if (url === '_course/clarifications/index.json') return mock(D.clarificationsIndex, true);
+    if (D.lessons        && url in D.lessons)        return mock(D.lessons[url],        false);
+    if (D.quizzes        && url in D.quizzes)        return mock(D.quizzes[url],        true);
+    if (D.clarifications && url in D.clarifications) return mock(D.clarifications[url], false);
     return _f ? _f.apply(this, arguments) : Promise.reject(new Error('Not found: ' + url));
   };
 })();
 </script>`;
 
-  // 7. Patch the template
   let out = template;
-
-  // Inline marked.js if available (enables full offline use)
   if (markedJs) {
-    out = out.replace(
-      /<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/marked[^"]*"><\/script>/,
-      `<script>${markedJs}</script>`
-    );
+    out = out.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/marked[^"]*"><\/script>/, `<script>${markedJs}</script>`);
   }
-
-  // Inject the data + fetch override just before </head>
   out = out.replace('</head>', injectedScript + '\n</head>');
 
-  // 8. Write output
-  const distDir = path.join(ROOT, 'dist');
-  if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
-
-  const outPath = path.join(distDir, 'index.html');
+  if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
+  const outPath = path.join(OUT_DIR, 'index.html');
   fs.writeFileSync(outPath, out, 'utf8');
-
-  // .nojekyll so GitHub Pages doesn't strip _course/ paths referenced in data
-  fs.writeFileSync(path.join(distDir, '.nojekyll'), '');
+  fs.writeFileSync(path.join(OUT_DIR, '.nojekyll'), '');
 
   const kb = Math.round(fs.statSync(outPath).size / 1024);
-  console.log(`\n✅  dist/index.html  (${kb} KB)\n`);
+  console.log(`\n✅  ${outPath}  (${kb} KB)\n`);
   console.log('  Open directly in any browser — no server needed.');
   console.log('  Or run:  npx serve dist\n');
 }
 
-main().catch(err => {
-  console.error('Build failed:', err.message);
-  process.exit(1);
-});
+main().catch(err => { console.error('Build failed:', err.message); process.exit(1); });
