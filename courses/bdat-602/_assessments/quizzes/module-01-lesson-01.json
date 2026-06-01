@@ -1,0 +1,66 @@
+{
+  "id": "module-01-lesson-01",
+  "title": "Quiz: What Is Data Mining?",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Which of the following best distinguishes data mining from a standard database query?",
+      "options": [
+        "Data mining requires SQL; queries use Python",
+        "A query retrieves known facts; data mining discovers unknown patterns",
+        "Data mining only works on structured data; queries work on all data",
+        "Queries are faster; data mining is slower"
+      ],
+      "correct": 1,
+      "explanation": "A SQL query retrieves facts you already knew to ask for. Data mining discovers structure you did not know was there — patterns, clusters, rules, anomalies."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In the KDD process, which step consumes roughly 80% of project time?",
+      "options": [
+        "Data Mining (applying the algorithm)",
+        "Interpretation and Evaluation",
+        "Selection, Preprocessing, and Transformation (data preparation)",
+        "Deployment"
+      ],
+      "correct": 2,
+      "explanation": "Steps 1–3 of KDD (Selection, Preprocessing, Transformation) — collectively called data preparation — consume roughly 80% of project time. The actual algorithm application is a relatively small fraction of the effort."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "Which of the 4 Vs of Big Data refers to the trustworthiness and quality of data?",
+      "options": [
+        "Volume",
+        "Velocity",
+        "Variety",
+        "Veracity"
+      ],
+      "correct": 3,
+      "explanation": "Veracity refers to the trustworthiness and quality of data — including noise, missing values, outliers, and entry errors. The course dataset intentionally introduces Veracity challenges."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The fraud_flag target has ~3% positive cases. A classifier that always predicts 'no fraud' achieves:",
+      "options": [
+        "0% accuracy",
+        "3% accuracy",
+        "97% accuracy but 0% recall on fraud",
+        "97% recall on fraud"
+      ],
+      "correct": 2,
+      "explanation": "The naïve classifier correctly labels all 97% non-fraud records — achieving 97% accuracy — but it misses every actual fraud (0% recall). This is why accuracy alone is misleading for rare-event classification."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Clustering is a supervised learning task because it assigns observations to groups.",
+      "correct": false,
+      "explanation": "Clustering is unsupervised — there are no predefined class labels. The algorithm discovers natural groupings in the data without any labelled training examples."
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+---
+title: "BDAT 602 — Module 1, Lesson 1 Exercise"
+subtitle: "What Is Data Mining? The Big Data Landscape and the KDD Process"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Generate the course dataset
+
+Source the data generator and create `health_small` (10,000 rows). Report the dimensions and column names.
+
+```{r task1}
+# YOUR CODE HERE
+# source("R/simulate_bdat602_data.R")
+# health_small <- simulate_bdat602(...)
+# dim(health_small)
+# names(health_small)
+```
+
+## Task 2 — First-pass EDA with skimr
+
+Run `skimr::skim()` on `health_small`. From the output, report how many numeric columns and how many character columns the dataset has.
+
+```{r task2}
+# YOUR CODE HERE
+# library(skimr)
+# skim(health_small)
+```
+
+**Answer:** The dataset has ___ numeric columns and ___ character columns.
+
+## Task 3 — Churn rate
+
+Compute the churn rate as a percentage (proportion of rows where `churned == 1`, multiplied by 100, rounded to 2 decimal places).
+
+```{r task3}
+# YOUR CODE HERE
+# library(dplyr)
+# health_small |>
+#   summarise(churn_rate_pct = ...)
+```

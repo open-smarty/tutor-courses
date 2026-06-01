@@ -1,0 +1,60 @@
+---
+title: "BDAT 602 — Module 6, Lesson 1 Exercise"
+subtitle: "Tokenisation and TF-IDF"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Tokenise and count top words
+
+Filter to rows where `complaint_notes` is not NA. Tokenise using `unnest_tokens()`, remove stop words with `anti_join(stop_words)`, and print the top 10 words by frequency.
+
+```{r task1}
+# YOUR CODE HERE
+# library(tidytext); library(dplyr)
+# data("stop_words")
+# complaints <- health_small |>
+#   filter(!is.na(complaint_notes)) |>
+#   mutate(doc_id = row_number())
+# tokens_clean <- complaints |>
+#   unnest_tokens(word, complaint_notes) |>
+#   anti_join(stop_words, by = "word") |>
+#   filter(nchar(word) > 2)
+# tokens_clean |> count(word, sort = TRUE) |> slice_head(n = 10)
+```
+
+## Task 2 — TF-IDF by plan tier
+
+Compute TF-IDF treating `plan_tier` as the document. Show the top 3 discriminating words for each tier.
+
+```{r task2}
+# YOUR CODE HERE
+# tokens_clean |>
+#   count(plan_tier, word) |>
+#   bind_tf_idf(term = word, document = plan_tier, n = n) |>
+#   group_by(plan_tier) |>
+#   slice_max(tf_idf, n = 3) |>
+#   select(plan_tier, word, tf_idf) |>
+#   print(n = 20)
+```
+
+## Task 3 — Document-Term Matrix
+
+Build a DTM using `cast_dtm()` with `doc_id` as the document. Report its dimensions.
+
+```{r task3}
+# YOUR CODE HERE
+# dtm <- tokens_clean |>
+#   count(doc_id, word) |>
+#   cast_dtm(document = doc_id, term = word, value = n)
+# dim(dtm)
+```

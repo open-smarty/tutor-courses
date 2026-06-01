@@ -1,0 +1,53 @@
+---
+title: "BDAT 602 — Module 4, Lesson 2 Exercise"
+subtitle: "Hierarchical Clustering"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Prepare data and distance matrix
+
+Take a 500-row sample of `health_small` (use `set.seed(602)` before `slice_sample()`). Select `age`, `bmi`, and `num_claims`. Impute `bmi` with its median. Scale all three variables. Compute the Euclidean distance matrix.
+
+```{r task1}
+# YOUR CODE HERE
+# library(dplyr)
+# set.seed(602)
+# hc_sub <- health_small |>
+#   slice_sample(n = 500) |>
+#   select(age, bmi, num_claims) |>
+#   mutate(bmi = if_else(is.na(bmi), median(bmi, na.rm=TRUE), bmi)) |>
+#   na.omit()
+# hc_scaled <- scale(hc_sub)
+# dist_mat  <- dist(hc_scaled, method = "euclidean")
+```
+
+## Task 2 — Fit hierarchical clustering and plot dendrogram
+
+Fit with Ward.D2 linkage. Plot the dendrogram with `labels = FALSE`, `hang = -1`.
+
+```{r task2}
+# YOUR CODE HERE
+# hc_ward <- hclust(dist_mat, method = "ward.D2")
+# plot(hc_ward, labels = FALSE, hang = -1,
+#      main = "Dendrogram: Ward.D2 Linkage", xlab = "", ylab = "Height")
+```
+
+## Task 3 — Cut at k = 3
+
+Use `cutree()` to cut at k = 3. Print the cluster size table.
+
+```{r task3}
+# YOUR CODE HERE
+# clusters <- cutree(hc_ward, k = 3)
+# table(clusters)
+```

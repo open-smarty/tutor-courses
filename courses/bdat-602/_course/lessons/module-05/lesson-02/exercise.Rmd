@@ -1,0 +1,74 @@
+---
+title: "BDAT 602 — Module 5, Lesson 2 Exercise"
+subtitle: "Handling Class Imbalance"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+set.seed(602)
+idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
+train <- health_small[idx, ]
+test  <- health_small[-idx, ]
+```
+
+## Task 1 — Baseline random forest (no correction)
+
+Report the fraud rate in `health_small`. Fit a random forest (ntree = 200) to predict `fraud_flag` using `age`, `income`, `num_claims`, `claim_amount`, and `plan_tier`. Predict on the test set. Report recall (true positive rate for fraud).
+
+```{r task1}
+# YOUR CODE HERE
+# cat("Fraud rate:", round(mean(health_small$fraud_flag)*100, 2), "%\n")
+# library(randomForest)
+# rf_base <- randomForest(
+#   as.factor(fraud_flag) ~ age + income + num_claims + claim_amount + plan_tier,
+#   data = train |> filter(!is.na(income)), ntree = 200
+# )
+# pred <- predict(rf_base, test |> filter(!is.na(income)))
+# actual <- test$fraud_flag[!is.na(test$income)]
+# cm <- table(Predicted = pred, Actual = actual)
+# recall <- cm["1","1"] / sum(cm[,"1"])
+# cat("Recall (no correction):", round(recall, 3), "\n")
+```
+
+## Task 2 — Class-weighted random forest
+
+Refit with `classwt = c("0" = 1, "1" = 30)`. Report both recall and precision on the test set.
+
+```{r task2}
+# YOUR CODE HERE
+# rf_wtd <- randomForest(
+#   as.factor(fraud_flag) ~ age + income + num_claims + claim_amount + plan_tier,
+#   data = train |> filter(!is.na(income)),
+#   ntree = 200, classwt = c("0" = 1, "1" = 30)
+# )
+# pred_w  <- predict(rf_wtd, test |> filter(!is.na(income)))
+# cm_w    <- table(Predicted = pred_w, Actual = actual)
+# recall_w  <- cm_w["1","1"] / sum(cm_w[,"1"])
+# precis_w  <- cm_w["1","1"] / sum(cm_w["1",])
+# cat("Recall (weighted): ", round(recall_w, 3), "\n")
+# cat("Precision (weighted):", round(precis_w, 3), "\n")
+```
+
+## Task 3 — Threshold adjustment
+
+Using the class-weighted model, get probability predictions. Adjust the threshold to 0.15. Report recall and precision at this threshold.
+
+```{r task3}
+# YOUR CODE HERE
+# prob <- predict(rf_wtd, test |> filter(!is.na(income)), type = "prob")[,"1"]
+# threshold <- 0.15
+# pred_thr  <- as.integer(prob >= threshold)
+# cm_thr    <- table(Predicted = pred_thr, Actual = actual)
+# print(cm_thr)
+# recall_thr  <- cm_thr["1","1"] / sum(cm_thr[,"1"])
+# precis_thr  <- cm_thr["1","1"] / sum(cm_thr["1",])
+# cat("Recall at 0.15: ", round(recall_thr, 3), "\n")
+# cat("Precision:      ", round(precis_thr, 3), "\n")
+```

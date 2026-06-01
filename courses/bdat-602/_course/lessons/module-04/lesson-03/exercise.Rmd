@@ -1,0 +1,70 @@
+---
+title: "BDAT 602 — Module 4, Lesson 3 Exercise"
+subtitle: "PCA for Dimensionality Reduction and Cluster Visualisation"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Fit PCA pipeline
+
+Build a `recipes` PCA pipeline on `age`, `bmi`, `income`, `num_claims`, `claim_amount`, and `num_chronic_conditions`. Steps: impute medians for `bmi` and `income`, normalise all numeric predictors, apply PCA with `num_comp = 3`. `prep()` and `bake()` it.
+
+```{r task1}
+# YOUR CODE HERE
+# library(recipes)
+# pca_vars <- c("age", "bmi", "income", "num_claims",
+#               "claim_amount", "num_chronic_conditions")
+# pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
+#   step_impute_median(bmi, income) |>
+#   step_normalize(all_numeric_predictors()) |>
+#   step_pca(all_numeric_predictors(), num_comp = 3)
+# pca_prep   <- prep(pca_rec)
+# pca_scores <- bake(pca_prep, new_data = NULL)
+# head(pca_scores)
+```
+
+## Task 2 — Scree plot
+
+Using `broom::tidy(pca_prep, number = ..., type = "variance")`, extract the percent variance per PC and plot a scree plot (bar chart with a line overlay).
+
+```{r task2}
+# YOUR CODE HERE
+# library(broom); library(ggplot2)
+# tidy(pca_prep, number = 3, type = "variance") |>
+#   filter(terms == "percent variance") |>
+#   ggplot(aes(x = component, y = value)) +
+#   geom_col(fill = "steelblue") +
+#   geom_line(group = 1, colour = "red") +
+#   labs(title = "Scree Plot", x = "PC", y = "% Variance Explained") +
+#   theme_minimal()
+```
+
+## Task 3 — Score plot coloured by plan_tier
+
+Join `plan_tier` from `health_small` (using the same rows that entered PCA — omit NAs on `bmi`/`income`/`num_chronic_conditions` first). Plot PC1 vs PC2 coloured by `plan_tier`.
+
+```{r task3}
+# YOUR CODE HERE
+# library(dplyr)
+# plan <- health_small |>
+#   select(bmi, income, num_chronic_conditions, plan_tier) |>
+#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
+#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
+#   na.omit() |>
+#   pull(plan_tier)
+# pca_scores |>
+#   mutate(plan_tier = plan) |>
+#   ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
+#   geom_point(alpha = 0.2, size = 0.5) +
+#   labs(title = "PCA Score Plot by Plan Tier") +
+#   theme_minimal()
+```

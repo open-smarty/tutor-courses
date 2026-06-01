@@ -1,0 +1,77 @@
+---
+title: "BDAT 602 — Module 4, Lesson 3 Solution"
+subtitle: "PCA for Dimensionality Reduction and Cluster Visualisation"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Fit PCA pipeline
+
+```{r task1}
+library(recipes)
+library(dplyr)
+
+pca_vars <- c("age", "bmi", "income", "num_claims",
+              "claim_amount", "num_chronic_conditions")
+
+pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
+  step_impute_median(bmi, income) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 3)
+
+pca_prep   <- prep(pca_rec)
+pca_scores <- bake(pca_prep, new_data = NULL)
+
+head(pca_scores)
+```
+
+## Task 2 — Scree plot
+
+```{r task2}
+library(broom)
+library(ggplot2)
+
+tidy(pca_prep, number = 3, type = "variance") |>
+  filter(terms == "percent variance") |>
+  ggplot(aes(x = component, y = value)) +
+  geom_col(fill = "steelblue") +
+  geom_line(group = 1, colour = "red") +
+  geom_point(colour = "red") +
+  labs(title = "Scree Plot: PCA on Health Insurance Variables",
+       x = "Principal Component", y = "% Variance Explained") +
+  theme_minimal()
+```
+
+PC1 typically explains ~30–40% of variance (capturing the utilisation/cost dimension), PC2 ~20% (capturing premium/income), and PC3 ~15%.
+
+## Task 3 — Score plot coloured by plan_tier
+
+```{r task3}
+plan <- health_small |>
+  select(bmi, income, num_chronic_conditions, plan_tier) |>
+  mutate(
+    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
+    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
+  ) |>
+  na.omit() |>
+  pull(plan_tier)
+
+pca_scores |>
+  mutate(plan_tier = plan) |>
+  ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
+  geom_point(alpha = 0.15, size = 0.5) +
+  labs(title = "PCA Score Plot by Plan Tier",
+       colour = "Plan Tier") +
+  theme_minimal()
+```
+
+Platinum and Gold policyholders should separate along PC1 (higher utilisation) and PC2 (higher income/premium), while Bronze clusters at lower PC1 scores.

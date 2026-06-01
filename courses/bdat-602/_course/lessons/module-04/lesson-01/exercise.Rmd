@@ -1,0 +1,63 @@
+---
+title: "BDAT 602 — Module 4, Lesson 1 Exercise"
+subtitle: "k-Means Clustering"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Prepare scaled clustering matrix
+
+From `health_small`, select `age`, `bmi`, `income`, `num_claims`, and `claim_amount`. Impute `bmi` and `income` with their medians, then Z-score scale all five columns using `scale()`. Remove any rows still containing NAs. Store the result as a numeric matrix `hc_mat`.
+
+```{r task1}
+# YOUR CODE HERE
+# library(dplyr)
+# hc_df <- health_small |>
+#   select(age, bmi, income, num_claims, claim_amount) |>
+#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
+#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
+#   na.omit()
+# hc_mat <- scale(hc_df)
+# dim(hc_mat)
+```
+
+## Task 2 — Fit k-Means with k = 4
+
+Run `kmeans()` with `centers = 4` and `nstart = 25`. Print the cluster sizes and total WCSS.
+
+```{r task2}
+# YOUR CODE HERE
+# set.seed(602)
+# km4 <- kmeans(hc_mat, centers = 4, nstart = 25)
+# km4$size
+# km4$tot.withinss
+```
+
+## Task 3 — Cluster profile
+
+Join cluster assignments back to the rows of `health_small` used in Task 1 (same `na.omit()` rows). Compute per-cluster average `claim_amount` and fraud rate (`mean(fraud_flag) * 100`).
+
+```{r task3}
+# YOUR CODE HERE
+# library(dplyr)
+# hc_labeled <- health_small |>
+#   select(age, bmi, income, num_claims, claim_amount, fraud_flag, plan_tier) |>
+#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
+#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
+#   na.omit() |>
+#   mutate(cluster = as.factor(km4$cluster))
+# hc_labeled |>
+#   group_by(cluster) |>
+#   summarise(avg_claim   = round(mean(claim_amount), 0),
+#             fraud_pct   = round(mean(fraud_flag) * 100, 2),
+#             n           = n())
+```

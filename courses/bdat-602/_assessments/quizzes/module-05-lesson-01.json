@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-01",
+  "title": "Quiz: Decision Trees and Random Forests",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Decision trees use Gini impurity to choose splits. A node with Gini = 0 means:",
+      "options": [
+        "The split is completely random",
+        "The node contains equal proportions of all classes",
+        "All observations in the node belong to the same class (pure node)",
+        "The algorithm has overfit the data"
+      ],
+      "correct": 2,
+      "explanation": "Gini = 1 − Σp_k² = 0 when one class has probability 1 (all others 0). A pure node — where every observation belongs to the same class — has Gini impurity of 0."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "What is the purpose of pruning a decision tree?",
+      "options": [
+        "To increase the depth of the tree",
+        "To add more variables to the model",
+        "To reduce overfitting by removing branches that provide little predictive improvement",
+        "To convert the tree to a random forest"
+      ],
+      "correct": 2,
+      "explanation": "Pruning removes branches that do not improve test-set performance (or worsen it). A deep unpruned tree memorises training data (low bias, high variance). Pruning trades some training accuracy for better generalisation."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A random forest requires feature scaling because it uses Euclidean distance to split nodes.",
+      "correct": false,
+      "explanation": "Decision trees (and random forests) use threshold comparisons (e.g. age > 45), not Euclidean distances. They are invariant to feature scaling — no normalisation is needed."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In randomForest(), the OOB (out-of-bag) error is:",
+      "options": [
+        "The training error on the full dataset",
+        "An unbiased test-error estimate computed from the bootstrap samples not used to train each tree",
+        "The error on a held-out validation set",
+        "The error after pruning"
+      ],
+      "correct": 1,
+      "explanation": "Each tree in a random forest is trained on a bootstrap sample (~63% of data). The remaining ~37% — the out-of-bag observations — are used to compute prediction error for that tree. Averaging OOB errors across all trees gives an unbiased test-error estimate without a separate validation set."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Setting mtry = 3 in randomForest() means:",
+      "options": [
+        "3 trees are grown in the forest",
+        "The maximum tree depth is 3",
+        "3 randomly chosen variables are considered at each split",
+        "The forest stops when 3% OOB error is achieved"
+      ],
+      "correct": 2,
+      "explanation": "mtry controls the number of variables randomly sampled as candidates at each split. The recommended default for classification is √p (where p is total variables). This random feature selection is what de-correlates the trees and reduces variance."
+    }
+  ]
+}

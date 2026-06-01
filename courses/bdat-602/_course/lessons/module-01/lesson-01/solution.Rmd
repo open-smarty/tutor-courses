@@ -1,0 +1,47 @@
+---
+title: "BDAT 602 — Module 1, Lesson 1 Solution"
+subtitle: "What Is Data Mining? The Big Data Landscape and the KDD Process"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Generate the course dataset
+
+```{r task1}
+source("R/simulate_bdat602_data.R")
+
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+
+dim(health_small)
+names(health_small)
+```
+
+The dataset has 10,000 rows and 40 columns.
+
+## Task 2 — First-pass EDA with skimr
+
+```{r task2}
+library(skimr)
+
+skim(health_small)
+```
+
+From the skim output: the dataset has **26 numeric** columns and **7 character** columns (plus date and logical columns).
+
+## Task 3 — Churn rate
+
+```{r task3}
+library(dplyr)
+
+health_small |>
+  summarise(churn_rate_pct = round(mean(churned) * 100, 2))
+```
+
+The churn rate is approximately **22–24 %** — a moderately imbalanced binary target that will require careful evaluation in Module 5.

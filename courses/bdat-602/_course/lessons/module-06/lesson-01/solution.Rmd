@@ -1,0 +1,64 @@
+---
+title: "BDAT 602 — Module 6, Lesson 1 Solution"
+subtitle: "Tokenisation and TF-IDF"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Tokenise and count top words
+
+```{r task1}
+library(tidytext)
+library(dplyr)
+
+data("stop_words")
+
+complaints <- health_small |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = row_number())
+
+tokens_clean <- complaints |>
+  unnest_tokens(word, complaint_notes) |>
+  anti_join(stop_words, by = "word") |>
+  filter(nchar(word) > 2)
+
+tokens_clean |>
+  count(word, sort = TRUE) |>
+  slice_head(n = 10)
+```
+
+The most frequent words reflect the templated complaint categories: "claim", "premium", "coverage", "billing", "service".
+
+## Task 2 — TF-IDF by plan tier
+
+```{r task2}
+tokens_clean |>
+  count(plan_tier, word) |>
+  bind_tf_idf(term = word, document = plan_tier, n = n) |>
+  group_by(plan_tier) |>
+  slice_max(tf_idf, n = 3) |>
+  select(plan_tier, word, tf_idf)
+```
+
+Since the complaint templates are shared across plan tiers, TF-IDF discriminating words tend to be the less common complaint phrases that appear more in one tier than another.
+
+## Task 3 — Document-Term Matrix
+
+```{r task3}
+dtm <- tokens_clean |>
+  count(doc_id, word) |>
+  cast_dtm(document = doc_id, term = word, value = n)
+
+dim(dtm)
+```
+
+The DTM has ~9,000 rows (complaints) and several hundred unique terms after stop word removal. It is very sparse — most complaints use only a small subset of the vocabulary.

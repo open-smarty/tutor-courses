@@ -1,0 +1,63 @@
+---
+title: "BDAT 602 — Module 2, Lesson 2 Solution"
+subtitle: "Outlier Detection and Treatment"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Flag BMI outliers (IQR rule)
+
+```{r task1}
+library(dplyr)
+
+q1  <- quantile(health_small$bmi, 0.25, na.rm = TRUE)
+q3  <- quantile(health_small$bmi, 0.75, na.rm = TRUE)
+iqr <- q3 - q1
+
+health_flagged <- health_small |>
+  mutate(bmi_outlier = !is.na(bmi) &
+           (bmi < (q1 - 1.5 * iqr) | bmi > (q3 + 1.5 * iqr)))
+
+health_flagged |> count(bmi_outlier)
+```
+
+A small number of records (typically 20–60 in a 10k sample) are flagged, mostly the injected extreme values (BMI = 5, 120, 150, 200).
+
+## Task 2 — Winsorise income
+
+```{r task2}
+p01 <- quantile(health_small$income, 0.01, na.rm = TRUE)
+p99 <- quantile(health_small$income, 0.99, na.rm = TRUE)
+
+health_win <- health_small |>
+  mutate(income = pmax(p01, pmin(p99, income)))
+
+summary(health_small$income)
+summary(health_win$income)
+```
+
+After winsorisation the maximum drops to the 99th percentile and the minimum rises to the 1st percentile. The mean shifts slightly closer to the median, reducing the influence of injected extreme values.
+
+## Task 3 — Log transformation of claim_amount
+
+```{r task3}
+pos_claims <- health_small$claim_amount[health_small$claim_amount > 0]
+
+par(mfrow = c(1, 2))
+hist(pos_claims,        main = "Claim Amount (raw)",
+     col = "steelblue", border = "white", xlab = "USD")
+hist(log1p(pos_claims), main = "Claim Amount (log1p)",
+     col = "darkorange", border = "white", xlab = "log1p(USD)")
+par(mfrow = c(1, 1))
+```
+
+The raw distribution is severely right-skewed. After `log1p()` the distribution is approximately symmetric — much better suited for algorithms that assume normality or compute Euclidean distances.

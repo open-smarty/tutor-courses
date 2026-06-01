@@ -1,0 +1,54 @@
+---
+title: "BDAT 602 — Module 3, Lesson 2 Solution"
+subtitle: "Mining Rules from the Health Insurance Dataset"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Build the transactions object
+
+```{r task1}
+source("R/simulate_bdat602_data.R")
+library(arules)
+library(dplyr)
+
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+
+bin_cols <- c("dental_cover", "vision_cover", "mental_cover",
+              "maternity_cover", "smoker", "high_risk")
+
+health_bin <- health_small |>
+  select(all_of(bin_cols)) |>
+  mutate(across(everything(), as.logical))
+
+trans <- as(health_bin, "transactions")
+summary(trans)
+```
+
+The transaction summary shows item frequencies — dental cover and vision cover are among the most common (linked to Gold/Platinum tier prevalence).
+
+## Task 2 — Run Apriori
+
+```{r task2}
+rules_ins <- apriori(
+  trans,
+  parameter = list(supp = 0.05, conf = 0.45, minlen = 2)
+)
+cat("Rules generated:", length(rules_ins), "\n")
+```
+
+## Task 3 — Dental cover on the RHS
+
+```{r task3}
+dental_rules <- subset(rules_ins, rhs %pin% "dental_cover")
+inspect(head(sort(dental_rules, by = "confidence"), 3))
+```
+
+The highest-confidence dental cover rules typically involve co-purchase of vision or mental health cover, reflecting that higher-tier policyholders tend to buy the full add-on bundle.

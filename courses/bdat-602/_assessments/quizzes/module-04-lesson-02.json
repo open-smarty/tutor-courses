@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-02",
+  "title": "Quiz: Hierarchical Clustering",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Hierarchical (agglomerative) clustering builds clusters by:",
+      "options": [
+        "Starting with k clusters and merging until one remains",
+        "Starting with each observation in its own cluster and merging bottom-up",
+        "Randomly assigning observations and then computing centroids",
+        "Splitting one large cluster top-down"
+      ],
+      "correct": 1,
+      "explanation": "Agglomerative hierarchical clustering starts with n singletons and merges the two closest clusters at each step, building up the dendrogram from the bottom. Divisive clustering (DIANA) goes top-down."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Ward.D2 linkage minimises:",
+      "options": [
+        "The maximum pairwise distance between clusters",
+        "The minimum pairwise distance between clusters",
+        "The increase in total within-cluster variance when merging two clusters",
+        "The average pairwise distance between all observations"
+      ],
+      "correct": 2,
+      "explanation": "Ward.D2 merges the pair of clusters whose fusion produces the smallest increase in total within-cluster variance (sum of squared deviations). This tends to produce compact, equal-sized clusters."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Hierarchical clustering is generally faster than k-means for datasets with 100,000+ observations.",
+      "correct": false,
+      "explanation": "Hierarchical clustering requires computing an n × n distance matrix, which is O(n²) in memory and O(n² log n) in time. For large n this becomes infeasible. k-Means is O(nkd) per iteration and scales much better."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "What is the purpose of cutree(hc, k = 4)?",
+      "options": [
+        "Prunes branches of the dendrogram below height 4",
+        "Returns cluster labels by cutting the dendrogram at a level that yields 4 clusters",
+        "Runs hierarchical clustering with k = 4 initial clusters",
+        "Removes 4 outlier observations from the clustering"
+      ],
+      "correct": 1,
+      "explanation": "cutree() converts the hierarchical tree to a flat partition. Specifying k = 4 cuts at the height where exactly 4 clusters are obtained. You can also specify h (height) instead of k."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Which linkage method is most prone to 'chaining' (producing long, elongated clusters)?",
+      "options": [
+        "Complete linkage",
+        "Ward.D2",
+        "Single linkage",
+        "Average linkage"
+      ],
+      "correct": 2,
+      "explanation": "Single linkage uses the minimum pairwise distance between clusters. A new observation only needs to be close to the nearest point in a cluster to be merged into it, creating chains of loosely connected points."
+    }
+  ]
+}

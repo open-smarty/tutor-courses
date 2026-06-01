@@ -1,0 +1,66 @@
+{
+  "id": "module-03-lesson-02",
+  "title": "Quiz: Mining Rules from the Health Insurance Dataset",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The rule {vision_cover} → {dental_cover} has lift = 2.1. What does this mean in a business context?",
+      "options": [
+        "Vision cover causes dental cover purchases",
+        "Policyholders with vision cover buy dental cover 2.1× more often than the average policyholder",
+        "21% of all policyholders have both vision and dental cover",
+        "The rule has 21% confidence"
+      ],
+      "correct": 1,
+      "explanation": "Lift = 2.1 means this co-occurrence is 2.1 times more frequent than if the items were independent. It does NOT imply causation — it is a correlation. A natural confound is plan tier: Gold/Platinum holders are more likely to buy all add-ons."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In arules, what does the %pin% operator do?",
+      "options": [
+        "Pins a rule to the top of the results",
+        "Matches items using partial item name strings",
+        "Computes the proportion of rules containing an item",
+        "Removes duplicate rules"
+      ],
+      "correct": 1,
+      "explanation": "%pin% is the 'partial item name' match operator in arules. subset(rules, rhs %pin% 'dental') returns all rules where the right-hand side contains the string 'dental'."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "When converting a data frame to an arules transactions object, you should include numeric variables like age and income to get richer rules.",
+      "correct": false,
+      "explanation": "The transactions class is a binary (presence/absence) structure. Numeric variables must be discretised (e.g. age < 40 = TRUE) before they can be included. Passing raw numerics would produce meaningless results or an error."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "You find the rule {dental_cover, mental_cover} → {vision_cover} with confidence = 0.90. A product manager says 90% of policyholders who buy dental and mental cover also buy vision cover. Is this interpretation correct?",
+      "options": [
+        "No — confidence measures support divided by item frequency",
+        "Yes — confidence = P(vision | dental ∩ mental) = 0.90 in this transaction set",
+        "No — confidence only applies to single-item antecedents",
+        "Yes, and this also proves vision causes dental and mental purchases"
+      ],
+      "correct": 1,
+      "explanation": "Yes, the interpretation is correct. Confidence = P(consequent | antecedent) in the observed transaction data. However, correlation ≠ causation; the high confidence is likely explained by plan tier as a common cause."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Which arulesViz plot type is most useful for exploring many rules simultaneously (support vs confidence, coloured by lift)?",
+      "options": [
+        "graph (network diagram)",
+        "scatter (two-key) plot",
+        "grouped matrix",
+        "item frequency plot"
+      ],
+      "correct": 1,
+      "explanation": "The scatter plot (method = 'scatter') maps support on the x-axis, confidence on the y-axis, and uses colour to encode lift. It is the most compact overview of a large rule set and makes the support-confidence-lift trade-off visible at a glance."
+    }
+  ]
+}

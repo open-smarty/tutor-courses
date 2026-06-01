@@ -1,0 +1,67 @@
+---
+title: "BDAT 602 — Module 4, Lesson 1 Solution"
+subtitle: "k-Means Clustering"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Prepare scaled clustering matrix
+
+```{r task1}
+library(dplyr)
+
+hc_df <- health_small |>
+  select(age, bmi, income, num_claims, claim_amount) |>
+  mutate(
+    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
+    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
+  ) |>
+  na.omit()
+
+hc_mat <- scale(hc_df)
+dim(hc_mat)
+```
+
+## Task 2 — Fit k-Means with k = 4
+
+```{r task2}
+set.seed(602)
+km4 <- kmeans(hc_mat, centers = 4, nstart = 25)
+
+cat("Cluster sizes:", km4$size, "\n")
+cat("Total WCSS:   ", round(km4$tot.withinss, 1), "\n")
+```
+
+## Task 3 — Cluster profile
+
+```{r task3}
+hc_labeled <- health_small |>
+  select(age, bmi, income, num_claims, claim_amount, fraud_flag, plan_tier) |>
+  mutate(
+    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
+    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
+  ) |>
+  na.omit() |>
+  mutate(cluster = as.factor(km4$cluster))
+
+hc_labeled |>
+  group_by(cluster) |>
+  summarise(
+    n          = n(),
+    avg_claim  = round(mean(claim_amount), 0),
+    fraud_pct  = round(mean(fraud_flag) * 100, 2),
+    avg_age    = round(mean(age), 1)
+  ) |>
+  arrange(desc(avg_claim))
+```
+
+The clusters should separate into low-utilisation (young/healthy, low claims), moderate-risk, high-utilisation (older, many claims), and outlier (rare large claims). The cluster with the highest average claims typically also has the highest fraud rate.

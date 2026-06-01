@@ -1,0 +1,66 @@
+{
+  "id": "module-01-lesson-02",
+  "title": "Quiz: CRISP-DM and Dataset Setup",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Which phase of CRISP-DM is NOT present in the original KDD process?",
+      "options": [
+        "Data Preparation",
+        "Modelling",
+        "Business Understanding",
+        "Interpretation"
+      ],
+      "correct": 2,
+      "explanation": "CRISP-DM adds Business Understanding (defining the problem from a business perspective) and Deployment phases that are not explicitly in KDD. KDD starts from the data; CRISP-DM starts from the business problem."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "What is the primary advantage of CRISP-DM's cyclical structure over a linear pipeline?",
+      "options": [
+        "It requires fewer iterations to complete",
+        "It explicitly allows evaluation findings to loop back to earlier phases",
+        "It eliminates the need for data preparation",
+        "It guarantees deployment within a fixed timeframe"
+      ],
+      "correct": 1,
+      "explanation": "CRISP-DM is explicitly cyclical — the Evaluation phase can send the project back to Data Understanding or Data Preparation if model performance reveals data quality issues or missing features."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "Which R function provides type-aware summaries including completion rates, percentiles, and inline histograms?",
+      "options": [
+        "summary()",
+        "str()",
+        "skimr::skim()",
+        "glimpse()"
+      ],
+      "correct": 2,
+      "explanation": "skimr::skim() gives type-aware summaries — completion rate, percentiles for numerics, inline histograms — far more informative than base R summary() for mixed-type data."
+    },
+    {
+      "id": "q4",
+      "type": "true-false",
+      "text": "data.table::fread() is faster than readr::read_csv() for reading large CSV files.",
+      "correct": true,
+      "explanation": "fread() from data.table is optimised for maximum speed, using parallel processing and memory-mapped I/O. For very large files it is typically 5–10× faster than read_csv()."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Claim amounts in the health insurance dataset are right-skewed. Which plot best reveals the shape of the bulk distribution?",
+      "options": [
+        "A bar chart of plan_tier counts",
+        "A histogram on a linear x-axis",
+        "A histogram on a log10 x-axis",
+        "A box plot of claim_amount"
+      ],
+      "correct": 2,
+      "explanation": "A log10 x-axis compresses the long right tail and reveals the shape of the bulk distribution. On a linear axis the large values dominate and the structure of typical claims is invisible."
+    }
+  ]
+}

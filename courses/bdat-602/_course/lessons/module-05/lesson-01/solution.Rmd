@@ -1,0 +1,72 @@
+---
+title: "BDAT 602 — Module 5, Lesson 1 Solution"
+subtitle: "Decision Trees and Random Forests"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+set.seed(602)
+idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
+train <- health_small[idx, ]
+test  <- health_small[-idx, ]
+```
+
+## Task 1 — Fit and plot a decision tree
+
+```{r task1}
+library(rpart)
+library(rpart.plot)
+
+tree_fit <- rpart(
+  high_risk ~ age + bmi + smoker + num_chronic_conditions + plan_tier,
+  data    = train,
+  method  = "class",
+  control = rpart.control(maxdepth = 4)
+)
+
+rpart.plot(tree_fit, type = 4, extra = 104,
+           main = "Decision Tree: High-Risk Prediction")
+```
+
+The top splits should be on `age` and `num_chronic_conditions` — directly reflecting the rule-based definition of `high_risk` in the simulation.
+
+## Task 2 — Confusion matrix and accuracy
+
+```{r task2}
+pred     <- predict(tree_fit, test, type = "class")
+conf_mat <- table(Predicted = pred, Actual = test$high_risk)
+print(conf_mat)
+
+accuracy <- sum(diag(conf_mat)) / sum(conf_mat)
+cat("Accuracy:", round(accuracy, 3), "\n")
+```
+
+Accuracy is typically > 90% — but this is partly a consequence of the explicit rule-based definition of `high_risk`. High accuracy does not imply the model is useful if the majority class dominates.
+
+## Task 3 — Random forest and variable importance
+
+```{r task3}
+library(randomForest)
+
+set.seed(602)
+rf_fit <- randomForest(
+  as.factor(high_risk) ~ age + bmi + smoker +
+    num_chronic_conditions + plan_tier,
+  data       = train,
+  ntree      = 200,
+  mtry       = 2,
+  importance = TRUE
+)
+
+print(rf_fit)
+varImpPlot(rf_fit, main = "RF Variable Importance: High-Risk")
+```
+
+`num_chronic_conditions` and `age` should rank as the most important variables (MeanDecreaseAccuracy and MeanDecreaseGini), consistent with the simulation definition.

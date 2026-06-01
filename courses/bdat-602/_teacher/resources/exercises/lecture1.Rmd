@@ -1,0 +1,362 @@
+---
+title: "BDAT 602 — Lecture 1"
+subtitle: "What is Data Mining? The Big Data Landscape and the KDD Process"
+date: "2026-05-18"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+# ── Pandoc (needed when knitting outside RStudio via Rscript) ────────────────
+pandoc_path <- "/usr/lib/rstudio/resources/app/bin/quarto/bin/tools/x86_64"
+if (nchar(Sys.getenv("RSTUDIO_PANDOC")) == 0 && dir.exists(pandoc_path)) {
+  Sys.setenv(RSTUDIO_PANDOC = pandoc_path)
+}
+
+# ── Set working directory to project root for all chunks ────────────────────
+# knitr defaults to the Rmd file's directory; this restores project-root paths
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+
+# ── Clean slate ──────────────────────────────────────────────────────────────
+rm(list = setdiff(ls(), c("knitr", "rmarkdown")))
+gc()
+options(scipen = 999, stringsAsFactors = FALSE)
+
+# ── Global chunk options ─────────────────────────────────────────────────────
+knitr::opts_chunk$set(
+  echo       = TRUE,
+  message    = FALSE,
+  warning    = FALSE,
+  fig.width  = 9,
+  fig.height = 5,
+  dpi        = 150
+)
+```
+
+---
+
+# What is Data Mining?
+
+**Data mining** is the process of discovering patterns, anomalies, and actionable insights from large datasets using statistical, machine learning, and database techniques.
+
+It is *not* just querying a database. Key distinctions:
+
+| Task | Example |
+|------|---------|
+| **Classification** | Will this policyholder churn? (`churned`) |
+| **Regression** | How much will this claim cost? (`claim_amount`) |
+| **Clustering** | Which policyholders behave similarly? |
+| **Association rules** | Which add-on covers are bought together? |
+| **Anomaly detection** | Is this claim fraudulent? (`fraud_flag`) |
+| **Text mining** | What are customers complaining about? (`complaint_notes`) |
+
+All six tasks appear in the course dataset generated below.
+
+---
+
+# The Big Data Landscape — The 4 Vs
+
+A dataset qualifies as "Big Data" when it stresses conventional tools across at least one of four dimensions:
+
+| V | Definition | In our dataset |
+|---|-----------|---------------|
+| **Volume** | Scale of data | 500,000 records, 40 variables |
+| **Velocity** | Speed of generation/processing | Claims arrive continuously |
+| **Variety** | Heterogeneity of types | Numerics, categoricals, dates, free text |
+| **Veracity** | Trustworthiness / quality | Intentional NAs, outliers, entry errors |
+
+A fifth V — **Value** — is the goal: extract business decisions from the noise.
+
+---
+
+# The KDD Process
+
+The **Knowledge Discovery in Databases (KDD)** process defines the end-to-end pipeline from raw data to deployed knowledge:
+
+1. **Selection** — identify which data to use
+2. **Preprocessing** — clean, handle missing values, remove noise
+3. **Transformation** — encode, scale, reduce dimensions
+4. **Data Mining** — apply the algorithm (cluster, classify, …)
+5. **Interpretation / Evaluation** — validate and communicate results
+
+> Data preparation (steps 1–3) consumes roughly **80 % of project time**. Lectures 2 onward address each step in depth.
+
+The **CRISP-DM** framework operationalises KDD for industry projects, adding *Business Understanding* and *Deployment* phases and emphasising that the process is **cyclical** — evaluation findings loop back to earlier phases.
+
+---
+
+# Setup — Generate the Course Dataset
+
+```{r load-data}
+source("R/simulate_bdat602.R")
+
+# 500,000-row dataset — matches the "Big Data" scale discussed above
+health_data  <- simulate_bdat602(n = 500000, seed = 602)
+
+# 10,000-row slice for interactive exploration
+health_small <- simulate_bdat602(n = 10000,  seed = 602)
+```
+
+---
+
+# A First Look at the Data
+
+## Dimensions and variable names
+
+```{r structure}
+dim(health_data)
+names(health_data)
+```
+
+The dataset has **`r nrow(health_data)`** rows and **`r ncol(health_data)`** columns across six groups: identifiers, demographics, policy details, medical usage, claims history, and customer behaviour.
+
+## First three rows
+
+```{r head}
+head(health_data, 3)
+```
+
+## Full summary with skimr
+
+`skimr::skim()` gives type-aware summaries (completion rate, percentiles, inline histograms) in one call — far more informative than `summary()` for mixed-type data.
+
+```{r skim}
+library(dplyr)
+library(skimr)
+
+skim(health_small)
+```
+
+## Plan tier distribution
+
+```{r plan-tier}
+health_small |>
+  count(plan_tier) |>
+  mutate(pct = round(100 * n / sum(n), 1)) |>
+  arrange(desc(n))
+```
+
+## Claim amount distribution
+
+```{r claim-summary}
+health_small |>
+  filter(claim_amount > 0) |>
+  summarise(
+    mean_claim   = round(mean(claim_amount),   2),
+    median_claim = round(median(claim_amount), 2),
+    sd_claim     = round(sd(claim_amount),     2),
+    max_claim    = round(max(claim_amount),    2),
+    pct_zero     = round(mean(health_small$claim_amount == 0) * 100, 1)
+  )
+```
+
+> The mean is far above the median — a classic sign of right skew. `pct_zero` tells us how many policyholders made no claims at all. Both facts will drive our preprocessing choices in Lecture 2.
+
+## Fraud prevalence
+
+```{r fraud-rate}
+health_small |>
+  summarise(fraud_rate_pct = round(mean(fraud_flag) * 100, 2))
+```
+
+About 3 % of records are flagged as fraudulent — a **rare event**. A naïve model that predicts "no fraud" for every record achieves 97 % accuracy but zero usefulness. Class imbalance remedies are covered in Lecture 2.
+
+---
+
+# Loading Big Data into Spark {.tabset}
+
+For 500,000+ rows, R's in-memory operations slow down. `sparklyr` lets you run `dplyr` verbs on a distributed Spark cluster. Computation stays inside Spark; only final summaries are `collect()`ed back to R.
+
+> The chunks below require a running Spark session — shown for reference (`eval=FALSE`). Run them interactively when Spark is available.
+
+## Connect and copy
+
+```{r spark-connect, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]")
+
+# Copy the in-memory data frame to Spark
+# From this point, health_tbl lives in Spark, not in R RAM
+health_tbl <- copy_to(
+  sc,
+  health_data,
+  name      = "health_insurance",
+  overwrite = TRUE
+)
+
+health_tbl |> count()     # count rows inside Spark
+health_tbl |> glimpse()   # inspect schema
+```
+
+## Sample for prototyping
+
+```{r spark-sample, eval=FALSE}
+# 10 % Bernoulli sample — keeps work fast during development
+health_sample <- health_tbl |>
+  sdf_sample(fraction = 0.10, replacement = FALSE, seed = 602)
+
+sdf_nrow(health_sample)   # ~50,000 rows
+```
+
+> **Key rule:** `filter()`, `mutate()`, and `group_by()` are translated to Spark SQL and run distributed. Only `collect()` brings results back to R. Never `collect()` the full 500 k rows — only collect summaries.
+
+---
+
+# Reading and Inspecting Data from a CSV {.tabset}
+
+In practice you will read data from flat files rather than generating it. Two main options depending on file size:
+
+| Package | Function | Best for |
+|---------|---------|---------|
+| `readr` | `read_csv()` | Tidyverse workflows, moderate files |
+| `data.table` | `fread()` | Maximum speed on large files |
+
+```{r save-csv, include=FALSE}
+# Write health_small to CSV so the read examples below work
+library(readr)
+write_csv(health_small, "data/raw/health_insurance_small.csv")
+```
+
+## readr
+
+```{r read-readr}
+library(readr)
+
+df_readr <- read_csv("data/raw/health_insurance_small.csv")
+glimpse(df_readr)
+```
+
+## data.table
+
+```{r read-datatable}
+library(data.table)
+
+df_dt <- fread("data/raw/health_insurance_small.csv")
+cat("Rows:", nrow(df_dt), "| Cols:", ncol(df_dt), "\n")
+cat("Class:", class(df_dt)[1], "\n")
+```
+
+## Quick inspection
+
+```{r inspect}
+# Missing values per column
+colSums(is.na(df_readr)) |> sort(decreasing = TRUE) |> (\(x) x[x > 0])()
+
+# Frequency table for a nominal variable
+df_readr |>
+  count(region, sort = TRUE) |>
+  mutate(pct = round(100 * n / sum(n), 1))
+
+# Numeric summary for key variables
+df_readr |>
+  select(age, bmi, income, claim_amount) |>
+  summary()
+```
+
+---
+
+# First Exploratory Visualisations
+
+## Distribution of claim amounts
+
+Claim amounts are heavily right-skewed — many small claims and a long tail of large ones. A log scale reveals the shape of the bulk distribution.
+
+```{r plot-claims}
+library(ggplot2)
+
+ggplot(health_small |> filter(claim_amount > 0),
+       aes(x = claim_amount)) +
+  geom_histogram(bins = 60, fill = "steelblue", colour = "white") +
+  scale_x_log10(labels = scales::comma) +
+  labs(title = "Distribution of Claim Amounts (log scale)",
+       x = "Claim Amount (USD, log scale)", y = "Count") +
+  theme_minimal()
+```
+
+## Claim amount by plan tier
+
+```{r plot-tier}
+ggplot(health_small |> filter(claim_amount > 0),
+       aes(x = plan_tier, y = claim_amount, fill = plan_tier)) +
+  geom_boxplot(outlier.alpha = 0.2) +
+  scale_y_log10(labels = scales::comma) +
+  labs(title = "Claim Amount by Plan Tier",
+       x = "Plan Tier", y = "Claim Amount (log scale)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Higher plan tiers show higher median claims — both because Platinum attracts higher-risk enrollees and because higher coverage incentivises larger claims.
+
+---
+
+# Automated EDA with DataExplorer
+
+`DataExplorer::create_report()` generates a full HTML EDA report in one line — missing value profiles, distributions, correlations, and QQ plots. Essential for the first pass on any new dataset.
+
+## Missing value map
+
+```{r eda-missing}
+library(DataExplorer)
+
+plot_missing(health_small)
+```
+
+## Continuous variable distributions
+
+```{r eda-hist, fig.height=8}
+plot_histogram(health_small)
+```
+
+## Correlation heatmap
+
+```{r eda-corr}
+plot_correlation(
+  health_small |>
+    select(age, bmi, income, premium,
+           claim_amount, num_claims,
+           num_chronic_conditions),
+  title = "Correlation Matrix: Key Numeric Variables"
+)
+```
+
+## Full automated report
+
+```{r eda-report, eval=FALSE}
+# Generates output/reports/lecture1_eda.html — open in a browser
+create_report(
+  health_small,
+  output_file  = "lecture1_eda.html",
+  output_dir   = "output/reports",
+  report_title = "BDAT 602: Health Insurance EDA"
+)
+```
+
+---
+
+# Key Takeaways
+
+* **Data mining** covers classification, regression, clustering, association rules, anomaly detection, and text mining — all demonstrated on the course dataset.
+* The **4 Vs** (Volume, Velocity, Variety, Veracity) characterise Big Data; the course dataset is designed to exercise all four.
+* The **KDD process** places data preparation before any algorithm. Expect to spend 80 % of your time here.
+* `skimr::skim()` and `DataExplorer::create_report()` are your first-pass EDA tools.
+* `sparklyr` lets you run `dplyr` verbs at scale — push computation to Spark, `collect()` only summaries.
+
+**Looking ahead — Lecture 2:** Data preparation in depth: handling missing values (MCAR / MAR / MNAR), outlier detection and treatment, scaling, categorical encoding, PCA, and building a leak-proof `recipes` preprocessing pipeline.
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

@@ -1,0 +1,43 @@
+---
+title: "BDAT 602 — Module 3, Lesson 1 Solution"
+subtitle: "Market Basket Analysis and the Apriori Algorithm"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Explore the Groceries dataset
+
+```{r task1}
+library(arules)
+data("Groceries")
+summary(Groceries)
+```
+
+The `Groceries` dataset has **9,835 transactions** and **169 items**. The most frequent item is "whole milk" (appearing in ~25.5% of transactions).
+
+## Task 2 — Run Apriori
+
+```{r task2}
+rules <- apriori(
+  Groceries,
+  parameter = list(supp = 0.01, conf = 0.25, minlen = 2)
+)
+length(rules)
+```
+
+With these thresholds, Apriori generates several hundred rules.
+
+## Task 3 — Top rules by lift
+
+```{r task3}
+inspect(head(sort(rules, by = "lift"), 5))
+```
+
+The top rules by lift typically involve specific combinations of dairy and baking items (e.g. butter + whipped cream → whole milk), with lift values of 3–4, meaning these items co-occur 3–4× more often than chance.

@@ -1,0 +1,66 @@
+{
+  "id": "module-02-lesson-03",
+  "title": "Quiz: Scaling, Encoding, and the recipes Pipeline",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "You are running k-means clustering on age (range 18–85) and income (range $1,000–$500,000) without scaling. What will happen?",
+      "options": [
+        "k-means will balance both variables equally",
+        "Income will dominate cluster assignments because it has a much larger range",
+        "Age will dominate because it is an integer",
+        "k-means is unaffected by variable scale"
+      ],
+      "correct": 1,
+      "explanation": "k-means uses Euclidean distance. A difference of 1 year in age is trivial compared to a difference of $10,000 in income. Without scaling, income completely dominates the distance calculation and age has essentially no influence on clustering."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Which scaling method is most appropriate when a variable has not been winsorised and still contains extreme outliers?",
+      "options": [
+        "Z-score normalisation",
+        "Min-Max scaling",
+        "Robust scaling (median + IQR)",
+        "No scaling is needed for outlier-containing variables"
+      ],
+      "correct": 2,
+      "explanation": "Robust scaling uses the median and IQR rather than the mean and SD, making it resistant to outliers. Z-score and Min-Max are both pulled toward extreme values."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "Why should plan_tier (Bronze < Silver < Gold < Platinum) use ordinal encoding rather than one-hot encoding?",
+      "options": [
+        "Because it has more than 2 levels",
+        "Because it is ordered — encoding as integers 1-4 preserves the natural rank",
+        "Because one-hot encoding always causes data leakage",
+        "Because Bronze is the reference category"
+      ],
+      "correct": 1,
+      "explanation": "plan_tier is an ordinal variable with a natural ordering. Encoding as integers 1 (Bronze) to 4 (Platinum) preserves that ordering. One-hot encoding would treat all tiers as unordered, discarding meaningful information."
+    },
+    {
+      "id": "q4",
+      "type": "true-false",
+      "text": "In a recipes pipeline, step_normalize() should come before step_impute_median() to avoid computing means on missing-value-containing columns.",
+      "correct": false,
+      "explanation": "step_impute_median() must come BEFORE step_normalize(). Normalization computes means and SDs from the data; if missing values are still present, the statistics will be based on incomplete data. Impute first, then scale."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "What is data leakage in the context of a preprocessing pipeline?",
+      "options": [
+        "When data is accidentally deleted during cleaning",
+        "When information from the test set influences the training-phase parameters (e.g. imputation values)",
+        "When the model is deployed to production without testing",
+        "When a variable has near-zero variance"
+      ],
+      "correct": 1,
+      "explanation": "Data leakage occurs when test-set information influences how the training pipeline is built — e.g. computing the median across train+test before imputing. This gives the model illegitimate access to information it would not have in production, inflating measured performance."
+    }
+  ]
+}

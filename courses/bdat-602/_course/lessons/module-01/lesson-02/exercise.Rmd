@@ -1,0 +1,52 @@
+---
+title: "BDAT 602 — Module 1, Lesson 2 Exercise"
+subtitle: "CRISP-DM and Setting Up the Course Dataset"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Read data from CSV
+
+Read `data/raw/health_insurance_small.csv` using `readr::read_csv()`. Call `glimpse()` on the result.
+
+```{r task1}
+# YOUR CODE HERE
+# library(readr)
+# df <- read_csv("data/raw/health_insurance_small.csv")
+# glimpse(df)
+```
+
+**How many rows?** ___
+**How many columns?** ___
+**Which columns were parsed as `<lgl>` (logical)?** ___
+
+## Task 2 — Histogram of claim amounts
+
+Filter to rows where `claim_amount > 0`, then plot a histogram on a log10 x-axis. Title: "Claim Amounts: 10k Sample".
+
+```{r task2}
+# YOUR CODE HERE
+# library(ggplot2)
+# library(dplyr)
+# ggplot(df |> filter(claim_amount > 0), aes(x = claim_amount)) +
+#   ...
+```
+
+## Task 3 — Missing value map
+
+Use `DataExplorer::plot_missing()` to visualise missing values. List which columns have missing data.
+
+```{r task3}
+# YOUR CODE HERE
+# library(DataExplorer)
+# plot_missing(df)
+```
+
+**Columns with missing values:** ___

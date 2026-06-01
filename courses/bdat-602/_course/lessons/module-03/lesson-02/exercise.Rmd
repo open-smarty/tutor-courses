@@ -1,0 +1,51 @@
+---
+title: "BDAT 602 — Module 3, Lesson 2 Exercise"
+subtitle: "Mining Rules from the Health Insurance Dataset"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Build the transactions object
+
+Generate `health_small` (n = 10000, seed = 602). Select only the four add-on cover columns (`dental_cover`, `vision_cover`, `mental_cover`, `maternity_cover`), `smoker`, and `high_risk`. Convert to a `transactions` object and call `summary()`.
+
+```{r task1}
+# YOUR CODE HERE
+# source("R/simulate_bdat602_data.R")
+# library(arules); library(dplyr)
+# health_small <- simulate_bdat602(n = 10000, seed = 602)
+# bin_cols <- c("dental_cover", "vision_cover", "mental_cover",
+#               "maternity_cover", "smoker", "high_risk")
+# health_bin <- health_small |>
+#   select(all_of(bin_cols)) |>
+#   mutate(across(everything(), as.logical))
+# trans <- as(health_bin, "transactions")
+# summary(trans)
+```
+
+## Task 2 — Run Apriori
+
+Run `apriori()` with `supp = 0.05`, `conf = 0.45`, `minlen = 2`. Store in `rules_ins` and print the count.
+
+```{r task2}
+# YOUR CODE HERE
+```
+
+**Number of rules:** ___
+
+## Task 3 — Dental cover on the RHS
+
+Filter for rules where `dental_cover` is on the right-hand side. Print the top 3 by confidence using `inspect()`.
+
+```{r task3}
+# YOUR CODE HERE
+# dental_rules <- subset(rules_ins, rhs %pin% "dental_cover")
+# inspect(head(sort(dental_rules, by = "confidence"), 3))
+```

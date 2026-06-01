@@ -1,0 +1,256 @@
+{
+  "id": "bdat-602",
+  "title": "BDAT 602: Data Mining and Applications",
+  "description": "A comprehensive introduction to data mining covering the full KDD / CRISP-DM pipeline. Students apply six mining tasks — cleaning, association rules, clustering, classification, and text mining — to a 500,000-row health insurance dataset in R, using tidymodels, arules, randomForest, tidytext, and sparklyr.",
+  "author": "Department of Statistics & Actuarial Science, University of Ghana, Legon",
+  "version": "1.0.0",
+  "subject": "Data Mining / R",
+  "level": "intermediate",
+  "estimatedHours": 8,
+  "prerequisites": ["Basic R (dplyr, ggplot2)", "First statistics course", "BDAT 601 or equivalent"],
+  "apiSubmission": {
+    "enabled": false,
+    "endpoint": "",
+    "courseId": ""
+  },
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Introduction to Data Mining",
+      "description": "The six mining tasks, the 4 Vs of Big Data, the KDD process, and the CRISP-DM framework — plus first contact with the course dataset and EDA tools.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "What Is Data Mining? The Big Data Landscape and the KDD Process",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-01/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-01-lesson-01.json",
+          "task": "_assessments/tasks/module-01-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "lesson-02",
+          "title": "CRISP-DM and Setting Up the Course Dataset",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-01/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-01-lesson-02.json",
+          "task": "_assessments/tasks/module-01-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 30
+        }
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Data Preparation — Cleaning",
+      "description": "Diagnose missing value mechanisms, apply imputation strategies, detect and treat outliers, and assemble a leak-proof preprocessing pipeline with the tidymodels recipes package.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Diagnosing and Handling Missing Values",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-01.json",
+          "task": "_assessments/tasks/module-02-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-02",
+          "title": "Outlier Detection and Treatment",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-02.json",
+          "task": "_assessments/tasks/module-02-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-03",
+          "title": "Scaling, Encoding, and the recipes Pipeline",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-03/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-03/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-03.json",
+          "task": "_assessments/tasks/module-02-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 35
+        }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Association Rule Mining",
+      "description": "Discover co-occurrence patterns in transactional data using the Apriori algorithm. Learn support, confidence, and lift, and mine actionable rules from the insurance add-on cover flags.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Market Basket Analysis and the Apriori Algorithm",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-03/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-03-lesson-01.json",
+          "task": "_assessments/tasks/module-03-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-02",
+          "title": "Mining Rules from the Health Insurance Dataset",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-03/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-03-lesson-02.json",
+          "task": "_assessments/tasks/module-03-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 35
+        }
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Clustering and Dimensionality Reduction",
+      "description": "Segment policyholders into homogeneous groups using k-means and hierarchical clustering, validate cluster quality, and apply PCA to visualise high-dimensional data.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "k-Means Clustering",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-01.json",
+          "task": "_assessments/tasks/module-04-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-02",
+          "title": "Hierarchical Clustering",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-02.json",
+          "task": "_assessments/tasks/module-04-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-03",
+          "title": "PCA for Dimensionality Reduction and Cluster Visualisation",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-03/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-03/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-03.json",
+          "task": "_assessments/tasks/module-04-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Classification",
+      "description": "Build decision tree and random forest classifiers to predict churn and fraud, evaluate performance with confusion matrices and ROC curves, and handle severe class imbalance with SMOTE and class weights.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Decision Trees and Random Forests",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-05/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-05-lesson-01.json",
+          "task": "_assessments/tasks/module-05-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "lesson-02",
+          "title": "Handling Class Imbalance",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-05/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-05-lesson-02.json",
+          "task": "_assessments/tasks/module-05-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-06",
+      "title": "Text Mining",
+      "description": "Extract structure from the unstructured complaint_notes column: tokenise text, compute TF-IDF to find discriminating terms, and apply Latent Dirichlet Allocation to discover latent complaint topics.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Tokenisation and TF-IDF",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-06/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-06-lesson-01.json",
+          "task": "_assessments/tasks/module-06-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-02",
+          "title": "Topic Modelling with LDA",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-06/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-06/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-06-lesson-02.json",
+          "task": "_assessments/tasks/module-06-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    }
+  ]
+}

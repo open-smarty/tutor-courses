@@ -1,0 +1,766 @@
+---
+title: "BDAT 602 — Lecture 2"
+subtitle: "Data Preparation: Cleaning, Transforming, and Exploring Data"
+date: "2026-05-18"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+# ── Pandoc (needed when knitting outside RStudio via Rscript) ────────────────
+pandoc_path <- "/usr/lib/rstudio/resources/app/bin/quarto/bin/tools/x86_64"
+if (nchar(Sys.getenv("RSTUDIO_PANDOC")) == 0 && dir.exists(pandoc_path)) {
+  Sys.setenv(RSTUDIO_PANDOC = pandoc_path)
+}
+
+# ── Set working directory to project root for all chunks ────────────────────
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+
+# ── Clean slate ──────────────────────────────────────────────────────────────
+rm(list = setdiff(ls(), c("knitr", "rmarkdown")))   # keep knitr objects
+gc()
+options(scipen = 999, stringsAsFactors = FALSE)
+
+# ── Global chunk options ──────────────────────────────────────────────────────
+knitr::opts_chunk$set(
+  echo       = TRUE,
+  message    = FALSE,
+  warning    = FALSE,
+  fig.width  = 9,
+  fig.height = 5,
+  dpi        = 150
+)
+```
+
+---
+
+# Setup
+
+Source the data generator and shared helpers, then create the two working datasets used throughout this lecture.
+
+```{r load-data}
+source("R/simulate_bdat602.R")
+source("R/utils.R")
+
+# 500 k rows — used for Spark and the final pipeline
+health_data  <- simulate_bdat602(n = 500000, seed = 602)
+
+# 10 k rows — used for interactive R sections (faster knitting)
+health_small <- simulate_bdat602(n = 10000,  seed = 602)
+
+library(dplyr)
+library(skimr)
+```
+
+A quick structural check before anything else:
+
+```{r structure}
+dim(health_data)
+```
+
+The dataset has **500,000 rows** and **40 columns** covering demographics, policy details, claims, engagement, and three classification targets (`fraud_flag`, `churned`, `high_risk`).
+
+---
+
+# Diagnosing Missing Values
+
+Before deciding *how* to handle missing data you must first understand *why* it is missing. The mechanism determines the remedy:
+
+| Mechanism | Definition | Safe remedy |
+|-----------|-----------|-------------|
+| **MCAR** — Missing Completely At Random | Missingness is unrelated to any variable | Deletion or imputation both fine |
+| **MAR** — Missing At Random | Missingness depends on *observed* variables | Imputation (kNN, model-based) |
+| **MNAR** — Missing Not At Random | Missingness depends on the *missing value itself* | Flag + domain knowledge |
+
+## Count and rank NAs
+
+```{r missing-count}
+# Columns with at least one NA, sorted by count
+colSums(is.na(health_small)) |>
+  sort(decreasing = TRUE) |>
+  (\(x) x[x > 0])()
+```
+
+```{r missing-pct}
+# As a percentage
+round(colMeans(is.na(health_small)) * 100, 2) |>
+  sort(decreasing = TRUE) |>
+  (\(x) x[x > 0])()
+```
+
+## Visual missing-value map
+
+```{r missing-plot}
+library(DataExplorer)
+plot_missing(health_small)
+```
+
+> **Key observations:** `bmi` (~5 %) and `income` (~4 %) are likely **MAR** — patients who do not visit a GP are less likely to have a recorded BMI. `complaint_notes` is **MNAR** — only policyholders who lodged a complaint have a value.
+
+---
+
+# Simple Imputation — Median, Mode, and Flags
+
+Simple imputation is fast and transparent. Always add a **binary missingness indicator** alongside any imputed numeric variable so downstream models can learn from the pattern of missingness itself.
+
+```{r simple-imputation}
+health_clean <- health_small
+
+# ── Strategy 1: Numeric → median (robust to skew) ──────────────────────────
+bmi_median    <- median(health_clean$bmi,    na.rm = TRUE)
+income_median <- median(health_clean$income, na.rm = TRUE)
+
+health_clean <- health_clean |>
+  mutate(
+    bmi_missing    = as.integer(is.na(bmi)),
+    income_missing = as.integer(is.na(income)),
+    bmi            = if_else(is.na(bmi),    bmi_median,    bmi),
+    income         = if_else(is.na(income), income_median, income)
+  )
+
+# ── Strategy 2: Categorical → mode (from R/utils.R) ────────────────────────
+health_clean <- health_clean |>
+  mutate(
+    employment_type = if_else(
+      is.na(employment_type),
+      get_mode(employment_type),
+      employment_type
+    )
+  )
+
+# ── Strategy 3: Free-text → treat NA as "no complaint" ─────────────────────
+health_clean <- health_clean |>
+  mutate(
+    has_complaint   = as.integer(!is.na(complaint_notes)),
+    complaint_notes = if_else(is.na(complaint_notes),
+                               "no complaint", complaint_notes)
+  )
+
+# Verify
+colSums(is.na(health_clean[, c("bmi", "income", "complaint_notes")]))
+```
+
+---
+
+# kNN Imputation for Better Accuracy
+
+Median imputation replaces every missing value with the *same* number regardless of context. **kNN imputation** instead finds the *k* most similar complete records and averages their values — far more accurate when data is MAR.
+
+The critical rule: **always use `recipes`** so the *k* neighbours are identified from training data only. Fitting on the full dataset (including what will become the test set) is data leakage.
+
+```{r knn-imputation}
+library(recipes)
+
+impute_recipe <- recipe(claim_amount ~ ., data = health_small) |>
+  step_impute_knn(
+    bmi,
+    neighbors   = 5,
+    impute_with = imp_vars(age, sex, region, employment_type, plan_tier)
+  ) |>
+  step_impute_median(income)   # income is MNAR → median is safer
+
+impute_prep    <- prep(impute_recipe, training = health_small)
+health_imputed <- bake(impute_prep, new_data = health_small)
+
+summary(health_imputed$bmi)
+```
+
+> **Why `recipes`?** The median and the *k* neighbours are learned during `prep()` from training data only, then applied identically to any new data via `bake()`. This prevents leakage and ensures reproducibility.
+
+---
+
+# Handling Missing Values in Spark at Scale {.tabset}
+
+For 500,000+ rows the in-memory approaches above are impractical. `sparklyr` lets you count NAs and compute medians **inside Spark** without ever moving the raw data into R.
+
+> **Note:** The chunks below require a running Spark session. They are shown for reference (`eval=FALSE`). Run them interactively when Spark is available.
+
+## Count NAs in Spark
+
+```{r spark-missing, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc         <- spark_connect(master = "local[*]")
+health_tbl <- copy_to(sc, health_data,
+                       name = "health_insurance", overwrite = TRUE)
+
+health_tbl |>
+  summarise(
+    bmi_missing    = sum(as.integer(is.na(bmi)),    na.rm = TRUE),
+    income_missing = sum(as.integer(is.na(income)), na.rm = TRUE)
+  )
+```
+
+## Impute median in Spark
+
+```{r spark-impute, eval=FALSE}
+# percentile_approx() is Spark's fast approximate median
+bmi_med_spark <- health_tbl |>
+  summarise(med = percentile_approx(bmi, 0.5, 1000L)) |>
+  collect() |>
+  pull(med)
+
+health_tbl_clean <- health_tbl |>
+  mutate(
+    bmi_missing = as.integer(is.na(bmi)),
+    bmi         = if_else(is.na(bmi), bmi_med_spark, bmi)
+  )
+
+sdf_nrow(health_tbl_clean)   # confirm no rows dropped
+```
+
+---
+
+# Outlier Detection
+
+An **outlier** is an observation that deviates markedly from the general pattern. It may be a genuine extreme value, a measurement error, or — crucially for fraud detection — **the signal itself**.
+
+Three types to recognise:
+
+* **Global**: extreme relative to the whole dataset (BMI = 200)
+* **Contextual**: extreme only within a context (£50k claim on a Bronze plan)
+* **Collective**: a group that is anomalous together (weekend claims from the same agent)
+
+## Visual — box plot
+
+```{r outlier-boxplot}
+library(ggplot2)
+
+ggplot(health_clean, aes(y = bmi)) +
+  geom_boxplot(fill = "steelblue", outlier.colour = "red",
+               outlier.alpha = 0.4) +
+  labs(title = "BMI Distribution with Outliers", y = "BMI") +
+  theme_minimal()
+```
+
+## Statistical — IQR rule
+
+Values below $Q_1 - 1.5 \times \text{IQR}$ or above $Q_3 + 1.5 \times \text{IQR}$ are flagged.
+
+```{r outlier-iqr}
+q1_bmi  <- quantile(health_clean$bmi, 0.25, na.rm = TRUE)
+q3_bmi  <- quantile(health_clean$bmi, 0.75, na.rm = TRUE)
+iqr_bmi <- q3_bmi - q1_bmi
+
+health_clean <- health_clean |>
+  mutate(
+    bmi_outlier = bmi < (q1_bmi - 1.5 * iqr_bmi) |
+                  bmi > (q3_bmi + 1.5 * iqr_bmi)
+  )
+
+health_clean |> count(bmi_outlier)
+```
+
+## Statistical — Z-score
+
+The Z-score $|z_i| = \left|\frac{x_i - \bar{x}}{s}\right| > 3$ assumes approximate normality. Use on roughly symmetric variables like income (after any transformation).
+
+```{r outlier-zscore}
+health_clean <- health_clean |>
+  mutate(
+    income_z       = (income - mean(income, na.rm = TRUE)) /
+                      sd(income, na.rm = TRUE),
+    income_outlier = abs(income_z) > 3
+  )
+
+health_clean |> count(income_outlier)
+```
+
+---
+
+# Treating Outliers
+
+Detection alone is not enough — you must decide what to do. The right action depends on *why* the outlier exists.
+
+| Treatment | When to use |
+|-----------|------------|
+| **Remove** | Clear data-entry error |
+| **Winsorise** (cap) | Genuine extreme; want to retain the record |
+| **Flag + retain** | Outlier is informative (fraud detection) |
+| **Log-transform** | Right-skewed variable; all values valid |
+
+## Winsorisation
+
+```{r winsorise}
+p01_income <- quantile(health_clean$income, 0.01, na.rm = TRUE)
+p99_income <- quantile(health_clean$income, 0.99, na.rm = TRUE)
+
+health_clean <- health_clean |>
+  mutate(
+    bmi    = pmax(10, pmin(60, bmi)),           # biologically plausible range
+    income = pmax(p01_income, pmin(p99_income, income))
+  )
+
+health_clean |> select(bmi, income) |> summary()
+```
+
+## Log transformation
+
+Right-skewed variables like income compress poorly with standardisation. Taking $\log(1 + x)$ makes the distribution more symmetric, which benefits distance-based algorithms (k-means, kNN) and linear models.
+
+```{r log-transform, fig.height=4}
+health_clean <- health_clean |>
+  mutate(log_income = log1p(income))
+
+par(mfrow = c(1, 2))
+hist(health_clean$income,     main = "Income (raw)",
+     col = "steelblue", border = "white", xlab = "")
+hist(health_clean$log_income, main = "Income (log1p)",
+     col = "darkorange", border = "white", xlab = "")
+par(mfrow = c(1, 1))
+```
+
+---
+
+# Scaling Numeric Variables
+
+**Why it matters:** compute the distance between two policyholders using age (range ~70) and income (range ~$500,000). Income completely dominates — age becomes irrelevant.
+
+Algorithms that require scaling: **k-means**, **kNN**, **PCA**, hierarchical clustering, SVM, ridge/lasso regression.
+Algorithms unaffected: decision trees, random forests, naïve Bayes, association rules.
+
+| Method | Formula | Range | Robust to outliers? |
+|--------|---------|-------|-------------------|
+| **Z-score** | $(x - \bar{x}) / s$ | $(-\infty, +\infty)$ | No |
+| **Min-Max** | $(x - x_{\min}) / (x_{\max} - x_{\min})$ | $[0, 1]$ | No |
+| **Robust** | $(x - \text{median}) / \text{IQR}$ | $(-\infty, +\infty)$ | Yes |
+
+## Z-score via recipes
+
+```{r scale-zscore}
+library(recipes)
+
+num_vars <- c("age", "bmi", "income", "premium", "deductible",
+              "coverage_amount", "policy_age_months",
+              "num_chronic_conditions", "num_visits",
+              "num_prescriptions", "num_hospital_admissions",
+              "num_claims", "avg_past_claim", "claim_amount",
+              "app_logins_monthly", "support_calls")
+
+scale_recipe <- recipe(~ ., data = health_clean) |>
+  step_normalize(all_of(num_vars))
+
+scale_prep    <- prep(scale_recipe, training = health_clean)
+health_scaled <- bake(scale_prep, new_data = health_clean)
+
+# Verify: mean ~0, sd ~1
+health_scaled |>
+  select(age, bmi, income) |>
+  summarise(across(everything(), list(mean = mean, sd = sd),
+                   .names = "{.col}_{.fn}"))
+```
+
+## Min-Max (manual)
+
+```{r scale-minmax}
+# min_max_scale() lives in R/utils.R
+health_clean <- health_clean |>
+  mutate(
+    age_mm = min_max_scale(age),
+    bmi_mm = min_max_scale(bmi)
+  )
+
+summary(health_clean[, c("age_mm", "bmi_mm")])
+```
+
+---
+
+# Encoding Categorical Variables
+
+Most mining algorithms require numeric input. The naive approach — assigning integers 1, 2, 3, … — imposes a false ordering. Use the right encoding for the variable type.
+
+| Variable type | Encoding | `recipes` step |
+|--------------|---------|---------------|
+| Nominal (sex, region) | One-hot / dummy (k-1 columns) | `step_dummy()` |
+| Ordinal (education, plan_tier) | Integer preserving order | `step_integer()` |
+| High-cardinality nominal | Target encoding | `step_lencode_*()` |
+
+> **The dummy trap:** always drop one category per variable (the reference level). `recipes` does this automatically with `one_hot = FALSE`.
+
+```{r encoding}
+library(recipes)
+
+encode_recipe <- recipe(claim_amount ~ ., data = health_clean) |>
+  # Nominal: k-1 dummy columns
+  step_dummy(sex, region, payment_method,
+             employment_type, one_hot = FALSE) |>
+  # Ordinal: set explicit level ordering, then integer-encode
+  step_mutate(
+    education = factor(education,
+                       levels = c("None", "Primary", "Secondary",
+                                   "Tertiary", "Postgraduate"),
+                       ordered = TRUE),
+    plan_tier = factor(plan_tier,
+                       levels = c("Bronze", "Silver", "Gold", "Platinum"),
+                       ordered = TRUE)
+  ) |>
+  step_integer(education, plan_tier) |>
+  step_nzv(all_predictors())   # drop near-zero variance artefacts
+
+encode_prep    <- prep(encode_recipe, training = health_clean)
+health_encoded <- bake(encode_prep, new_data = health_clean)
+
+# First 30 column names after encoding
+names(health_encoded) |> head(30)
+```
+
+```{r encoding-verify}
+# Confirm no character columns remain
+sapply(health_encoded, class) |> table()
+```
+
+---
+
+# Principal Component Analysis (PCA)
+
+PCA addresses the **curse of dimensionality**: as the number of variables grows, the feature space expands exponentially and distance-based algorithms degrade. PCA creates a smaller set of new variables (principal components) that capture most of the variance.
+
+* **PC1** — direction of greatest variance
+* **PC2** — direction of second-greatest variance, perpendicular to PC1
+* Each subsequent PC captures less variance
+* PCs are **uncorrelated** — no multicollinearity
+
+> **In BDAT 602** we use PCA as a preprocessing step before clustering and as a visualisation tool. The full mathematical treatment is in BDAT 604.
+
+**Requirements:** numeric, scaled input only — cannot be applied to raw categorical variables.
+
+## Fit PCA
+
+```{r pca-fit}
+library(broom)
+
+pca_vars <- c("age", "bmi", "income", "premium", "deductible",
+              "num_chronic_conditions", "num_visits",
+              "num_prescriptions", "num_hospital_admissions",
+              "num_claims", "avg_past_claim", "claim_amount",
+              "app_logins_monthly", "support_calls",
+              "policy_age_months")
+
+pca_recipe <- recipe(~ ., data = health_clean[, pca_vars]) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+pca_prep   <- prep(pca_recipe)
+pca_scores <- bake(pca_prep, new_data = NULL)
+
+head(pca_scores)
+```
+
+## Scree plot
+
+The **scree plot** shows how much variance each PC explains. Look for the "elbow" — the point where adding more PCs yields diminishing returns. Keep enough PCs to explain ≥ 80 % of total variance (or apply the Kaiser rule: eigenvalue > 1).
+
+```{r pca-scree}
+library(ggplot2)
+
+tidy(pca_prep, number = 2, type = "variance") |>
+  filter(terms == "percent variance") |>
+  ggplot(aes(x = component, y = value)) +
+  geom_col(fill = "steelblue") +
+  geom_line(group = 1, colour = "red") +
+  labs(title = "Scree Plot: Variance Explained by Each PC",
+       x = "Principal Component", y = "% Variance Explained") +
+  theme_minimal()
+```
+
+## PC loadings
+
+Loadings show how much each original variable contributes to each component. Positive and negative bars indicate the direction of contribution.
+
+```{r pca-loadings, fig.height=6}
+tidy(pca_prep, number = 2, type = "coef") |>
+  filter(component %in% c("PC1", "PC2")) |>
+  ggplot(aes(x = reorder(terms, value), y = value,
+             fill = value > 0)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ component) +
+  coord_flip() +
+  scale_fill_manual(values = c("steelblue", "darkorange")) +
+  labs(title = "PCA Loadings: PC1 and PC2",
+       x = NULL, y = "Loading") +
+  theme_minimal()
+```
+
+## Score plot
+
+Plot PC1 vs PC2 coloured by plan tier. If groups separate along a component, that component captures a risk/value dimension.
+
+```{r pca-scoreplot}
+pca_scores |>
+  bind_cols(health_clean |> select(plan_tier)) |>
+  ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
+  geom_point(alpha = 0.15, size = 0.8) +
+  labs(title = "PCA Score Plot: PC1 vs PC2 by Plan Tier",
+       colour = "Plan Tier") +
+  theme_minimal()
+```
+
+---
+
+# Exploratory Data Analysis (EDA)
+
+EDA is **not** just plotting. It is a systematic investigation of distribution shapes, central tendency, missing values, outliers, relationships between variables, and class balance. The decisions made during EDA — what to impute, what to transform, what to encode — directly determine the quality of mining results.
+
+## Univariate EDA
+
+```{r eda-univariate, fig.width=11}
+library(patchwork)
+
+p1 <- health_clean |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(x = claim_amount)) +
+  geom_histogram(bins = 60, fill = "steelblue", colour = "white") +
+  scale_x_log10(labels = scales::comma) +
+  labs(title = "Claim Amount (log scale)", x = "USD", y = "Count") +
+  theme_minimal()
+
+p2 <- health_clean |>
+  count(plan_tier) |>
+  ggplot(aes(x = reorder(plan_tier, -n), y = n, fill = plan_tier)) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = scales::comma(n)), vjust = -0.3, size = 3) +
+  labs(title = "Policies by Plan Tier", x = NULL, y = "Count") +
+  theme_minimal()
+
+p1 + p2
+```
+
+## Bivariate EDA
+
+```{r eda-bivariate}
+health_clean |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(x = plan_tier, y = claim_amount, fill = plan_tier)) +
+  geom_boxplot(outlier.alpha = 0.15) +
+  scale_y_log10(labels = scales::comma) +
+  labs(title = "Claim Amount by Plan Tier",
+       x = NULL, y = "Claim Amount (log scale)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+## Correlation heatmap
+
+```{r eda-correlation, fig.height=6}
+health_clean |>
+  select(age, bmi, income, premium, deductible,
+         num_chronic_conditions, num_visits, num_claims,
+         claim_amount, support_calls, customer_rating) |>
+  plot_correlation(type  = "continuous",
+                   title = "Correlation Matrix: Numeric Variables")
+```
+
+## Fraud rate by employment type
+
+```{r eda-fraud}
+health_clean |>
+  group_by(employment_type) |>
+  summarise(fraud_rate = round(mean(fraud_flag) * 100, 2),
+            n          = n()) |>
+  arrange(desc(fraud_rate))
+```
+
+---
+
+# EDA at Scale with sparklyr {.tabset}
+
+With 500,000 rows, R-side `group_by()` operations can be slow. Push aggregations to Spark and `collect()` only the summary.
+
+> The chunks below require a running Spark session — set `eval=FALSE` for knitting without Spark.
+
+## Global summaries
+
+```{r spark-eda-global, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+# sc and health_tbl created in Section 4
+health_tbl |>
+  summarise(
+    mean_age       = mean(age,          na.rm = TRUE),
+    mean_bmi       = mean(bmi,          na.rm = TRUE),
+    mean_claim     = mean(claim_amount, na.rm = TRUE),
+    median_claim   = percentile_approx(claim_amount, 0.5),
+    fraud_rate_pct = mean(fraud_flag,   na.rm = TRUE) * 100,
+    churn_rate_pct = mean(churned,      na.rm = TRUE) * 100
+  ) |>
+  collect()
+```
+
+## Group-wise summaries
+
+```{r spark-eda-group, eval=FALSE}
+health_tbl |>
+  group_by(plan_tier) |>
+  summarise(
+    n           = n(),
+    avg_premium = mean(premium,      na.rm = TRUE),
+    avg_claim   = mean(claim_amount, na.rm = TRUE),
+    pct_fraud   = mean(fraud_flag,   na.rm = TRUE) * 100,
+    pct_churned = mean(churned,      na.rm = TRUE) * 100
+  ) |>
+  arrange(desc(avg_claim)) |>
+  collect()
+```
+
+## Practice exercise
+
+```{r spark-exercise, eval=FALSE}
+# Fraud rate by region and employment type
+health_tbl |>
+  group_by(region, employment_type) |>
+  summarise(fraud_rate = mean(fraud_flag, na.rm = TRUE) * 100,
+            n          = n()) |>
+  arrange(desc(fraud_rate)) |>
+  collect()
+```
+
+---
+
+# Class Imbalance
+
+A critical EDA finding for any classification problem. When a target has very unequal class frequencies, standard algorithms default to predicting the majority class.
+
+```{r class-imbalance}
+# fraud_flag: ~3 % positive — a model predicting "no fraud" for everyone
+# achieves 97 % accuracy but is completely useless
+health_clean |>
+  summarise(
+    fraud_rate_pct  = round(mean(fraud_flag)                * 100, 2),
+    churn_rate_pct  = round(mean(churned, na.rm = TRUE)      * 100, 2),
+    high_risk_pct   = round(mean(high_risk, na.rm = TRUE)    * 100, 2)
+  )
+```
+
+Common remedies (applied *after* the train/test split, on training data only):
+
+1. **SMOTE** — generate synthetic minority records
+2. **Random oversampling** — duplicate minority records
+3. **Random undersampling** — remove majority records
+4. **Class weights** — penalise misclassifying the minority more heavily
+5. **Threshold adjustment** — lower the classification threshold from 0.5
+
+---
+
+# Complete Preprocessing Pipeline
+
+Ad-hoc preprocessing causes **data leakage** (imputing with the whole-dataset mean before splitting), is hard to reproduce, and cannot be applied consistently to new data. A `recipes` pipeline solves all three problems.
+
+The workflow:
+
+```
+recipe()   → define steps (blueprint only)
+prep()     → learn parameters from training data
+bake()     → apply to training set, test set, or new data
+```
+
+```{r pipeline-split}
+library(tidymodels)
+
+set.seed(602)
+data_split <- initial_split(health_clean, prop = 0.75,
+                             strata = plan_tier)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+cat("Train rows:", nrow(train_data), "\n")
+cat("Test rows: ", nrow(test_data),  "\n")
+```
+
+```{r pipeline-recipe}
+prep_recipe <- recipe(claim_amount ~ ., data = train_data) |>
+  # 1. Imputation
+  step_impute_median(bmi, income) |>
+  step_mutate(
+    income_missing = as.integer(is.na(income)),
+    bmi_missing    = as.integer(is.na(bmi))
+  ) |>
+  # 2. Outlier treatment
+  step_mutate(
+    bmi    = pmax(10, pmin(60, bmi)),
+    income = pmax(quantile(income, 0.01, na.rm = TRUE),
+                  pmin(quantile(income, 0.99, na.rm = TRUE), income))
+  ) |>
+  # 3. Log-transform skewed variables
+  step_log(income, claim_amount, base = 10, offset = 1) |>
+  # 4. Encode categoricals
+  step_dummy(sex, region, payment_method, employment_type) |>
+  step_mutate(
+    education = factor(education,
+                       levels = c("None", "Primary", "Secondary",
+                                   "Tertiary", "Postgraduate"),
+                       ordered = TRUE),
+    plan_tier = factor(plan_tier,
+                       levels = c("Bronze", "Silver", "Gold", "Platinum"),
+                       ordered = TRUE)
+  ) |>
+  step_integer(education, plan_tier) |>
+  # 5. Scale
+  step_normalize(all_numeric_predictors()) |>
+  # 6. Dimensionality reduction
+  step_nzv(all_predictors()) |>
+  step_corr(all_numeric_predictors(), threshold = 0.95)
+```
+
+```{r pipeline-prep-bake}
+prep_fit        <- prep(prep_recipe, training = train_data)
+train_processed <- bake(prep_fit, new_data = NULL)
+test_processed  <- bake(prep_fit, new_data = test_data)
+
+cat("Columns after pipeline — train:", ncol(train_processed),
+    "| test:", ncol(test_processed), "\n")
+cat("Missing values remaining:", sum(colSums(is.na(train_processed))), "\n")
+```
+
+```{r pipeline-verify}
+# Which columns survived nzv + corr removal?
+cat("Columns kept:", ncol(train_processed), "\n")
+cat("Removed columns include those with near-zero variance or r > 0.95\n\n")
+
+# Means ~0 and SDs ~1 — pick the first 4 numeric columns that survived
+train_processed |>
+  select(where(is.numeric)) |>
+  select(1:4) |>
+  summarise(across(everything(), list(mean = mean, sd = sd),
+                   .names = "{.col}_{.fn}"))
+```
+
+```{r pipeline-save}
+saveRDS(train_processed, "data/processed/train_processed.rds")
+saveRDS(test_processed,  "data/processed/test_processed.rds")
+cat("Processed datasets saved to data/processed/\n")
+```
+
+---
+
+# Key Takeaways
+
+| Problem | Remedy | `recipes` step |
+|---------|--------|---------------|
+| Missing values | Median / kNN imputation + flag | `step_impute_*` |
+| Outliers | Winsorise or log-transform | `step_mutate`, `step_log` |
+| Different scales | Z-score or Min-Max | `step_normalize` |
+| Categorical variables | One-hot or ordinal encoding | `step_dummy`, `step_integer` |
+| Too many variables | PCA | `step_pca` |
+
+**The three rules of data preparation:**
+
+1. Understand *why* values are missing before deciding how to handle them.
+2. Always build a pipeline — never transform data by hand.
+3. EDA is not optional and not a one-time step.
+
+---
+
+# Session Info
+
+```{r session-info}
+sessionInfo()
+```

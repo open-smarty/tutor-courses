@@ -1,0 +1,54 @@
+---
+title: "BDAT 602 — Module 2, Lesson 3 Solution"
+subtitle: "Scaling, Encoding, and the recipes Pipeline"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Full preprocessing pipeline
+
+```{r task1}
+library(recipes)
+
+pp_rec <- recipe(claim_amount ~ ., data = health_small) |>
+  step_impute_median(bmi, income) |>
+  step_dummy(sex, region, one_hot = FALSE) |>
+  step_normalize(all_numeric_predictors())
+
+pp_prep          <- prep(pp_rec, training = health_small)
+health_processed <- bake(pp_prep, new_data = health_small)
+
+cat("NAs in bmi:   ", sum(is.na(health_processed$bmi)),    "\n")
+cat("NAs in income:", sum(is.na(health_processed$income)),  "\n")
+cat("Mean of bmi:  ", round(mean(health_processed$bmi), 4), "\n")
+```
+
+`bmi` and `income` have 0 NAs. The mean of scaled `bmi` is approximately 0 and the SD is approximately 1.
+
+## Task 2 — Column count before and after step_nzv
+
+```{r task2}
+cat("Columns without nzv:", ncol(health_processed), "\n")
+
+pp_rec2 <- recipe(claim_amount ~ ., data = health_small) |>
+  step_impute_median(bmi, income) |>
+  step_dummy(sex, region, one_hot = FALSE) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_nzv(all_predictors())
+
+pp_prep2  <- prep(pp_rec2, training = health_small)
+health_p2 <- bake(pp_prep2, new_data = health_small)
+
+cat("Columns with nzv:   ", ncol(health_p2), "\n")
+```
+
+`step_nzv()` typically removes one or two near-constant dummy columns (e.g. rare categories that appear in fewer than 10% of rows after encoding). The exact columns depend on the random seed.

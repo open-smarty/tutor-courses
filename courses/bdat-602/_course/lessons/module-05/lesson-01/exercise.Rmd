@@ -1,0 +1,65 @@
+---
+title: "BDAT 602 — Module 5, Lesson 1 Exercise"
+subtitle: "Decision Trees and Random Forests"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+set.seed(602)
+idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
+train <- health_small[idx, ]
+test  <- health_small[-idx, ]
+```
+
+## Task 1 — Fit and plot a decision tree
+
+Predict `high_risk` using `age`, `bmi`, `smoker`, `num_chronic_conditions`, and `plan_tier`. Set `maxdepth = 4`. Plot with `rpart.plot()`.
+
+```{r task1}
+# YOUR CODE HERE
+# library(rpart); library(rpart.plot)
+# tree_fit <- rpart(
+#   high_risk ~ age + bmi + smoker + num_chronic_conditions + plan_tier,
+#   data = train, method = "class",
+#   control = rpart.control(maxdepth = 4)
+# )
+# rpart.plot(tree_fit, type = 4, extra = 104,
+#            main = "Decision Tree: High-Risk Prediction")
+```
+
+## Task 2 — Confusion matrix and accuracy
+
+Predict classes on `test`. Build the confusion matrix with `table()`. Report accuracy.
+
+```{r task2}
+# YOUR CODE HERE
+# pred <- predict(tree_fit, test, type = "class")
+# conf_mat <- table(Predicted = pred, Actual = test$high_risk)
+# print(conf_mat)
+# accuracy <- sum(diag(conf_mat)) / sum(conf_mat)
+# cat("Accuracy:", round(accuracy, 3), "\n")
+```
+
+## Task 3 — Random forest and variable importance
+
+Fit a random forest with `ntree = 200`, `mtry = 2`, `importance = TRUE`. Plot variable importance.
+
+```{r task3}
+# YOUR CODE HERE
+# library(randomForest)
+# set.seed(602)
+# rf_fit <- randomForest(
+#   as.factor(high_risk) ~ age + bmi + smoker +
+#     num_chronic_conditions + plan_tier,
+#   data = train, ntree = 200, mtry = 2, importance = TRUE
+# )
+# print(rf_fit)
+# varImpPlot(rf_fit, main = "RF Variable Importance: High-Risk")
+```

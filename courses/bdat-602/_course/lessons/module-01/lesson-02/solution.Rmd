@@ -1,0 +1,50 @@
+---
+title: "BDAT 602 — Module 1, Lesson 2 Solution"
+subtitle: "CRISP-DM and Setting Up the Course Dataset"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Read data from CSV
+
+```{r task1}
+library(readr)
+
+df <- read_csv("data/raw/health_insurance_small.csv")
+glimpse(df)
+```
+
+The dataset has **10,000 rows** and **40 columns**. Logical columns include `dental_cover`, `vision_cover`, `mental_cover`, `maternity_cover`, `smoker`, `auto_pay`, `fraud_flag`, `churned`, `high_risk`, and `weekend_claim`.
+
+## Task 2 — Histogram of claim amounts
+
+```{r task2}
+library(ggplot2)
+library(dplyr)
+
+ggplot(df |> filter(claim_amount > 0), aes(x = claim_amount)) +
+  geom_histogram(bins = 60, fill = "steelblue", colour = "white") +
+  scale_x_log10(labels = scales::comma) +
+  labs(title = "Claim Amounts: 10k Sample",
+       x = "Claim Amount (USD, log scale)", y = "Count") +
+  theme_minimal()
+```
+
+The distribution is right-skewed with many small claims and a long tail of large ones. Using a log scale reveals the shape of the bulk distribution.
+
+## Task 3 — Missing value map
+
+```{r task3}
+library(DataExplorer)
+
+plot_missing(df)
+```
+
+Columns with missing values: `bmi` (~5%), `income` (~4%), `days_since_last_claim` (records with zero claims), `last_claim_date` (same), `weekend_claim` (same), and `complaint_notes` (~10%).

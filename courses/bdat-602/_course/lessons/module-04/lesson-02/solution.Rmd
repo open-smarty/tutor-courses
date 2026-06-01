@@ -1,0 +1,56 @@
+---
+title: "BDAT 602 — Module 4, Lesson 2 Solution"
+subtitle: "Hierarchical Clustering"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Prepare data and distance matrix
+
+```{r task1}
+library(dplyr)
+
+set.seed(602)
+hc_sub <- health_small |>
+  slice_sample(n = 500) |>
+  select(age, bmi, num_claims) |>
+  mutate(bmi = if_else(is.na(bmi), median(bmi, na.rm = TRUE), bmi)) |>
+  na.omit()
+
+hc_scaled <- scale(hc_sub)
+dist_mat  <- dist(hc_scaled, method = "euclidean")
+
+cat("Matrix dimensions:", nrow(as.matrix(dist_mat)), "×",
+    ncol(as.matrix(dist_mat)), "\n")
+```
+
+## Task 2 — Fit hierarchical clustering and plot dendrogram
+
+```{r task2}
+hc_ward <- hclust(dist_mat, method = "ward.D2")
+
+plot(hc_ward, labels = FALSE, hang = -1,
+     main = "Dendrogram: Ward.D2 Linkage",
+     xlab = "", ylab = "Height")
+abline(h = 6, col = "red", lty = 2)
+```
+
+The dendrogram shows the merge hierarchy. The red line at height 6 suggests roughly 3–4 natural clusters.
+
+## Task 3 — Cut at k = 3
+
+```{r task3}
+clusters <- cutree(hc_ward, k = 3)
+table(clusters)
+```
+
+With Ward.D2 and k = 3, the clusters are typically balanced, each containing roughly 100–200 of the 500 sampled observations.

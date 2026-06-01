@@ -1,0 +1,47 @@
+---
+title: "BDAT 602 — Module 3, Lesson 1 Exercise"
+subtitle: "Market Basket Analysis and the Apriori Algorithm"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Explore the Groceries dataset
+
+Load `Groceries` from `arules`. Call `summary()`. Report: how many transactions? How many items?
+
+```{r task1}
+# YOUR CODE HERE
+# library(arules)
+# data("Groceries")
+# summary(Groceries)
+```
+
+**Transactions:** ___
+**Items:** ___
+
+## Task 2 — Run Apriori
+
+Run `apriori()` on `Groceries` with `supp = 0.01`, `conf = 0.25`, `minlen = 2`. Store the result in `rules`. Print the number of rules generated.
+
+```{r task2}
+# YOUR CODE HERE
+# rules <- apriori(Groceries, parameter = list(supp = 0.01, conf = 0.25, minlen = 2))
+# length(rules)
+```
+
+**Number of rules generated:** ___
+
+## Task 3 — Top rules by lift
+
+Print the top 5 rules sorted by lift using `inspect(head(sort(rules, by = "lift"), 5))`.
+
+```{r task3}
+# YOUR CODE HERE
+```

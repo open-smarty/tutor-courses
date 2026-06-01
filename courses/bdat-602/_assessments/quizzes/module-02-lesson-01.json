@@ -1,0 +1,66 @@
+{
+  "id": "module-02-lesson-01",
+  "title": "Quiz: Diagnosing and Handling Missing Values",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A patient's BMI is missing because they never visited a GP and no measurement was taken. Which missing data mechanism does this represent?",
+      "options": [
+        "MCAR — Missing Completely At Random",
+        "MAR — Missing At Random",
+        "MNAR — Missing Not At Random",
+        "Structural missing"
+      ],
+      "correct": 1,
+      "explanation": "MAR: the missingness depends on an observed variable (GP visit frequency). The BMI value itself is not what causes the missingness — it is the behaviour (attending GP) that determines whether BMI gets recorded."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Why should a binary missingness indicator be added when imputing a numeric variable?",
+      "options": [
+        "It replaces the need for imputation",
+        "It allows downstream models to learn from the pattern of missingness itself",
+        "It prevents the imputed column from being used in the model",
+        "It converts the variable from numeric to categorical"
+      ],
+      "correct": 1,
+      "explanation": "The pattern of missingness may itself be predictive (e.g. income missing → unusual income → different behaviour). Adding a flag preserves this information for downstream models."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In a recipes pipeline, prep() learns imputation parameters from the full dataset including the future test set.",
+      "correct": false,
+      "explanation": "prep() is called on the training data only. Parameters (medians, kNN neighbours) are learned from training data and then applied to new data via bake(). This prevents data leakage."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Why is median preferred over mean for imputing a right-skewed variable like income?",
+      "options": [
+        "The median is always larger than the mean for skewed data",
+        "The median is the most common value",
+        "The median is robust to extreme values; the mean is pulled toward outliers",
+        "The mean cannot be computed for income data"
+      ],
+      "correct": 2,
+      "explanation": "For right-skewed distributions, the mean is pulled upward by a few very large values. The median represents the middle of the distribution and is unaffected by extreme outliers."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "kNN imputation is more accurate than median imputation because it:",
+      "options": [
+        "Always replaces values with zero",
+        "Uses the k most similar complete records to estimate the missing value in context",
+        "Removes all rows with missing values",
+        "Uses the global mean regardless of the record's other features"
+      ],
+      "correct": 1,
+      "explanation": "kNN finds the k nearest complete records and averages their values. A young Bronze-tier policyholder's missing BMI is estimated from similar young Bronze-tier policyholders — much more accurate than the global median."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+---
+title: "BDAT 602 — Module 2, Lesson 3 Exercise"
+subtitle: "Scaling, Encoding, and the recipes Pipeline"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Full preprocessing pipeline
+
+Build a `recipes` pipeline that:
+- imputes `bmi` and `income` with their medians (`step_impute_median`)
+- dummy-encodes `sex` and `region` (one_hot = FALSE)
+- Z-score normalises all numeric predictors (`step_normalize`)
+
+`prep()` on `health_small`, then `bake()` to get `health_processed`. Verify:
+- zero NAs in `bmi` and `income`
+- `mean(health_processed$bmi)` is approximately 0
+
+```{r task1}
+# YOUR CODE HERE
+# library(recipes)
+# pp_rec <- recipe(claim_amount ~ ., data = health_small) |>
+#   step_impute_median(bmi, income) |>
+#   step_dummy(sex, region, one_hot = FALSE) |>
+#   step_normalize(all_numeric_predictors())
+# pp_prep       <- prep(pp_rec, training = health_small)
+# health_processed <- bake(pp_prep, new_data = health_small)
+# sum(is.na(health_processed$bmi))
+# round(mean(health_processed$bmi), 4)
+```
+
+## Task 2 — Column count before and after step_nzv
+
+Report how many columns `health_processed` has (from Task 1). Then add `step_nzv(all_predictors())` to the pipeline and report the new column count. Which columns (if any) were dropped?
+
+```{r task2}
+# YOUR CODE HERE
+# ncol(health_processed)
+# pp_rec2 <- recipe(claim_amount ~ ., data = health_small) |>
+#   step_impute_median(bmi, income) |>
+#   step_dummy(sex, region, one_hot = FALSE) |>
+#   step_normalize(all_numeric_predictors()) |>
+#   step_nzv(all_predictors())
+# pp_prep2  <- prep(pp_rec2, training = health_small)
+# health_p2 <- bake(pp_prep2, new_data = health_small)
+# ncol(health_p2)
+```

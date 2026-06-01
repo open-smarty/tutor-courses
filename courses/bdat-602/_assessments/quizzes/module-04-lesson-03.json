@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-03",
+  "title": "Quiz: PCA for Dimensionality Reduction",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Principal Component 1 (PC1) is defined as:",
+      "options": [
+        "The variable with the highest variance",
+        "The linear combination of original variables capturing the most variance",
+        "The first variable listed in the dataset",
+        "The average of all standardised variables"
+      ],
+      "correct": 1,
+      "explanation": "PC1 is the linear combination of the original variables that captures the maximum variance. It is a new synthetic variable, not one of the original variables."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "PCA requires that input variables are:",
+      "options": [
+        "Categorical and one-hot encoded",
+        "Numeric and scaled (standardised)",
+        "Already clustered",
+        "Binary (0/1)"
+      ],
+      "correct": 1,
+      "explanation": "PCA is based on variance and covariance — concepts only meaningful for numeric variables. Variables must be scaled so that high-variance variables do not dominate the PCs regardless of their meaning."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "Principal components are correlated with each other.",
+      "correct": false,
+      "explanation": "PCs are orthogonal (perpendicular) to each other by construction. This means they are uncorrelated — each captures variance not explained by any previous component. Absence of multicollinearity among PCs is one of their main advantages."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The scree plot shows 40% variance explained by PC1, 25% by PC2, and 15% by PC3. How many PCs would you retain using the '80% total variance' rule?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "All PCs"
+      ],
+      "correct": 2,
+      "explanation": "Cumulative variance: PC1 = 40%, PC1+PC2 = 65%, PC1+PC2+PC3 = 80%. So 3 PCs are needed to explain 80% of the total variance."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "In a loadings plot, PC1 has large positive loadings on num_claims and claim_amount, and a large negative loading on customer_rating. This suggests PC1 represents:",
+      "options": [
+        "Policy tenure (how long the policyholder has been enrolled)",
+        "A 'high utilisation / low satisfaction' dimension",
+        "Geographic region",
+        "Premium tier"
+      ],
+      "correct": 1,
+      "explanation": "High positive loadings on claim-related variables and a negative loading on customer_rating together define a dimension where moving in the positive PC1 direction means more claims and lower satisfaction — a 'high utilisation / dissatisfied' segment."
+    }
+  ]
+}

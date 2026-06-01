@@ -1,0 +1,66 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Tokenisation and TF-IDF",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "After tokenising with unnest_tokens(), anti_join(stop_words) is applied. What does this step remove?",
+      "options": [
+        "Words with fewer than 3 characters",
+        "Common, high-frequency words that carry little meaning (e.g. 'the', 'and', 'is')",
+        "Words that appear in only one document",
+        "All punctuation from the text"
+      ],
+      "correct": 1,
+      "explanation": "Stop words are high-frequency function words (the, and, is, of, etc.) that appear in virtually every document and thus carry no discriminating information. Removing them improves the signal-to-noise ratio in downstream analyses."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "TF-IDF gives a high score to a word that:",
+      "options": [
+        "Appears in every document in the corpus",
+        "Appears frequently in a specific document but rarely across all documents",
+        "Is a stop word",
+        "Appears exactly once in the entire corpus"
+      ],
+      "correct": 1,
+      "explanation": "TF-IDF = TF × IDF. High TF means the word is frequent in the document. High IDF means it is rare across documents. The product is highest for words that are characteristic of a specific document or group."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A word that appears equally in all plan tiers will have a high TF-IDF score when plan_tier is used as the document.",
+      "correct": false,
+      "explanation": "If a word appears in all documents (plan tiers) with similar frequency, its IDF will be close to 0 (DF ≈ N), making TF-IDF ≈ 0. TF-IDF rewards words that are distinctive, not ubiquitous."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The Document-Term Matrix (DTM) produced by cast_dtm() is described as 'sparse'. This means:",
+      "options": [
+        "It contains many missing (NA) values",
+        "Most entries are 0 because most documents do not contain most terms",
+        "It has fewer rows than columns",
+        "It is stored as a dense numeric matrix"
+      ],
+      "correct": 1,
+      "explanation": "A sparse matrix has mostly zero entries. In a DTM, most documents use only a small fraction of the total vocabulary, so most (document, term) entries are 0. Sparse storage formats save memory by recording only non-zero entries."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "bind_tf_idf() in tidytext requires three arguments. Which are they?",
+      "options": [
+        "document, term, n (count per document-term pair)",
+        "word, corpus, model",
+        "text, language, encoding",
+        "token, frequency, weight"
+      ],
+      "correct": 0,
+      "explanation": "bind_tf_idf(term, document, n) takes the term column name, the document column name, and the count column (n = occurrences of the term in that document). It adds tf, idf, and tf_idf columns."
+    }
+  ]
+}

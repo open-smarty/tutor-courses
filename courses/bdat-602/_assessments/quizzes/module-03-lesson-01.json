@@ -1,0 +1,66 @@
+{
+  "id": "module-03-lesson-01",
+  "title": "Quiz: Market Basket Analysis and Apriori",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The rule {bread, butter} → {milk} has support = 0.12. This means:",
+      "options": [
+        "12% of transactions contain bread, butter, and milk together",
+        "12% of transactions that contain bread and butter also contain milk",
+        "Milk appears in 12% of all transactions",
+        "The rule is correct 12% of the time"
+      ],
+      "correct": 0,
+      "explanation": "Support is the fraction of all transactions containing the complete itemset (bread ∩ butter ∩ milk). It is NOT the conditional probability — that is confidence."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Lift = 1 for a rule means:",
+      "options": [
+        "The rule has perfect confidence",
+        "The antecedent and consequent are statistically independent",
+        "The rule occurs in fewer transactions than expected",
+        "The rule should be discarded because it is incorrect"
+      ],
+      "correct": 1,
+      "explanation": "Lift = confidence / support(consequent). If lift = 1, the confidence equals the unconditional probability of the consequent — meaning knowing the antecedent provides no additional information. The items are independent."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The Apriori principle states: if an itemset is frequent, all of its subsets are also frequent.",
+      "correct": true,
+      "explanation": "This is the anti-monotone property. If {bread, butter, milk} is frequent (above minSupport), then {bread, butter}, {bread, milk}, and {butter, milk} must also be frequent. Apriori uses the contrapositive: if a subset is infrequent, its supersets cannot be frequent."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "What does the `transactions` class in the arules package store internally?",
+      "options": [
+        "A data frame with one row per item purchased",
+        "A sparse binary matrix of transaction × item presence/absence",
+        "A list of character vectors, one per transaction",
+        "A CSV file on disk"
+      ],
+      "correct": 1,
+      "explanation": "The transactions class is a sparse binary matrix where rows are transactions and columns are items. A 1 indicates the item was present in that transaction. Sparse representation is efficient because most entries are 0 (an item not purchased)."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Setting minSupport very low (e.g. 0.0001) in Apriori will:",
+      "options": [
+        "Produce fewer rules with higher confidence",
+        "Eliminate the need to check lift",
+        "Produce an exponentially large number of candidate itemsets, making computation slow",
+        "Make the algorithm run faster by pruning more branches"
+      ],
+      "correct": 2,
+      "explanation": "The Apriori pruning relies on infrequent itemsets having infrequent supersets. With a very low minSupport threshold, almost all itemsets are 'frequent', so almost no pruning occurs, and the number of candidate itemsets grows exponentially."
+    }
+  ]
+}

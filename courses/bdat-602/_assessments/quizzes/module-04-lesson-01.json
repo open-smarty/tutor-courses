@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-01",
+  "title": "Quiz: k-Means Clustering",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "k-Means minimises which objective function?",
+      "options": [
+        "Total between-cluster sum of squares (BCSS)",
+        "Total within-cluster sum of squares (WCSS)",
+        "The silhouette coefficient",
+        "The number of clusters k"
+      ],
+      "correct": 1,
+      "explanation": "k-Means minimises WCSS — the total squared Euclidean distance from each observation to its cluster centroid. Minimising WCSS creates compact, internally cohesive clusters."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Why should nstart be set to 25 (or higher) in kmeans()?",
+      "options": [
+        "To run 25 cross-validation folds",
+        "Because k-Means converges to a local minimum; multiple random starts increases the chance of finding the global minimum",
+        "To create 25 clusters",
+        "To run the algorithm for exactly 25 iterations"
+      ],
+      "correct": 1,
+      "explanation": "k-Means converges to a local minimum depending on the random initialisation. Running nstart = 25 starts means 25 random initialisations are tried; the best result (lowest WCSS) is returned."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The elbow plot shows silhouette scores on the y-axis.",
+      "correct": false,
+      "explanation": "The elbow plot shows WCSS (total within-cluster sum of squares) on the y-axis against the number of clusters k. The silhouette plot is a separate diagnostic that shows average silhouette width against k."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The silhouette score for an observation ranges from -1 to +1. A score close to +1 means:",
+      "options": [
+        "The observation is likely an outlier",
+        "The observation is well-matched to its cluster and poorly matched to neighbouring clusters",
+        "The observation belongs equally to two clusters",
+        "The total WCSS is minimised"
+      ],
+      "correct": 1,
+      "explanation": "A silhouette close to +1 indicates the observation is much closer to its own cluster centroid than to the nearest other cluster. A score near 0 indicates borderline assignment; negative scores suggest possible misassignment."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "After clustering policyholders, you want to describe each cluster in business terms. What is the appropriate next step?",
+      "options": [
+        "Re-run k-means with a different random seed",
+        "Join cluster labels back to the original data and compute per-cluster summaries of key variables",
+        "Remove the smallest cluster because it may be noise",
+        "Increase k until each cluster has exactly one member"
+      ],
+      "correct": 1,
+      "explanation": "Cluster profiling involves joining the integer cluster labels back to the original (unscaled) data and computing group-level summaries (means, proportions). This translates the abstract cluster numbers into interpretable business segments."
+    }
+  ]
+}

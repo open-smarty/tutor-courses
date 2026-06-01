@@ -1,0 +1,75 @@
+---
+title: "BDAT 602 — Module 6, Lesson 2 Solution"
+subtitle: "Topic Modelling with LDA"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Build the DTM
+
+```{r task1}
+library(tidytext)
+library(dplyr)
+
+data("stop_words")
+
+complaints <- health_small |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = row_number())
+
+dtm <- complaints |>
+  unnest_tokens(word, complaint_notes) |>
+  anti_join(stop_words, by = "word") |>
+  filter(nchar(word) > 2) |>
+  count(doc_id, word) |>
+  cast_dtm(document = doc_id, term = word, value = n)
+
+dim(dtm)
+```
+
+## Task 2 — Fit LDA and plot top words
+
+```{r task2}
+library(topicmodels)
+library(ggplot2)
+
+set.seed(602)
+lda_fit  <- LDA(dtm, k = 4, control = list(seed = 602))
+beta_mat <- tidy(lda_fit, matrix = "beta")
+
+beta_mat |>
+  group_by(topic) |>
+  slice_max(beta, n = 6) |>
+  ungroup() |>
+  ggplot(aes(x = reorder(term, beta), y = beta)) +
+  geom_col(fill = "steelblue") +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip() +
+  labs(title = "LDA: Top 6 Words per Topic (k=4)",
+       x = NULL, y = "Beta") +
+  theme_minimal()
+```
+
+With 4 topics and the templated complaint notes, the topics should map approximately to: billing/premium, claims processing, coverage/services, and positive feedback.
+
+## Task 3 — Topic prevalence
+
+```{r task3}
+gamma_mat <- tidy(lda_fit, matrix = "gamma")
+
+gamma_mat |>
+  group_by(topic) |>
+  summarise(avg_gamma = round(mean(gamma), 3)) |>
+  arrange(desc(avg_gamma))
+```
+
+The most prevalent topic is likely the billing/claims topic — consistent with these being the most common complaint categories in the simulation templates.

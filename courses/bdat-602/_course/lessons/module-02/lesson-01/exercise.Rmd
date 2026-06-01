@@ -1,0 +1,54 @@
+---
+title: "BDAT 602 — Module 2, Lesson 1 Exercise"
+subtitle: "Diagnosing and Handling Missing Values"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Count NAs
+
+Count the number of missing values in `bmi`, `income`, and `complaint_notes`.
+
+```{r task1}
+# YOUR CODE HERE
+# colSums(is.na(health_small[, c("bmi", "income", "complaint_notes")]))
+```
+
+## Task 2 — Median imputation with indicator
+
+Impute `bmi` with its median. Add a `bmi_missing` indicator column (1 if originally missing, 0 otherwise). Store the result in `health_clean`. Verify that `bmi` has zero NAs after imputation.
+
+```{r task2}
+# YOUR CODE HERE
+# library(dplyr)
+# bmi_median <- median(health_small$bmi, na.rm = TRUE)
+# health_clean <- health_small |>
+#   mutate(
+#     bmi_missing = as.integer(is.na(bmi)),
+#     bmi         = if_else(is.na(bmi), bmi_median, bmi)
+#   )
+# colSums(is.na(health_clean[, c("bmi", "bmi_missing")]))
+```
+
+## Task 3 — recipes imputation
+
+Build a `recipes` pipeline that applies `step_impute_median()` to `income`. Call `prep()` and `bake()` on `health_small`. Confirm `income` has zero NAs in the baked result.
+
+```{r task3}
+# YOUR CODE HERE
+# library(recipes)
+# impute_rec  <- recipe(claim_amount ~ ., data = health_small) |>
+#   step_impute_median(income)
+# impute_prep <- prep(impute_rec, training = health_small)
+# health_imp  <- bake(impute_prep, new_data = health_small)
+# sum(is.na(health_imp$income))
+```

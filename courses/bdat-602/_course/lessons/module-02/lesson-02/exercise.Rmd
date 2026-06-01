@@ -1,0 +1,55 @@
+---
+title: "BDAT 602 — Module 2, Lesson 2 Exercise"
+subtitle: "Outlier Detection and Treatment"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Flag BMI outliers (IQR rule)
+
+Compute Q1, Q3, and IQR for `bmi`. Add a `bmi_outlier` column (TRUE if below Q1 – 1.5×IQR or above Q3 + 1.5×IQR). Count how many records are flagged.
+
+```{r task1}
+# YOUR CODE HERE
+# library(dplyr)
+# q1  <- quantile(health_small$bmi, 0.25, na.rm = TRUE)
+# ...
+```
+
+**How many BMI outliers?** ___
+
+## Task 2 — Winsorise income
+
+Cap `income` at the 1st and 99th percentiles. Store the result in `health_win`. Compare `summary(health_small$income)` to `summary(health_win$income)`.
+
+```{r task2}
+# YOUR CODE HERE
+# p01 <- quantile(health_small$income, 0.01, na.rm = TRUE)
+# p99 <- quantile(health_small$income, 0.99, na.rm = TRUE)
+# health_win <- health_small |>
+#   mutate(income = pmax(p01, pmin(p99, income)))
+# summary(health_small$income)
+# summary(health_win$income)
+```
+
+## Task 3 — Log transformation of claim_amount
+
+For rows where `claim_amount > 0`, create side-by-side histograms of `claim_amount` (raw) and `log1p(claim_amount)`. Use base R `par(mfrow = c(1, 2))` and `hist()`.
+
+```{r task3}
+# YOUR CODE HERE
+# pos_claims <- health_small$claim_amount[health_small$claim_amount > 0]
+# par(mfrow = c(1, 2))
+# hist(pos_claims,        main = "Claim Amount (raw)",    col = "steelblue")
+# hist(log1p(pos_claims), main = "Claim Amount (log1p)", col = "darkorange")
+# par(mfrow = c(1, 1))
+```

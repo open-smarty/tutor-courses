@@ -1,0 +1,71 @@
+---
+title: "BDAT 602 — Module 6, Lesson 2 Exercise"
+subtitle: "Topic Modelling with LDA"
+output:
+  html_document:
+    theme: flatly
+    highlight: tango
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("R/simulate_bdat602_data.R")
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+## Task 1 — Build the DTM
+
+Repeat the tokenisation pipeline from Lesson 1 (filter non-NA complaints, tokenise, remove stop words, filter nchar > 2, cast to DTM). Report the DTM dimensions.
+
+```{r task1}
+# YOUR CODE HERE
+# library(tidytext); library(dplyr)
+# data("stop_words")
+# complaints <- health_small |>
+#   filter(!is.na(complaint_notes)) |>
+#   mutate(doc_id = row_number())
+# dtm <- complaints |>
+#   unnest_tokens(word, complaint_notes) |>
+#   anti_join(stop_words, by = "word") |>
+#   filter(nchar(word) > 2) |>
+#   count(doc_id, word) |>
+#   cast_dtm(document = doc_id, term = word, value = n)
+# dim(dtm)
+```
+
+## Task 2 — Fit LDA and plot top words
+
+Fit `LDA(dtm, k = 4, control = list(seed = 602))`. Extract the beta matrix with `tidy(..., matrix = "beta")`. Plot the top 6 words per topic using faceted bar charts.
+
+```{r task2}
+# YOUR CODE HERE
+# library(topicmodels)
+# set.seed(602)
+# lda_fit <- LDA(dtm, k = 4, control = list(seed = 602))
+# beta_mat <- tidy(lda_fit, matrix = "beta")
+# beta_mat |>
+#   group_by(topic) |>
+#   slice_max(beta, n = 6) |>
+#   ggplot(aes(x = reorder(term, beta), y = beta)) +
+#   geom_col(fill = "steelblue") +
+#   facet_wrap(~ topic, scales = "free_y") +
+#   coord_flip() +
+#   labs(title = "Top 6 Words per LDA Topic", x = NULL) +
+#   theme_minimal()
+```
+
+## Task 3 — Topic prevalence
+
+Extract the gamma matrix. Compute average gamma per topic. Which topic is most prevalent in the corpus?
+
+```{r task3}
+# YOUR CODE HERE
+# gamma_mat <- tidy(lda_fit, matrix = "gamma")
+# gamma_mat |>
+#   group_by(topic) |>
+#   summarise(avg_gamma = round(mean(gamma), 3)) |>
+#   arrange(desc(avg_gamma))
+```
+
+**Most prevalent topic:** ___
