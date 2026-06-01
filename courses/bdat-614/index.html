@@ -3,152 +3,845 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BDAT 614 — Statistical Quality Control</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Loading Course...</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+          onload="window._katexReady = true"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9fafb;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-secondary: #6b7280;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --accent-hover: #4338ca;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --error: #dc2626;
+      --error-light: #fef2f2;
+      --sidebar-width: 280px;
+      --topbar-height: 56px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Layout */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-height);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 100;
+    }
+
+    #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #progress-bar-wrap { flex: 0 0 200px; }
+    #progress-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    #progress-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; width: 0%; }
+
+    #body-wrap { display: flex; margin-top: var(--topbar-height); min-height: calc(100vh - var(--topbar-height)); }
+
+    #sidebar {
+      position: fixed; top: var(--topbar-height); left: 0; bottom: 0;
+      width: var(--sidebar-width); background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 16px 0;
+    }
+
+    #sidebar-header { padding: 0 16px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+
+    .module-title {
+      padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px;
+    }
+
+    .lesson-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; cursor: pointer; font-size: 14px; transition: background 0.15s;
+    }
+    .lesson-item:hover { background: var(--accent-light); }
+    .lesson-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .lesson-item.completed .lesson-dot { background: var(--success); }
+
+    .lesson-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--border); border: 2px solid transparent;
+    }
+    .lesson-item.active .lesson-dot { background: var(--accent); }
+
+    #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 40px; max-width: 900px; }
+
+    /* Screens */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Empty state */
+    #empty-state { text-align: center; padding: 80px 20px; }
+    #empty-state h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    #empty-state p { color: var(--text-secondary); max-width: 540px; margin: 0 auto 24px; }
+
+    .steps { text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; max-width: 540px; margin: 0 auto 24px; }
+    .steps h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+    .step { display: flex; gap: 14px; margin-bottom: 14px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-text { font-size: 14px; padding-top: 4px; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--accent-light); color: var(--accent); }
+
+    /* Lesson view */
+    #lesson-header { margin-bottom: 32px; }
+    #lesson-header .lesson-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    #lesson-header h2 { font-size: 26px; font-weight: 700; }
+    #lesson-body { font-size: 15px; line-height: 1.75; }
+
+    /* Markdown styles */
+    #lesson-body h1 { font-size: 22px; font-weight: 700; margin: 28px 0 10px; }
+    #lesson-body h2 { font-size: 18px; font-weight: 600; margin: 24px 0 8px; padding-top: 24px; border-top: 1px solid var(--border); }
+    #lesson-body h2:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    #lesson-body h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+    #lesson-body p { margin-bottom: 14px; }
+    #lesson-body ul, #lesson-body ol { margin: 0 0 14px 20px; }
+    #lesson-body li { margin-bottom: 4px; }
+    #lesson-body code { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace; font-size: 13px; }
+    #lesson-body pre { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 20px; overflow-x: auto; margin: 0 0 16px; }
+    #lesson-body pre code { background: none; border: none; padding: 0; color: inherit; font-size: 13px; }
+    #lesson-body blockquote { border-left: 4px solid var(--accent); padding: 10px 16px; background: var(--accent-light); border-radius: 0 8px 8px 0; margin: 0 0 14px; color: var(--text); }
+    #lesson-body strong { font-weight: 600; }
+    #lesson-body a { color: var(--accent); }
+
+    /* Action bar */
+    #lesson-actions { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    .btn {
+      padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Quiz */
+    #quiz-panel { margin-top: 32px; padding: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    #quiz-panel h3 { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+    .question-block { margin-bottom: 24px; }
+    .question-text { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option-label {
+      display: flex; align-items: flex-start; gap: 10; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+      font-size: 14px; transition: all 0.15s;
+    }
+    .option-label:hover { border-color: var(--accent); background: var(--accent-light); }
+    .option-label input { margin-right: 10px; margin-top: 3px; }
+    .option-label.correct { border-color: var(--success); background: var(--success-light); }
+    .option-label.wrong { border-color: var(--error); background: var(--error-light); }
+    .explanation { font-size: 13px; color: var(--text-secondary); margin-top: 8px; padding: 8px 12px; background: var(--bg); border-radius: 6px; display: none; }
+    .explanation.visible { display: block; }
+
+    #quiz-result { padding: 16px; border-radius: 8px; margin-top: 20px; font-size: 15px; font-weight: 500; }
+    #quiz-result.pass { background: var(--success-light); color: var(--success); }
+    #quiz-result.fail { background: var(--error-light); color: var(--error); }
+
+    /* Reflection */
+    #reflection-section { margin-top: 28px; }
+    #reflection-section label { font-size: 15px; font-weight: 500; display: block; margin-bottom: 8px; }
+    #reflection-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; resize: vertical; min-height: 80px; font-family: inherit; }
+    #reflection-input:focus { outline: none; border-color: var(--accent); }
+
+    /* Loading */
+    #loading { text-align: center; padding: 80px; color: var(--text-secondary); }
+
+    /* Error */
+    #error-screen { padding: 40px; }
+    #error-screen .error-box { background: var(--error-light); border: 1px solid var(--error); border-radius: 12px; padding: 24px; }
+    #error-screen h3 { color: var(--error); margin-bottom: 8px; }
+
+    /* Clarifications */
+    #clarifications-section { margin-top: 40px; }
+    #clarifications-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .clarification-card { background: var(--warning-light); border: 1px solid #fde68a; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .clarification-header { padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; }
+    .clarification-header:hover { background: #fef3c7; }
+    .clarification-toggle { font-size: 12px; color: var(--text-secondary); }
+    .clarification-body { padding: 0 16px 16px; font-size: 14px; line-height: 1.7; display: none; }
+    .clarification-body.open { display: block; }
+    .clarification-body p { margin-bottom: 10px; }
+    .clarification-body code { background: rgba(0,0,0,0.06); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; }
+    .clarification-body pre { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 16px; overflow-x: auto; }
+    .clarification-body pre code { background: none; padding: 0; }
+    .clarification-source { font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 10px; }
+
+    /* Ask Claude panel */
+    #claude-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    #claude-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    #claude-panel p { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+    #claude-prompt { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: monospace; color: var(--text); cursor: text; min-height: 60px; resize: vertical; }
+    .copy-hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* Completion banner */
+    #completion-banner { display: none; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-radius: 12px; padding: 32px; text-align: center; margin-top: 40px; }
+    #completion-banner h2 { font-size: 24px; margin-bottom: 8px; }
+    #completion-banner p { opacity: 0.85; }
+    #completion-banner.visible { display: block; }
+
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      #main-content { margin-left: 0; padding: 20px; }
+    }
+  </style>
+
+<script>
+/* ── Tutor static build: embedded course data + fetch override ── */
+(function () {
+  var D = {"course":{"id":"bdat-614","title":"Statistical Quality Control and Improvement","description":"A comprehensive introduction to statistical quality control (SQC) for MSc Big Data Analytics students. Covers control charts, process capability, acceptance sampling, Six Sigma, DMAIC, TQM, and real-time Big Data applications. All exercises use Python.","author":"Prof. Louis Asiedu","version":"1.0.0","subject":"statistics","level":"intermediate","estimatedHours":35,"prerequisites":["Basic statistics (mean, std dev, normal distribution)","Introductory Python (numpy, matplotlib)"],"apiSubmission":{"enabled":false,"endpoint":"","courseId":""},"modules":[{"id":"module-01","title":"Foundations of Quality and Process Variation","description":"Introduces the concept of quality, its dimensions, and how process variation is classified and sourced.","lessons":[{"id":"lesson-01","title":"What is Quality? Definitions and Dimensions","difficulty":"beginner","files":{"lesson":"_course/lessons/module-01/lesson-01/lesson.md","exercise":"_course/lessons/module-01/lesson-01/exercise.py","solution":"_course/lessons/module-01/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-01-lesson-01.json","task":"_assessments/tasks/module-01-lesson-01.md","required":true,"estimatedMinutes":25},{"id":"lesson-02","title":"Process Variation — Sources and Types","difficulty":"beginner","files":{"lesson":"_course/lessons/module-01/lesson-02/lesson.md","exercise":"_course/lessons/module-01/lesson-02/exercise.py","solution":"_course/lessons/module-01/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-01-lesson-02.json","task":"_assessments/tasks/module-01-lesson-02.md","required":true,"estimatedMinutes":30}]},{"id":"module-02","title":"Statistical Process Control and Control Charts","description":"Builds control charts for both variables (measurement) data and attribute (count) data. Introduces SPC rules and Big Data extensions.","lessons":[{"id":"lesson-01","title":"Variables Control Charts — Xbar-R and Xbar-S","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-02/lesson-01/lesson.md","exercise":"_course/lessons/module-02/lesson-01/exercise.py","solution":"_course/lessons/module-02/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-02-lesson-01.json","task":"_assessments/tasks/module-02-lesson-01.md","required":true,"estimatedMinutes":45},{"id":"lesson-02","title":"Individuals and Moving Range (I-MR) Charts","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-02/lesson-02/lesson.md","exercise":"_course/lessons/module-02/lesson-02/exercise.py","solution":"_course/lessons/module-02/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-02-lesson-02.json","task":"_assessments/tasks/module-02-lesson-02.md","required":true,"estimatedMinutes":40},{"id":"lesson-03","title":"Attribute Control Charts — p, np, c, and u Charts","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-02/lesson-03/lesson.md","exercise":"_course/lessons/module-02/lesson-03/exercise.py","solution":"_course/lessons/module-02/lesson-03/solution.py"},"quiz":"_assessments/quizzes/module-02-lesson-03.json","task":"_assessments/tasks/module-02-lesson-03.md","required":true,"estimatedMinutes":40}]},{"id":"module-03","title":"Process Capability and Measurement Systems","description":"Evaluates whether a process meets specification limits (Cp, Cpk) and whether the measurement system can be trusted (Gauge R&R).","lessons":[{"id":"lesson-01","title":"Process Capability Analysis — Cp and Cpk","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-03/lesson-01/lesson.md","exercise":"_course/lessons/module-03/lesson-01/exercise.py","solution":"_course/lessons/module-03/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-03-lesson-01.json","task":"_assessments/tasks/module-03-lesson-01.md","required":true,"estimatedMinutes":35},{"id":"lesson-02","title":"Measurement System Analysis — Gauge R&R","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-03/lesson-02/lesson.md","exercise":"_course/lessons/module-03/lesson-02/exercise.py","solution":"_course/lessons/module-03/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-03-lesson-02.json","task":"_assessments/tasks/module-03-lesson-02.md","required":true,"estimatedMinutes":40}]},{"id":"module-04","title":"Continuous Improvement Frameworks","description":"Introduces the Shewhart Cycle (PDCA/PDSA) and the DMAIC problem-solving framework with key quality tools.","lessons":[{"id":"lesson-01","title":"The Shewhart Cycle — PDCA and PDSA","difficulty":"beginner","files":{"lesson":"_course/lessons/module-04/lesson-01/lesson.md","exercise":"_course/lessons/module-04/lesson-01/exercise.py","solution":"_course/lessons/module-04/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-04-lesson-01.json","task":"_assessments/tasks/module-04-lesson-01.md","required":true,"estimatedMinutes":25},{"id":"lesson-02","title":"DMAIC Framework and Root Cause Analysis Tools","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-04/lesson-02/lesson.md","exercise":"_course/lessons/module-04/lesson-02/exercise.py","solution":"_course/lessons/module-04/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-04-lesson-02.json","task":"_assessments/tasks/module-04-lesson-02.md","required":true,"estimatedMinutes":40}]},{"id":"module-05","title":"Acceptance Sampling and Six Sigma","description":"Covers lot-acceptance decisions using sampling plans and OC curves, then introduces Six Sigma and Lean Six Sigma.","lessons":[{"id":"lesson-01","title":"Acceptance Sampling Plans and OC Curves","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-05/lesson-01/lesson.md","exercise":"_course/lessons/module-05/lesson-01/exercise.py","solution":"_course/lessons/module-05/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-05-lesson-01.json","task":"_assessments/tasks/module-05-lesson-01.md","required":true,"estimatedMinutes":40},{"id":"lesson-02","title":"Six Sigma — DPMO, Performance Levels, and DMAIC Roadmap","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-05/lesson-02/lesson.md","exercise":"_course/lessons/module-05/lesson-02/exercise.py","solution":"_course/lessons/module-05/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-05-lesson-02.json","task":"_assessments/tasks/module-05-lesson-02.md","required":true,"estimatedMinutes":35},{"id":"lesson-03","title":"Lean Six Sigma — Waste Elimination and Quality Tools","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-05/lesson-03/lesson.md","exercise":"_course/lessons/module-05/lesson-03/exercise.py","solution":"_course/lessons/module-05/lesson-03/solution.py"},"quiz":"_assessments/quizzes/module-05-lesson-03.json","task":"_assessments/tasks/module-05-lesson-03.md","required":true,"estimatedMinutes":35}]},{"id":"module-06","title":"Total Quality Management and Big Data in SQC","description":"Covers TQM philosophy and Deming's principles, then explores how Big Data and machine learning transform SQC into real-time intelligent monitoring.","lessons":[{"id":"lesson-01","title":"Total Quality Management (TQM) and Cost of Poor Quality","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-06/lesson-01/lesson.md","exercise":"_course/lessons/module-06/lesson-01/exercise.py","solution":"_course/lessons/module-06/lesson-01/solution.py"},"quiz":"_assessments/quizzes/module-06-lesson-01.json","task":"_assessments/tasks/module-06-lesson-01.md","required":true,"estimatedMinutes":30},{"id":"lesson-02","title":"Big Data Applications in SQC — EWMA, CUSUM, and ML Integration","difficulty":"advanced","files":{"lesson":"_course/lessons/module-06/lesson-02/lesson.md","exercise":"_course/lessons/module-06/lesson-02/exercise.py","solution":"_course/lessons/module-06/lesson-02/solution.py"},"quiz":"_assessments/quizzes/module-06-lesson-02.json","task":"_assessments/tasks/module-06-lesson-02.md","required":true,"estimatedMinutes":50}]}]},"lessons":{"_course/lessons/module-01/lesson-01/lesson.md":"# Lesson 1: What is Quality? Definitions and Dimensions\n\n## Goal\nExplain what quality means in production and service contexts, identify its eight dimensions, and distinguish between Quality Control (QC) and Quality Assurance (QA).\n\n## Concept\n\n**Quality** is not a single thing. Different people define it differently:\n\n- **Conformance to requirements** (Crosby) — quality means meeting a specification exactly.\n- **Fitness for use** (Juran) — quality means the product does what the customer needs it to do.\n- **Loss to society** (Taguchi) — quality is the degree to which a product avoids causing loss to the customer or society after delivery.\n\nNo single definition covers every situation, which is why Garvin proposed **eight dimensions of quality** that together give a complete picture:\n\n| Dimension | Meaning |\n|---|---|\n| Performance | Does it do the primary job? |\n| Features | Does it have extra capabilities? |\n| Reliability | Does it work consistently over time? |\n| Conformance | Does it meet the specification? |\n| Durability | How long does it last? |\n| Serviceability | How easy is it to fix? |\n| Aesthetics | How does it look/feel/sound? |\n| Perceived quality | What do customers believe about it? |\n\n**Quality Control (QC)** is about detecting and correcting defects — it is reactive. QC happens during or after production: inspect the output, find the defects, remove or fix them.\n\n**Quality Assurance (QA)** is about preventing defects — it is proactive. QA builds the system, processes, and standards so that defects are unlikely to occur in the first place. ISO 9001 is a globally recognised QA standard.\n\nIn Big Data analytics, \"quality\" applies to data itself. A dataset that is accurate, complete, consistent, timely, and valid is a *high-quality* dataset. Poor data quality leads to incorrect analysis — \"garbage in, garbage out.\"\n\n## Example\n\nA company manufactures USB drives.\n\n- **Conformance quality:** each drive must store exactly 64 GB and read at ≥ 400 MB/s. Any drive below spec is a defect.\n- **Fitness for use:** the drive must be reliable enough that a user trusts it with important files. A drive that meets the speed spec but fails after 3 months has poor quality.\n- **Perceived quality:** if the packaging looks cheap, customers may rate it poorly even if it performs perfectly.\n\nWhich dimension matters most? It depends on the customer and context — that is exactly why all eight dimensions exist.\n\n## Task\n\nOpen `exercise.py`. You will find a list of eight product scenarios. For each one, identify the most relevant Garvin dimension and write your answer as a string in the provided list. Then compute a simple \"quality score\" for a data pipeline using the provided checklist.\n\nRun the check when done:\n`npm run check -- bdat-614 module-01 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-01 lesson-01\n```\n\n## Reflection\n\nA data pipeline runs on time and produces results, but 5% of records contain null values that downstream models silently treat as zero. Which quality dimensions are violated, and is this a QC problem, a QA problem, or both? Explain your reasoning.\n","_course/lessons/module-01/lesson-02/lesson.md":"# Lesson 2: Process Variation — Sources and Types\n\n## Goal\nDistinguish between common-cause variation and special-cause variation, and identify the sources of process variation using the 6M framework and the 5 Whys technique.\n\n## Concept\n\nEvery process has variation. A machine that fills bottles never fills exactly 500 ml each time — some variation is always present. The key question in quality control is: **what kind of variation is it?**\n\n**Common-cause variation** (also called natural or random variation):\n- Always present in any process\n- Due to many small, unknown factors acting together (materials slightly different, temperature fluctuating slightly, operator hand pressure varying)\n- Predictable — the process is \"in control\"\n- Can only be reduced by changing the process itself (a management decision)\n\n**Special-cause variation** (also called assignable or non-random variation):\n- Caused by a specific, identifiable event\n- Examples: a new batch of raw material, a broken tool, an operator error, a software bug in a pipeline\n- Unpredictable — the process has gone \"out of control\"\n- Must be found and fixed immediately, without changing the whole process\n\nThink of it this way: a river's water level rises and falls every year with seasons — that is common-cause variation. A dam bursting upstream is a special cause — it is identifiable, unusual, and must be addressed.\n\n**The 6Ms — Sources of Process Variation:**\n\nVariation always comes from one or more of these six categories:\n\n| M | Category | Example |\n|---|---|---|\n| Man | People (operators, analysts) | Operator fatigue, inconsistent technique |\n| Machine | Equipment | Tool wear, sensor drift |\n| Material | Inputs / raw data | Batch variation, corrupted data source |\n| Method | Process / algorithm | Different coding standards, wrong procedure |\n| Measurement | How output is measured | Sensor error, calibration drift |\n| Environment | Physical/digital surroundings | Temperature, network latency |\n\n**5 Whys:** A simple technique to find the root cause of a special-cause variation. Ask \"why?\" five times in sequence. Each answer prompts the next \"why?\" until you reach the true root cause.\n\nExample: *Defective parts increase suddenly (effect).*\n1. Why? — The cutting tool is worn.\n2. Why? — Maintenance schedule was skipped.\n3. Why? — The maintenance log system went offline.\n4. Why? — A server update deleted the cron job.\n5. Why? — There was no version-controlled backup of the cron configuration.\n\nRoot cause: no backup/version control for scheduled maintenance jobs.\n\n## Example\n\nAn ETL pipeline that normally runs in 45 minutes suddenly takes 3 hours.\n\n- **Special cause:** a new data source was added with 50× more records than expected.\n- **6M analysis:** *Material* (data volume) is the source.\n- **5 Whys:** Why slow? → Too many records. Why? → New source added. Why no alert? → Threshold monitor wasn't updated. Why not updated? → No change-management process for data sources. Why no process? → Root cause — lack of a data source onboarding protocol.\n- **Action:** fix the immediate issue (partition the load), then address the root cause (implement a data source onboarding checklist).\n\n## Task\n\nOpen `exercise.py`. You will:\n1. Classify a list of variation scenarios as `\"common\"` or `\"special\"` cause.\n2. Map each scenario to the correct 6M category.\n3. Simulate a simple 5 Whys chain for a given problem statement.\n\nRun the check when done:\n`npm run check -- bdat-614 module-01 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-01 lesson-02\n```\n\n## Reflection\n\nIn a manufacturing plant, the fill weight of cereal boxes varies slightly every day but stays within a predictable range. One morning the average fill weight drops by 15 grams. A worker says \"the machine is just random — ignore it.\" Do you agree? What type of variation is the 15-gram drop, and what should be done?\n","_course/lessons/module-02/lesson-01/lesson.md":"# Lesson 3: Variables Control Charts — Xbar-R and Xbar-S\n\n## Goal\nConstruct Xbar-R and Xbar-S control charts from subgroup data, compute control limits using the correct constants, and identify out-of-control signals.\n\n## Concept\n\nA **control chart** is a time-series plot with three horizontal lines:\n- **Center Line (CL):** the process average\n- **Upper Control Limit (UCL):** CL + 3 standard deviations\n- **Lower Control Limit (LCL):** CL − 3 standard deviations\n\nPoints outside the UCL or LCL signal that the process is out of control — a special cause is likely present.\n\nControl charts for **variables data** (measurements like weight, temperature, time) use subgroups — small samples taken at regular intervals. Two charts are always plotted together: one for the **location** (average) and one for the **spread** (range or standard deviation).\n\n### Xbar-R Chart (subgroup size n = 2 to 10)\n\nUsed when subgroups are small (n ≤ 10). \"R\" is the range within each subgroup (max − min).\n\n**Step 1:** Collect k subgroups, each of size n. Compute the subgroup means (x̄ᵢ) and ranges (Rᵢ).\n\n**Step 2:** Compute the grand mean and average range:\n- x̄̄ = mean of all x̄ᵢ\n- R̄ = mean of all Rᵢ\n\n**Step 3:** Apply control chart constants (from the standard table, based on n):\n\n| n | A₂ | D₃ | D₄ |\n|---|----|----|-----|\n| 2 | 1.880 | 0 | 3.267 |\n| 3 | 1.023 | 0 | 2.574 |\n| 4 | 0.729 | 0 | 2.282 |\n| 5 | 0.577 | 0 | 2.114 |\n\n- **Xbar chart:** UCL = x̄̄ + A₂·R̄, LCL = x̄̄ − A₂·R̄\n- **R chart:** UCL = D₄·R̄, LCL = D₃·R̄\n\n### Xbar-S Chart (subgroup size n > 10)\n\nFor larger subgroups, use the within-subgroup standard deviation S instead of R. The constants A₃, B₃, B₄ replace A₂, D₃, D₄.\n\n### Western Electric Rules (Out-of-Control Signals)\n\nA chart signals out of control when:\n1. One point beyond 3σ limits (most common)\n2. Two of three consecutive points beyond 2σ on the same side\n3. Four of five consecutive points beyond 1σ on the same side\n4. Eight consecutive points on the same side of the centre line\n\n## Example\n\nBottle filling line. Subgroup size n = 5. We take 6 subgroups:\n\n| Subgroup | x̄ᵢ (ml) | Rᵢ (ml) |\n|---|---|---|\n| 1 | 500.2 | 2.1 |\n| 2 | 499.8 | 1.9 |\n| 3 | 500.5 | 2.3 |\n| 4 | 499.6 | 2.0 |\n| 5 | 500.1 | 1.8 |\n| 6 | 500.3 | 2.2 |\n\nx̄̄ = 500.08, R̄ = 2.05. For n=5: A₂=0.577, D₃=0, D₄=2.114.\n\n- Xbar UCL = 500.08 + 0.577 × 2.05 = 501.26\n- Xbar LCL = 500.08 − 0.577 × 2.05 = 498.90\n- R UCL = 2.114 × 2.05 = 4.33, R LCL = 0\n\nAll points are within limits — the process is in control.\n\n## Task\n\nOpen `exercise.py`. You are given subgroup data from a manufacturing process. Compute the Xbar-R control chart limits and plot both charts using matplotlib. Identify any out-of-control points.\n\nRun the check when done:\n`npm run check -- bdat-614 module-02 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-02 lesson-01\n```\n\n## Reflection\n\nYour Xbar chart shows no out-of-control points, but the R chart shows one point above the UCL. The process average looks stable. Should you be concerned? What does an out-of-control R chart tell you about the process that an in-control Xbar chart cannot?\n","_course/lessons/module-02/lesson-02/lesson.md":"# Lesson 4: Individuals and Moving Range (I-MR) Charts\n\n## Goal\nConstruct an I-MR chart for individual (n=1) observations, compute its control limits using the correct constants, and explain why it is the preferred control chart for Big Data streaming scenarios.\n\n## Concept\n\nThe Xbar-R chart requires subgroups of 2 or more measurements taken at the same time. But many real processes produce **one observation at a time**:\n\n- A daily server response time measurement\n- A chemical batch that takes a full day to produce (one result per day)\n- IoT sensor readings arriving one per second\n- Daily average error rate from an ETL pipeline\n\nFor these processes, we use the **Individuals and Moving Range (I-MR) chart**, also called the X-MR chart. It is two charts:\n\n**I-Chart (Individuals chart):** plots each individual measurement. Monitors the process *level* (mean).\n\n**MR-Chart (Moving Range chart):** plots the absolute difference between consecutive measurements: MRᵢ = |xᵢ − xᵢ₋₁|. Monitors the process *variability*.\n\n### Formulas\n\nLet x₁, x₂, …, xₖ be k individual measurements.\n\n- x̄ = (Σxᵢ) / k  ← centre line of I-Chart\n- MRᵢ = |xᵢ − xᵢ₋₁|  for i = 2, 3, …, k\n- MR̄ = (Σ MRᵢ) / (k − 1)  ← centre line of MR-Chart\n\n**I-Chart limits:**\n- UCLₓ = x̄ + 2.66 × MR̄\n- LCLₓ = x̄ − 2.66 × MR̄\n\n**MR-Chart limits:**\n- UCL_MR = 3.267 × MR̄\n- LCL_MR = 0\n\nThe constant 2.66 = E₂ = 3/d₂ where d₂ = 1.128 for n=1. The constant 3.267 = D₄ for n=1.\n\n### Why I-MR for Big Data?\n\nWhen data arrives as a continuous stream (one point per second from an IoT sensor), it is impractical to wait and form subgroups. The I-MR chart processes each new observation as it arrives, making it **ideal for real-time streaming quality control** using tools like Kafka or Spark Streaming.\n\n## Example\n\nDaily server response times (ms) for 8 days (from the course slides):\n\n| Day | Response Time (xᵢ) | Moving Range (MRᵢ) |\n|-----|---------------------|---------------------|\n| 1   | 245                 | —                   |\n| 2   | 238                 | 7                   |\n| 3   | 252                 | 14                  |\n| 4   | 241                 | 11                  |\n| 5   | 260                 | 19                  |\n| 6   | 255                 | 5                   |\n| 7   | 248                 | 7                   |\n| 8   | 272                 | 24                  |\n\nx̄ = 251.375 ms,  MR̄ = 12.43 ms\n\n- I-Chart: UCL = 251.375 + 2.66 × 12.43 = **284.4 ms**,  LCL = **218.3 ms**\n- MR-Chart: UCL = 3.267 × 12.43 = **40.6 ms**,  LCL = 0\n\nAll 8 days are within control limits — the process is in control.\n\n## Task\n\nOpen `exercise.py`. You are given 24 hourly server response time readings. Compute the I-MR chart limits, plot both charts, and identify any out-of-control observations.\n\nRun the check when done:\n`npm run check -- bdat-614 module-02 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-02 lesson-02\n```\n\n## Reflection\n\nYour I-Chart shows the process in control, but the MR-Chart has one point above its UCL. What does this tell you specifically? Can the process be considered stable? What should you investigate?\n","_course/lessons/module-02/lesson-03/lesson.md":"# Lesson 5: Attribute Control Charts — p, np, c, and u Charts\n\n## Goal\nSelect the correct attribute control chart for a given situation, compute its control limits, and explain the difference between defectives and defects.\n\n## Concept\n\nWhen quality is measured by *counting* rather than *measuring*, we use **attribute control charts**. There are two types of counts:\n\n- **Defective (nonconforming) unit:** an entire item is defective — it either passes or fails (binary). A bottle with the wrong label. A transaction that errors out.\n- **Defect (nonconformity):** a specific flaw on a unit — one unit can have multiple defects. Scratches on a surface. Null values in a record.\n\nThis distinction drives which chart to use:\n\n| Chart | What is Counted | Sample Size |\n|-------|----------------|-------------|\n| **p-chart** | Proportion of defectives | Variable |\n| **np-chart** | Number of defectives | Constant |\n| **c-chart** | Number of defects | Constant |\n| **u-chart** | Defects per unit | Variable |\n\n### p-Chart (Proportion Defective)\n\nUsed when you count the fraction of defective items per sample and sample size varies.\n\n- p̄ = total defectives / total inspected\n- UCL_p = p̄ + 3√(p̄(1−p̄)/nᵢ)   ← computed per sample if nᵢ varies\n- LCL_p = max(0, p̄ − 3√(p̄(1−p̄)/nᵢ))\n\n### np-Chart (Number of Defectives)\n\nUsed when you count the actual number of defective items and sample size is constant.\n\n- np̄ = p̄ × n\n- UCL = np̄ + 3√(np̄(1−p̄))\n- LCL = max(0, np̄ − 3√(np̄(1−p̄)))\n\n### c-Chart (Number of Defects)\n\nUsed when counting defects on a single unit (or fixed inspection area) with constant sample size. Based on the Poisson distribution.\n\n- c̄ = total defects / number of units\n- UCL = c̄ + 3√c̄\n- LCL = max(0, c̄ − 3√c̄)\n\n### u-Chart (Defects per Unit)\n\nLike the c-chart but sample size (number of units inspected) can vary.\n\n- ū = total defects / total units inspected\n- UCL_u = ū + 3√(ū/nᵢ)   ← varies per sample\n- LCL_u = max(0, ū − 3√(ū/nᵢ))\n\n**Big Data example:** monitoring error rates in an ETL pipeline — each daily run inspects a different number of records, so the u-chart (defects per unit = errors per record) is appropriate, with variable limits.\n\n## Example\n\nA web service is monitored for failed API calls. Each hour, 200 requests are sampled (constant n). The number of failures in 8 hours: 4, 6, 2, 8, 5, 3, 7, 4.\n\nThis is an np-chart (number of defectives, constant n=200).\n\n- p̄ = (4+6+2+8+5+3+7+4) / (8×200) = 39/1600 = 0.0244\n- np̄ = 0.0244 × 200 = 4.875\n- UCL = 4.875 + 3√(4.875 × (1−0.0244)) = 4.875 + 3√4.756 = 4.875 + 6.54 = **11.4**\n- LCL = max(0, 4.875 − 6.54) = **0**\n\nHour 4 (8 failures) is within control. The process is in control.\n\n## Task\n\nOpen `exercise.py`. You are given daily data from two different processes. For each one, select and build the correct attribute chart (p, np, c, or u), compute variable or fixed limits, and plot the chart.\n\nRun the check when done:\n`npm run check -- bdat-614 module-02 lesson-03`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-02 lesson-03\n```\n\n## Reflection\n\nAn analyst is monitoring a data ingestion pipeline. Each day, a different number of records arrive. The analyst wants to track the number of invalid records per day. Should they use a c-chart or a u-chart? Why does it matter which one they choose?\n","_course/lessons/module-03/lesson-01/lesson.md":"# Lesson 6: Process Capability Analysis — Cp and Cpk\n\n## Goal\nCompute Cp and Cpk from process data and specification limits, interpret the indices to determine whether a process is capable, and explain the difference between the two indices.\n\n## Concept\n\nA control chart tells you whether a process is *statistically stable* — in control. But it does not tell you whether the process is actually producing parts that meet the **specification** (customer requirements). That is what **process capability analysis** answers.\n\n**Specification limits** are set by engineers or customers:\n- **USL** = Upper Specification Limit\n- **LSL** = Lower Specification Limit\n\nThe **specification width** = USL − LSL.\nThe **process spread** = 6σ (the natural variation of the process, covering ±3σ).\n\n### Cp — Potential Capability\n\nCp compares the specification width to the process spread:\n\n```\nCp = (USL − LSL) / 6σ\n```\n\n- **Cp > 1.33:** Excellent — the process comfortably fits inside the spec.\n- **1.00 < Cp ≤ 1.33:** Marginal — the process fits but with little room.\n- **Cp < 1.00:** Not capable — the process produces defects.\n\n**Limitation of Cp:** It assumes the process is centred between the spec limits. If the process mean is off-centre, Cp overstates capability.\n\n### Cpk — Actual Capability (with centring)\n\nCpk accounts for how well the process is centred:\n\n```\nCpk = min( (USL − μ) / 3σ,  (μ − LSL) / 3σ )\n```\n\nIt takes the smaller of the two distances from the mean to a spec limit, divided by 3σ.\n\n- **Cpk > 1.33:** Excellent\n- **1.00 < Cpk ≤ 1.33:** Marginal\n- **Cpk < 1.00:** Not capable\n\n**Key insight:** Cp = Cpk only when the process is perfectly centred. If Cp is much larger than Cpk, the process is capable but off-centred — recentring the process (without reducing variation) would immediately improve quality.\n\n**Important:** Process capability analysis is only valid **after** the process has been confirmed to be in statistical control (Xbar-R chart showing no out-of-control signals). Running capability analysis on an unstable process gives meaningless results.\n\n## Example\n\nA machining process produces shaft diameters. Specifications: LSL = 49.5 mm, USL = 50.5 mm. From 100 parts: μ = 50.1 mm, σ = 0.12 mm.\n\n```\nCp  = (50.5 − 49.5) / (6 × 0.12) = 1.0 / 0.72 = 1.39  → Excellent\nCpk = min( (50.5 − 50.1)/(3×0.12), (50.1 − 49.5)/(3×0.12) )\n    = min( 0.4/0.36, 0.6/0.36 )\n    = min( 1.11, 1.67 )\n    = 1.11  → Marginal\n```\n\nThe process has good potential (Cp = 1.39) but the mean is shifted toward the USL. Action: adjust the process mean to 50.0 mm without changing the variability.\n\n## Task\n\nOpen `exercise.py`. You are given a dataset of 80 shaft diameters. The specs are LSL = 19.5 mm, USL = 20.5 mm. Compute σ from the data, compute Cp and Cpk, and interpret the results. Then plot a histogram with spec lines.\n\nRun the check when done:\n`npm run check -- bdat-614 module-03 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-03 lesson-01\n```\n\n## Reflection\n\nA process has Cp = 1.50 and Cpk = 0.85. What does this tell you about the process? What specific action would you take — reduce variation, shift the mean, or both? Explain.\n","_course/lessons/module-03/lesson-02/lesson.md":"# Lesson 7: Measurement System Analysis — Gauge R&R\n\n## Goal\nExplain what Gauge R&R measures, compute the percentage of variation due to the measurement system, and determine whether a measurement system is acceptable for use in SPC or capability studies.\n\n## Concept\n\nBefore you trust any control chart or capability index, you need to know: **can you trust the measurements themselves?** A measurement system (gauge, sensor, instrument) that is inaccurate or inconsistent will make a perfectly stable process look out of control — and will hide real problems.\n\n**Measurement System Analysis (MSA)** evaluates this. The most common method is **Gauge Repeatability and Reproducibility (Gauge R&R)**.\n\n### Two Components of Measurement Variation\n\n**Repeatability (Equipment Variation — EV):** The same operator measures the same part multiple times with the same gauge. How much does the reading vary? This is the gauge's own variation.\n\n**Reproducibility (Appraiser Variation — AV):** Different operators measure the same part. How much do their averages differ? This is operator-to-operator variation.\n\nTogether:\n```\nσ²_GaugeR&R = σ²_Repeatability + σ²_Reproducibility\n```\n\nTotal variation:\n```\nTotal Variation (TV) = √(σ²_Process + σ²_GaugeR&R)\n```\n\n### % Gauge R&R\n\nThe key metric is the percentage of total variation caused by the measurement system:\n\n```\n% GR&R = (σ_GaugeR&R / σ_Total) × 100\n```\n\n### Acceptance Criteria\n\n| % GR&R | Interpretation |\n|--------|----------------|\n| < 10%  | Excellent — measurement system is adequate |\n| 10–30% | Acceptable (depends on application) |\n| > 30%  | Unacceptable — improve measurement system first |\n\nAlso check **ndc (Number of Distinct Categories)**: should be ≥ 5 to detect meaningful differences between parts.\n\n### Standard Gauge R&R Study Design\n\n- 10 parts representing the full process variation\n- 2–3 operators (appraisers)\n- 2–3 repeated measurements per part per operator\n- Total readings = 10 × 3 × 3 = 90 measurements\n\nAnalysis is done using **ANOVA** (most recommended method) or the Average and Range method.\n\n### Why This Matters for Big Data\n\nIn Big Data systems, \"gauges\" are sensors, APIs, and data collection scripts. A sensor that varies by ±1.5°C when measuring the same part is repeatable-defective. Two data collection scripts producing different averages have a reproducibility problem. Poor measurement systems poison downstream analytics — \"garbage in, garbage out.\"\n\n## Example\n\nA Gauge R&R study on a temperature sensor gives:\n- % Repeatability = 18.2%\n- % Reproducibility = 9.8%\n- **% GR&R = 28.0%**\n- ndc = 4.8\n\n**Conclusion:** Marginally acceptable. The measurement system needs improvement before trusting it for SPC or capability studies. The ndc < 5 means the system cannot reliably distinguish between parts.\n\n**Action:** Calibrate sensors, standardise data collection scripts, and re-run the study.\n\n## Task\n\nOpen `exercise.py`. You are given Gauge R&R data: 4 parts, 3 operators, 2 replicates each (matching the ANOVA example from the slides). Compute the variance components, % GR&R, and determine whether the measurement system is acceptable.\n\nRun the check when done:\n`npm run check -- bdat-614 module-03 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-03 lesson-02\n```\n\n## Reflection\n\nAn analyst says: \"Our sensors have 28% GR&R but we're using them for Big Data analytics, so it doesn't matter — we have millions of data points and the average will be accurate.\" Is the analyst correct? What specific problem does high %GR&R cause even with large sample sizes?\n","_course/lessons/module-04/lesson-01/lesson.md":"# Lesson 8: The Shewhart Cycle — PDCA and PDSA\n\n## Goal\nDescribe the four phases of the Shewhart Cycle (PDCA/PDSA), explain the difference between PDCA and PDSA, and apply the cycle to a quality improvement scenario.\n\n## Concept\n\nThe **Shewhart Cycle** is a scientific, iterative method for continuous improvement. Walter A. Shewhart (1891–1967) introduced it in the 1930s. W. Edwards Deming later popularised it worldwide.\n\nThe cycle has four phases:\n\n### PDCA (Plan–Do–Check–Act)\n\n| Phase | What Happens |\n|-------|-------------|\n| **Plan** | Identify the problem, collect baseline data, set SMART objectives, develop an action plan and prediction about what will happen. |\n| **Do** | Execute the plan on a **small scale** (pilot) to test the change. Document observations. |\n| **Check** | Measure and collect data. Analyse results using Control Charts, Capability Analysis, and Statistics. Compare against objectives. Identify what worked and what didn't. |\n| **Act** | If the change worked: standardise it. If not: adjust the plan and restart the cycle. Either way, cycle continues. |\n\n### PDSA (Plan–Do–Study–Act)\n\nDeming preferred **PDSA** (Study instead of Check). The \"Study\" phase emphasises *learning* — not just checking numbers, but understanding *why* the results occurred. PDSA is now the preferred form.\n\n### Why Iterate?\n\nQuality improvement is rarely solved in one cycle. Each cycle produces learning that informs the next. Over many iterations:\n- Common-cause variation is reduced by process redesign\n- Special causes are eliminated and prevented\n- The process moves toward the next improvement target\n\n### Shewhart Cycle in Big Data\n\nThe cycle maps directly onto data pipeline improvement:\n- **Plan:** Identify that ETL error rate is 2.8%; target < 0.5%.\n- **Do:** Deploy improved data validation rules in a staging pipeline.\n- **Study:** Monitor the error rate using a p-chart on staging for two weeks.\n- **Act:** If error rate drops to 0.4%, promote to production. Otherwise, adjust.\n\nControl charts are essential in the **Check/Study phase** — they distinguish real improvements from random variation.\n\n## Example\n\nA bottle-filling line has excessive fill variation (σ = 4 ml; target σ < 2 ml):\n\n- **Plan:** Baseline data shows average fill = 503 ml, σ = 4 ml. Hypothesis: filler nozzle wear is the cause. Plan to replace nozzles on 2 of 6 lines.\n- **Do:** Replace nozzles on 2 lines. Run for 2 weeks. Collect 50 subgroups.\n- **Study:** Xbar-R chart for the 2 replaced lines shows σ drops to 1.8 ml. Original 4 lines unchanged.\n- **Act:** Replace nozzles on all 6 lines. Implement preventive maintenance schedule. Start next cycle: investigate fill mean drift.\n\n## Task\n\nOpen `exercise.py`. You are given a scenario description. Map each action to the correct PDCA/PDSA phase (Plan, Do, Study, Act). Then simulate a before/after comparison using Python to show whether the improvement was real or just random variation.\n\nRun the check when done:\n`npm run check -- bdat-614 module-04 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-04 lesson-01\n```\n\n## Reflection\n\nWhy does Deming prefer \"Study\" over \"Check\"? What is the risk of treating the third phase as just a box to tick rather than as genuine learning? Give a concrete example of how the distinction matters in a data analytics project.\n","_course/lessons/module-04/lesson-02/lesson.md":"# Lesson 9: DMAIC Framework and Root Cause Analysis Tools\n\n## Goal\nDescribe the five DMAIC phases, match quality tools to each phase, and use the Fishbone diagram and Pareto analysis to identify the dominant root cause of a quality problem.\n\n## Concept\n\n**DMAIC** is the core problem-solving methodology of **Six Sigma**. It is a structured, data-driven approach to improving existing processes. DMAIC stands for:\n\n| Phase | Question | Key Tools |\n|-------|----------|-----------|\n| **Define** | What is the problem? | Project Charter, SIPOC, Voice of Customer |\n| **Measure** | How is the process performing now? | Control Charts, Gauge R&R, Process Maps |\n| **Analyze** | What are the root causes? | Fishbone Diagram, Pareto Chart, Hypothesis Testing |\n| **Improve** | How can we fix it? | DOE, Kaizen Events, Pilot |\n| **Control** | How do we sustain the gains? | Control Charts, Control Plans, Dashboards |\n\n### Fishbone (Ishikawa) Diagram\n\nA visual tool for the **Analyze phase**. It maps all possible causes of a problem (the \"effect\") by category. The categories are typically the 6Ms: Man, Machine, Material, Method, Measurement, Environment. The result looks like a fish skeleton — the problem is the head, each M-category is a bone.\n\n**How to use it:**\n1. Write the problem (effect) on the right.\n2. Draw six \"bones\" for each M-category.\n3. Brainstorm possible causes under each bone.\n4. Drill deeper with \"why?\" within each bone.\n5. Identify the most likely causes to investigate.\n\n### Pareto Chart\n\nA bar chart that ranks causes (or defect types) from most frequent to least frequent, with a cumulative percentage line overlaid. Based on the **Pareto Principle (80/20 rule)**: approximately 80% of problems come from 20% of causes.\n\n**How to use it:** Focus improvement efforts on the top 1–3 causes. Fix those and you will resolve most of the problem with minimum effort.\n\n### DMAIC in Big Data — Example (ETL Pipeline)\n\n- **Define:** ETL pipeline error rate is 2.8%; target < 0.5%.\n- **Measure:** Baseline control chart shows the process is stable at 2.8%. Gauge R&R confirms data quality metrics are reliable.\n- **Analyze:** Pareto chart shows 80% of errors come from 3 of 15 data sources. Fishbone on those sources points to inconsistent API response formats (Method) and missing null-handling (Method/Material).\n- **Improve:** Rewrite the transformation step for those 3 sources; add null-handling rules. Pilot on staging.\n- **Control:** Deploy a real-time p-chart monitoring error rate. Set up automated alerts. Update documentation.\n\n## Example\n\nA Pareto analysis of 500 customer complaints:\n\n| Defect Type | Count | Cumulative % |\n|---|---|---|\n| Wrong delivery address | 200 | 40% |\n| Damaged packaging | 150 | 70% |\n| Missing item | 75  | 85% |\n| Wrong product | 50  | 95% |\n| Other | 25  | 100% |\n\n**Conclusion:** Fix \"wrong delivery address\" and \"damaged packaging\" first — together they account for 70% of complaints.\n\n## Task\n\nOpen `exercise.py`. You are given a list of defect types and counts from a manufacturing process. Build a Pareto chart in Python and identify the critical few causes. Then complete a structured Fishbone analysis by mapping provided potential causes to the correct 6M bones.\n\nRun the check when done:\n`npm run check -- bdat-614 module-04 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-04 lesson-02\n```\n\n## Reflection\n\nIn the Analyze phase of DMAIC, a team creates a beautiful Fishbone diagram and identifies 20 potential causes of high process variation. But they have no data to verify which causes are real. What should they do next, and why is the Fishbone diagram alone not sufficient to identify the root cause?\n","_course/lessons/module-05/lesson-01/lesson.md":"# Lesson 10: Acceptance Sampling Plans and OC Curves\n\n## Goal\nDescribe acceptance sampling, explain the roles of AQL and LTPD, design a single sampling plan, compute its Operating Characteristic (OC) curve, and interpret producer's risk and consumer's risk.\n\n## Concept\n\n**Acceptance sampling** is a statistical method used to decide whether to accept or reject a batch (lot) of products. Rather than inspecting every item (100% inspection), a sample is taken and a decision rule applied.\n\nIt is used when:\n- 100% inspection is too expensive or destructive\n- Items are incoming raw materials or finished goods\n- A supplier sends regular batches and trust must be verified statistically\n\n**It is not a substitute for SPC** — it does not improve the process, it only makes accept/reject decisions on existing lots.\n\n### Key Terms\n\n| Term | Meaning |\n|------|---------|\n| **N** | Lot size — total number of items in the batch |\n| **n** | Sample size — number of items inspected |\n| **c** | Acceptance number — maximum defectives allowed in the sample |\n| **AQL** | Acceptable Quality Level — the proportion defective at which the producer's quality is good |\n| **LTPD** | Lot Tolerance Percent Defective — the proportion defective the consumer considers unacceptable |\n| **α (Producer's Risk)** | Probability of rejecting a good lot (Type I error) |\n| **β (Consumer's Risk)** | Probability of accepting a bad lot (Type II error) |\n\n### Single Sampling Plan\n\n**Decision rule:** Inspect n items. Count the number of defectives d.\n- If d ≤ c → **Accept** the lot\n- If d > c → **Reject** the lot\n\n**Parameters:** N = lot size, n = sample size, c = acceptance number.\n\n### Operating Characteristic (OC) Curve\n\nThe OC curve plots **Pa (probability of accepting the lot)** on the y-axis against **p (true proportion defective)** on the x-axis.\n\nFor a single sampling plan, Pa(p) uses the **Binomial** (or Poisson for large lots) distribution:\n\n```\nPa(p) = P(X ≤ c | X ~ Binomial(n, p))\n       = Σ [k=0 to c] C(n,k) × pᵏ × (1-p)^(n-k)\n```\n\nA steep OC curve means the plan discriminates well between good and bad lots.\n\nKey points on the OC curve:\n- At p = AQL: Pa should be high (≈ 1 − α), because good lots should usually be accepted.\n- At p = LTPD: Pa should be low (≈ β), because bad lots should usually be rejected.\n\n### Example\n\nN = 2000, n = 125, c = 3, AQL = 1%, LTPD = 5%.\n\nDecision rule: inspect 125 items; reject the lot if more than 3 are defective.\n\nAt p = 0.01: Pa = P(X ≤ 3 | Binomial(125, 0.01)) ≈ 0.97 → producer's risk α ≈ 3%\nAt p = 0.05: Pa = P(X ≤ 3 | Binomial(125, 0.05)) ≈ 0.10 → consumer's risk β ≈ 10%\n\n## Task\n\nOpen `exercise.py`. Design a single sampling plan with n=100, c=2. Use scipy to compute Pa for a range of p values and plot the OC curve. Mark the AQL and LTPD points and interpret the producer's and consumer's risks.\n\nRun the check when done:\n`npm run check -- bdat-614 module-05 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-05 lesson-01\n```\n\n## Reflection\n\nA supplier argues that single sampling is unfair — if their batch happens to have a bad sample by chance, the whole lot gets rejected even though most items are fine. Is this a valid concern? What does the OC curve tell you about this risk? How would you respond to the supplier?\n","_course/lessons/module-05/lesson-02/lesson.md":"# Lesson 11: Six Sigma — DPMO, Performance Levels, and DMAIC Roadmap\n\n## Goal\nCalculate DPMO from process data, interpret Six Sigma performance levels, and map the DMAIC roadmap to a concrete improvement scenario.\n\n## Concept\n\n**Six Sigma** is a data-driven methodology aimed at achieving near-perfect quality. The goal: reduce process variation until the defect rate reaches **3.4 Defects Per Million Opportunities (DPMO)**. Originated at Motorola (1986, Bill Smith) and popularised by GE under Jack Welch.\n\n### What Does \"Six Sigma\" Mean?\n\nIn a normal process, ±3σ from the mean captures 99.73% of output — that is about 2,700 DPMO. Six Sigma demands that the process mean be 6 standard deviations away from the nearest specification limit. This achieves 3.4 DPMO (accounting for a ±1.5σ long-term shift in the mean).\n\n### Six Sigma Performance Levels\n\n| Sigma Level | DPMO | Process Yield |\n|-------------|------|---------------|\n| 6σ | 3.4 | 99.99966% |\n| 5σ | 233 | 99.977% |\n| 4σ | 6,210 | 99.38% |\n| 3σ | 66,807 | 93.32% |\n| 2σ | 308,537 | 69.15% |\n\nMost industry processes operate at 3σ–4σ. Healthcare and aviation target 6σ.\n\n### Computing DPMO\n\n```\nDPMO = (Number of Defects / (Number of Units × Opportunities per Unit)) × 1,000,000\n```\n\n**Example:** A data pipeline processes 50,000 records per day. Each record has 10 fields that can be invalid. In one day, 150 invalid fields are found.\n\n```\nDPMO = 150 / (50,000 × 10) × 1,000,000 = 300 DPMO\n```\n\nThat is just above 5σ — excellent quality.\n\n### DMAIC as the Six Sigma Roadmap\n\nDMAIC is the structured problem-solving framework of Six Sigma (covered in detail in Module 4). At the Six Sigma level, each phase has specific deliverables:\n\n| Phase | Six Sigma Deliverable |\n|-------|----------------------|\n| Define | Project Charter with financial impact; Voice of Customer analysis |\n| Measure | Baseline DPMO and sigma level; Gauge R&R validated |\n| Analyze | Root causes statistically confirmed (not just hypothesised) |\n| Improve | Designed experiments (DOE) or Kaizen events; validated on pilot |\n| Control | Statistical control charts deployed; control plan signed off |\n\n### Six Sigma Roles\n\n- **Champion:** Senior manager who sponsors and removes barriers.\n- **Master Black Belt (MBB):** Expert trainer and mentor.\n- **Black Belt (BB):** Full-time project leader — typically runs 3–6 DMAIC projects per year.\n- **Green Belt (GB):** Part-time team member with basic Six Sigma training.\n- **Yellow Belt:** Basic awareness training only.\n\n### Six Sigma in Big Data\n\nDMAIC applies directly to data quality and ML model improvement:\n- Reduce model drift (Analyze: identify which features drift; Improve: add retraining triggers)\n- Improve A/B test reliability (Define: define success metrics; Control: monitor with control charts)\n- Reduce ETL error rates (full DMAIC as shown in Module 4, Lesson 9)\n\n## Example\n\nA bank's loan approval system incorrectly classifies 6,200 applications per million (4σ level). Management launches a Six Sigma project:\n- **Target:** reach 5σ (233 DPMO)\n- **DMAIC:** Identify that 85% of misclassifications come from 2 data sources with 12% missing values. Fix the imputation strategy. Validate with holdout set. Monitor with a p-chart.\n- **Result:** DPMO drops to 210 (just above 5σ).\n\n## Task\n\nOpen `exercise.py`. Given defect data for three processes, compute DPMO and sigma level for each. Then determine which process is closest to Six Sigma performance and how many defects per day would need to be eliminated to reach the next sigma level.\n\nRun the check when done:\n`npm run check -- bdat-614 module-05 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-05 lesson-02\n```\n\n## Reflection\n\nA manager says: \"We are already at 99.38% accuracy — that is excellent.\" A Six Sigma engineer says: \"That is only 4σ — we have 6,210 DPMO.\" Who is right? In what context does the difference between 99.38% and 99.99966% actually matter? Give a specific example where the gap between 4σ and 6σ has life-or-death consequences.\n","_course/lessons/module-05/lesson-03/lesson.md":"# Lesson 12: Lean Six Sigma — Waste Elimination and Quality Tools\n\n## Goal\nDescribe how Lean combines with Six Sigma, identify the 8 Lean wastes (Muda), and apply Value Stream Mapping to identify and eliminate non-value-adding steps in a process.\n\n## Concept\n\n**Six Sigma** focuses on reducing variation and defects. **Lean** focuses on eliminating waste and increasing speed. Together, **Lean Six Sigma** addresses both quality and efficiency simultaneously.\n\n- **Six Sigma alone:** reduces variation but may leave slow, wasteful processes intact.\n- **Lean alone:** speeds up processes but may still produce defective output.\n- **Lean Six Sigma:** achieves both — fast, efficient, and defect-free processes.\n\n### The 8 Lean Wastes (Muda — TIM WOODS)\n\n| Letter | Waste | Example |\n|--------|-------|---------|\n| **T** | Transportation | Moving data between unnecessary systems |\n| **I** | Inventory | Data waiting in queues; unprocessed records |\n| **M** | Motion | Analysts repeatedly switching between tools |\n| **W** | Waiting | Pipeline jobs waiting for upstream data |\n| **O** | Overproduction | Generating reports nobody reads |\n| **O** | Overprocessing | Running 10 validation steps when 3 suffice |\n| **D** | Defects | Invalid records that must be reworked |\n| **S** | Unused Talent | Analysts doing manual work that could be automated |\n\n### Value Stream Map (VSM)\n\nA VSM is a diagram that shows every step in a process — from supplier to customer — and labels each step as:\n- **Value-Adding (VA):** the customer would pay for this step\n- **Non-Value-Adding (NVA) / Waste:** the customer would not pay for this — eliminate it\n- **Non-Value-Adding but Necessary (NNVA):** required but not adding direct value — minimise it\n\n**How to draw one:**\n1. Map the current state (every step, wait time, data flow)\n2. Identify waste at each step\n3. Design the future state (removing/reducing waste)\n4. Implement the future state with PDCA\n\n### Key Lean Tools\n\n| Tool | Purpose |\n|------|---------|\n| **5S** | Sort, Set in order, Shine, Standardise, Sustain — workplace organisation |\n| **Kanban** | Visual workflow management; limit work in progress |\n| **Poka-Yoke** | Mistake-proofing — design the process so errors cannot occur |\n| **Just-in-Time (JIT)** | Produce/process only what is needed, when it is needed |\n| **Kaizen** | Continuous small improvements, involving everyone |\n\n### Lean Six Sigma in Big Data\n\n- **Waste = data debt:** unused tables, redundant pipelines, over-engineered transformations\n- **VSM for data:** map raw data → ETL → staging → analytics → report, identify wait times and defect rates at each stage\n- **Poka-Yoke for data:** schema validation at ingestion prevents invalid data from entering the pipeline\n- **Kanban for data teams:** limit concurrent pipeline jobs to reduce queueing delays\n\n## Example\n\nA data pipeline with 7 steps:\n\n| Step | Time | VA or Waste? |\n|------|------|-------------|\n| Ingest from source | 5 min | Value-Adding |\n| Wait in queue | 45 min | Waste (Waiting) |\n| Validate schema | 3 min | Value-Adding |\n| Reformat data | 8 min | Partly NVA — could be done at source |\n| Manual approval check | 30 min | Waste (Over-processing / Motion) |\n| Load to warehouse | 4 min | Value-Adding |\n| Wait for downstream job | 60 min | Waste (Waiting) |\n\n**Total time:** 155 min. **Value-adding time:** 20 min (13%). Lean target: eliminate or reduce the 135 minutes of waste.\n\n## Task\n\nOpen `exercise.py`. You are given a list of process steps with times. Classify each step as VA, NVA, or NNVA. Compute the process cycle efficiency (VA time / total time). Then identify which Lean waste category each NVA step belongs to.\n\nRun the check when done:\n`npm run check -- bdat-614 module-05 lesson-03`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-05 lesson-03\n```\n\n## Reflection\n\nA Six Sigma engineer says: \"We should focus only on reducing defects — waste elimination is a distraction.\" A Lean practitioner says: \"Speed is more important than quality.\" Which approach would you recommend to a Big Data team trying to improve their analytics pipeline, and why? What does Lean Six Sigma offer that neither approach alone provides?\n","_course/lessons/module-06/lesson-01/lesson.md":"# Lesson 13: Total Quality Management (TQM) and Cost of Poor Quality\n\n## Goal\nDescribe the core principles and contributors of TQM, apply Deming's 14 Points to a modern context, and compute the Cost of Poor Quality (COPQ) for a given scenario.\n\n## Concept\n\n**Total Quality Management (TQM)** is a management philosophy in which the *entire organisation* — from senior executives to frontline workers — is committed to continuously improving quality. It shifts focus from inspecting products at the end of a line to building quality into every process.\n\nTQM is the foundation for modern frameworks like Six Sigma, Lean, and ISO 9001.\n\n### Core Principles of TQM\n\n- **Customer Focus:** All quality decisions start with the customer — both internal customers (the next process step) and external customers (end users).\n- **Total Employee Involvement:** Everyone is responsible for quality, not just the QC department.\n- **Process-Centred Approach:** Manage and improve the process — good processes produce good outcomes consistently.\n- **Integrated System:** All departments work toward common quality goals.\n- **Continuous Improvement (Kaizen):** Never accept the current state as the best possible state.\n- **Fact-Based Decision Making:** Decisions are made using data and statistical tools, not intuition alone.\n\n### Key Contributors to TQM\n\n| Expert | Key Contribution |\n|--------|-----------------|\n| **W. Edwards Deming** | 14 Points for Management, PDCA Cycle, System of Profound Knowledge |\n| **Joseph Juran** | Quality Trilogy (Planning, Control, Improvement), Cost of Poor Quality |\n| **Philip Crosby** | \"Quality is Free\", Zero Defects concept |\n| **Kaoru Ishikawa** | Fishbone Diagram, 7 QC Tools, Company-wide Quality Control |\n| **Genichi Taguchi** | Robust Design, Taguchi Loss Function |\n\n### Deming's 14 Points (Key Points)\n\n1. Create constancy of purpose for improvement of products and services.\n2. Adopt the new philosophy — do not accept defects as inevitable.\n3. Cease dependence on inspection to achieve quality — build quality in.\n4. End awarding business on price tag alone — build long-term supplier relationships.\n5. Improve constantly and forever every process.\n6. Institute training on the job.\n7. Institute leadership — managers should help people do a better job.\n8. Drive out fear — employees must feel safe to report problems.\n9. Break down barriers between departments.\n...continuing to point 14: put everyone to work on the transformation.\n\n### Cost of Poor Quality (COPQ)\n\nIntroduced by Juran and Crosby, COPQ categorises the financial cost of quality failures into four types:\n\n| Category | What it Includes | Example |\n|----------|-----------------|---------|\n| **Prevention Costs** | Training, process planning, quality audits | Staff training on data validation |\n| **Appraisal Costs** | Inspection, testing, calibration | Running data quality checks on each pipeline run |\n| **Internal Failure Costs** | Rework, scrap, downtime | Reprocessing corrupt records; re-running failed jobs |\n| **External Failure Costs** | Warranty, returns, lost goodwill | Customer churn from inaccurate reports |\n\n**Key insight:** Prevention is the cheapest category. Every £1 spent on prevention saves approximately £10 on internal failures and £100 on external failures (the 1:10:100 rule).\n\n### TQM in Big Data Context\n\n- **Data Quality Management** is TQM applied to data: completeness, accuracy, consistency, timeliness, validity.\n- **Quality of algorithms:** Are ML models being validated and monitored for drift? Are training datasets audited?\n- **Reducing \"Data Debt\":** accumulated poor-quality data, duplicate pipelines, undocumented transformations — analogous to technical debt but for data quality.\n- **Building a quality culture in data teams:** DevOps (test-driven development, CI/CD pipelines) is TQM for software.\n\n## Example\n\nAn e-commerce company discovers its recommendation engine has been using stale product data for 3 months.\n\n- **Internal failure cost:** 40 hours of data engineering time to clean and reload the data.\n- **External failure cost:** 12% drop in click-through rate, estimated £80,000 revenue loss.\n- **Prevention cost (that was missing):** automated data freshness monitoring — would have cost £500 to implement.\n\nThis is a classic COPQ example: a £500 prevention investment would have avoided £80,000+ in losses.\n\n## Task\n\nOpen `exercise.py`. You are given COPQ data for a data analytics team. Compute the total cost in each category, compute the total COPQ, and determine what percentage of total cost is spent on prevention. Then write a recommendation.\n\nRun the check when done:\n`npm run check -- bdat-614 module-06 lesson-01`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-06 lesson-01\n```\n\n## Reflection\n\nDeming's Point 3 says: \"Cease dependence on inspection to achieve quality.\" In a data context, this means don't rely on manual data quality checks after the fact. What would it mean in practice to \"build quality in\" to a data pipeline — and why is this cheaper than detection?\n","_course/lessons/module-06/lesson-02/lesson.md":"# Lesson 14: Big Data Applications in SQC — EWMA, CUSUM, and ML Integration\n\n## Goal\nImplement EWMA and CUSUM control charts in Python, explain why they outperform Shewhart charts for detecting small process shifts, and describe how machine learning augments traditional SQC in Big Data environments.\n\n## Concept\n\nTraditional Shewhart control charts (Xbar-R, I-MR) are excellent at detecting large, sudden shifts — but they can miss **small, sustained shifts** in the process mean. For Big Data streaming environments that generate millions of observations, two advanced charts are preferred:\n\n### EWMA — Exponentially Weighted Moving Average\n\nThe EWMA chart weights recent observations more heavily than older ones using a smoothing parameter λ (0 < λ ≤ 1):\n\n```\nEWMA₀ = x̄ (process mean)\nEWMAₜ = λ·xₜ + (1 − λ)·EWMAₜ₋₁\n```\n\n**Control limits** (asymptotically stable):\n```\nUCL = μ₀ + L·σ·√(λ/(2−λ))\nLCL = μ₀ − L·σ·√(λ/(2−λ))\n```\nwhere L is typically 3 (3-sigma limits) and σ is the process standard deviation.\n\n- **Small λ (e.g., 0.1):** more smoothing — sensitive to small, slow shifts.\n- **Large λ (e.g., 0.4):** less smoothing — similar to Shewhart chart.\n\n### CUSUM — Cumulative Sum\n\nThe CUSUM chart accumulates deviations from the target mean. It uses two statistics:\n\n```\nC⁺ₜ = max(0, C⁺ₜ₋₁ + (xₜ − μ₀ − K))   ← upper CUSUM (detects upward shifts)\nC⁻ₜ = max(0, C⁻ₜ₋₁ − (xₜ − μ₀ + K))   ← lower CUSUM (detects downward shifts)\n```\n\n- **K** = reference value (typically K = δ/2, where δ = shift to detect in units of σ)\n- **H** = decision interval (typically H = 4 or 5σ)\n- **Signal:** when C⁺ₜ > H or C⁻ₜ > H\n\nCUSUM accumulates small deviations over time — a persistent shift of 1σ will trigger it in ~10 observations, whereas a Shewhart chart might take 40+ observations.\n\n### Traditional SQC vs Big Data SQC\n\n| Feature | Traditional | Big Data |\n|---------|-------------|----------|\n| Sample size | Small (n=5, monthly) | Millions per minute |\n| Update frequency | Hours/days | Sub-second |\n| Detection | Reactive | Predictive |\n| Charts | Shewhart | EWMA, CUSUM, Hotelling's T² |\n| Tools | Minitab, manual | Python, Spark, Kafka, Flink |\n\n### Machine Learning + SQC\n\nML can augment traditional SQC in two ways:\n\n1. **Hybrid anomaly detection:** Use traditional 3σ control limits for interpretability, but also run an Isolation Forest or Autoencoder to catch complex, multivariate anomalies that a univariate chart would miss.\n\n2. **Predictive quality:** Use time-series forecasting (ARIMA, LSTM) to predict when a process will go out of control *before* it happens — enabling preventive action rather than reactive correction.\n\n### Big Data Architecture for Real-Time SPC\n\n```\nIoT Sensors → Kafka → Spark Streaming → EWMA/CUSUM Chart → Alert → Dashboard\n                                       ↓\n                               ML Anomaly Model\n```\n\n## Example\n\nServer response times are monitored with an EWMA chart (λ = 0.2). The process mean is 250 ms, σ = 15 ms.\n\n- L = 3, UCL = 250 + 3 × 15 × √(0.2/1.8) = 250 + 3 × 15 × 0.333 = 265 ms\n- A sustained increase of 10 ms (from 250 to 260) is detected in ~6 observations by EWMA vs ~40 observations by a Shewhart chart.\n\n## Task\n\nOpen `exercise.py`. Implement both EWMA and CUSUM charts for a simulated process. Inject a small shift at observation 50 (mean shifts from 100 to 103). Compare how quickly each chart detects the shift. Plot both charts.\n\nRun the check when done:\n`npm run check -- bdat-614 module-06 lesson-02`\n\n## Check\n\n```\nnpm run check -- bdat-614 module-06 lesson-02\n```\n\n## Reflection\n\nA traditional Shewhart I-Chart and an EWMA chart are both monitoring a server response time metric. A small but sustained 5ms increase occurs at hour 100. The Shewhart chart does not trigger for 35 hours; the EWMA chart triggers at hour 108. What are the practical consequences of this 27-hour difference in a production system? Is the EWMA chart always better, or are there situations where the Shewhart chart is preferred?\n"},"quizzes":{"_assessments/quizzes/module-01-lesson-01.json":{"id":"module-01-lesson-01","title":"Quiz: What is Quality?","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"Juran defines quality as:","options":["Conformance to requirements","Fitness for use","Zero defects","Loss to society"],"correct":1,"explanation":"Juran's definition focuses on whether the product satisfies the user's needs — 'fitness for use'. Crosby defined quality as conformance to requirements; Taguchi introduced the 'loss to society' concept."},{"id":"q2","type":"multiple-choice","text":"A hospital drug that works perfectly but has packaging that makes patients doubt its effectiveness is a failure in which Garvin dimension?","options":["Conformance","Performance","Perceived Quality","Reliability"],"correct":2,"explanation":"Perceived Quality is about what customers believe based on indirect cues (brand, appearance, reputation) — not actual performance. The drug performs well but is perceived poorly."},{"id":"q3","type":"true-false","text":"Quality Assurance (QA) is reactive — it finds and fixes defects after they occur.","correct":false,"explanation":"QA is proactive — it builds systems and standards to prevent defects. Quality Control (QC) is the reactive activity of detecting and correcting defects."},{"id":"q4","type":"multiple-choice","text":"A data pipeline delivers results on schedule and with no missing records, but 8% of values are out of valid range. Which quality dimension is primarily violated?","options":["Timeliness","Completeness","Validity","Consistency"],"correct":2,"explanation":"Values out of valid range violate the Validity dimension of data quality. Completeness (missing records) and Timeliness (on schedule) are both fine here."},{"id":"q5","type":"true-false","text":"ISO 9001 is a Quality Assurance standard focused on building systems that prevent defects.","correct":true,"explanation":"ISO 9001 is an internationally recognised QA standard that specifies requirements for a quality management system — it is process-focused and preventive, not just inspection-based."}]},"_assessments/quizzes/module-01-lesson-02.json":{"id":"module-01-lesson-02","title":"Quiz: Process Variation — Sources and Types","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A filling machine consistently produces volumes between 498 ml and 502 ml with no identifiable cause. This is an example of:","options":["Special-cause variation","Common-cause variation","Measurement error","Environmental variation"],"correct":1,"explanation":"Variation that is always present, due to many small unknown factors, and predictable is common-cause variation. The process is 'in control' — no single cause can be identified."},{"id":"q2","type":"multiple-choice","text":"An API suddenly starts returning error codes because a cloud provider updated their authentication method. Which 6M category caused this variation?","options":["Machine","Environment","Material","Man"],"correct":1,"explanation":"The cloud provider's change is an external Environmental factor. The change happened outside the team's direct control and altered the operating conditions of the process."},{"id":"q3","type":"true-false","text":"Special-cause variation can be reduced by changing the fundamental design of the process.","correct":false,"explanation":"Special-cause variation is eliminated by identifying and removing the specific assignable cause. Changing the fundamental process design addresses common-cause variation, which is a management-level decision."},{"id":"q4","type":"multiple-choice","text":"The 5 Whys technique is used to:","options":["Calculate control chart limits","Trace a defect back to its root cause","Rank defect types by frequency","Estimate process capability"],"correct":1,"explanation":"The 5 Whys is a root-cause analysis technique. By repeatedly asking 'why?' you move past symptoms to the underlying root cause of a problem."},{"id":"q5","type":"true-false","text":"In a Big Data pipeline, corrupted records arriving from an upstream source would be classified as a 'Material' variation in the 6M framework.","correct":true,"explanation":"In the 6M framework, 'Material' refers to the inputs to the process — in a data pipeline, this is the data itself. Corrupted or poor-quality input data is a Material variation source."}]},"_assessments/quizzes/module-02-lesson-01.json":{"id":"module-02-lesson-01","title":"Quiz: Variables Control Charts — Xbar-R and Xbar-S","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"For an Xbar-R chart with subgroup size n=4, R̄ = 3.2 mm, and A₂ = 0.729, and x̄̄ = 50.0 mm — what is the UCL of the Xbar chart?","options":["50.0 + 0.729 × 3.2 = 52.33 mm","50.0 + 3.267 × 3.2 = 60.45 mm","50.0 + 0.729 × 50.0 = 86.45 mm","50.0 + 3 × 3.2 = 59.6 mm"],"correct":0,"explanation":"UCL for the Xbar chart = x̄̄ + A₂ × R̄ = 50.0 + 0.729 × 3.2 = 52.33 mm. The constant A₂ depends on subgroup size n."},{"id":"q2","type":"multiple-choice","text":"Which chart in a control chart pair monitors process SPREAD (variability)?","options":["The Xbar chart","The R or S chart","Both charts equally","Neither — control charts only monitor the mean"],"correct":1,"explanation":"The R chart (or S chart) monitors process spread/variability within subgroups. The Xbar chart monitors the process location (mean). Both are always used together."},{"id":"q3","type":"true-false","text":"An Xbar chart that shows all points within control limits proves the process is producing conforming products.","correct":false,"explanation":"An in-control Xbar chart means the process location is statistically stable — not that products meet specification. Process capability (Cp, Cpk) determines whether the process meets specifications."},{"id":"q4","type":"multiple-choice","text":"According to the Western Electric rules, eight consecutive points on the same side of the centre line indicate:","options":["Normal common-cause variation","A probable process shift — an out-of-control signal","An error in the control chart constants","The subgroup size is too large"],"correct":1,"explanation":"Eight consecutive points on the same side of the CL is a Western Electric run rule — it signals a probable process shift even if no single point exceeds the 3σ limits."},{"id":"q5","type":"true-false","text":"The Xbar-S chart is preferred over Xbar-R when the subgroup size is greater than 10.","correct":true,"explanation":"For larger subgroups (n > 10), the within-subgroup standard deviation S is a more efficient estimator of process spread than the range R, so the Xbar-S chart is used."}]},"_assessments/quizzes/module-02-lesson-02.json":{"id":"module-02-lesson-02","title":"Quiz: Individuals and Moving Range (I-MR) Charts","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"Given x̄ = 100 ms and MR̄ = 10 ms, what is the UCL for the I-Chart?","options":["100 + 3 × 10 = 130 ms","100 + 2.66 × 10 = 126.6 ms","100 + 3.267 × 10 = 132.67 ms","100 + 1.128 × 10 = 111.28 ms"],"correct":1,"explanation":"The I-Chart UCL = x̄ + E₂ × MR̄ = 100 + 2.66 × 10 = 126.6 ms. The constant E₂ = 2.66 is derived from d₂ = 1.128 for n=1."},{"id":"q2","type":"multiple-choice","text":"What does the Moving Range in an I-MR chart measure?","options":["The mean of consecutive observations","The absolute difference between consecutive individual observations","The standard deviation within a subgroup","The range within a subgroup of 5 measurements"],"correct":1,"explanation":"MRᵢ = |xᵢ − xᵢ₋₁|. It captures the short-term, point-to-point variability when subgroups of size n=1 are used."},{"id":"q3","type":"true-false","text":"The I-MR chart is the best choice when manufacturing one batch per day and only one quality measurement is available per batch.","correct":true,"explanation":"When it is impossible or impractical to form subgroups (e.g., one batch per day), the I-MR chart is the correct choice — it handles individual observations."},{"id":"q4","type":"multiple-choice","text":"Why is the I-MR chart particularly valuable in Big Data streaming environments?","options":["It handles very large subgroup sizes efficiently","It can process one observation at a time, making real-time monitoring possible","It requires no control chart constants","It is immune to outliers in the data"],"correct":1,"explanation":"In streaming systems (Kafka, Spark Streaming), data arrives one point at a time. The I-MR chart evaluates each new observation immediately, enabling real-time out-of-control detection."},{"id":"q5","type":"true-false","text":"The LCL for the MR-Chart is always set to zero, even if the formula gives a negative number.","correct":true,"explanation":"Negative moving ranges are impossible (it is an absolute difference), so the MR-Chart LCL is always 0. D₃ = 0 for n=1, reflecting this."}]},"_assessments/quizzes/module-02-lesson-03.json":{"id":"module-02-lesson-03","title":"Quiz: Attribute Control Charts — p, np, c, u","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A quality engineer inspects 200 circuit boards per shift and counts the number of defective boards. The sample size is constant. Which chart should be used?","options":["p-chart","np-chart","c-chart","u-chart"],"correct":1,"explanation":"The np-chart counts the number of defective items (not proportion) when the sample size is constant. Here n=200 per shift is constant, and the count of defectives is tracked."},{"id":"q2","type":"multiple-choice","text":"A website monitoring tool counts the number of broken links per webpage. Each page has a different number of links. Which chart is appropriate?","options":["np-chart","p-chart","c-chart","u-chart"],"correct":3,"explanation":"Broken links are defects (one page can have multiple), and the inspection area (number of links) varies per page. The u-chart handles defects per unit with variable sample size."},{"id":"q3","type":"true-false","text":"The p-chart and u-chart both use variable control limits when the sample size changes from period to period.","correct":true,"explanation":"Both the p-chart and u-chart compute UCL and LCL individually for each sample because the limits depend on the sample size nᵢ. When n varies, so do the limits."},{"id":"q4","type":"multiple-choice","text":"The c-chart and u-chart are both based on which probability distribution?","options":["Normal distribution","Binomial distribution","Poisson distribution","Exponential distribution"],"correct":2,"explanation":"The c-chart and u-chart model count data (number of defects) using the Poisson distribution, which is appropriate when counting rare events in a fixed space or time."},{"id":"q5","type":"multiple-choice","text":"An ETL pipeline processes a different number of records each day. You want to monitor the rate of invalid records. The correct chart and its centre line are:","options":["c-chart, centre line = total invalid records","u-chart, centre line = total invalid / total records processed","p-chart, centre line = number invalid / 100","np-chart, centre line = average records per day"],"correct":1,"explanation":"Invalid records are defects (not pass/fail items), and the sample size (records per day) varies. Use the u-chart. The centre line ū = total defects / total units inspected."}]},"_assessments/quizzes/module-03-lesson-01.json":{"id":"module-03-lesson-01","title":"Quiz: Process Capability Analysis — Cp and Cpk","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A process has USL = 110, LSL = 90, μ = 100, σ = 3. What is Cp?","options":["(110 − 90) / (6 × 3) = 1.11","(110 − 90) / (3 × 3) = 2.22","(110 − 100) / (3 × 3) = 1.11","(110 − 90) / (2 × 3) = 3.33"],"correct":0,"explanation":"Cp = (USL − LSL) / 6σ = (110 − 90) / (6 × 3) = 20/18 = 1.11. Cp measures the ratio of the spec width to the natural process spread (6σ)."},{"id":"q2","type":"multiple-choice","text":"Using the same process (USL=110, LSL=90, μ=100, σ=3), what is Cpk?","options":["1.11","min(1.11, 1.11) = 1.11","min(10/9, 10/9) = 1.11","All of the above — they are the same"],"correct":3,"explanation":"Cpk = min((USL−μ)/3σ, (μ−LSL)/3σ) = min(10/9, 10/9) = 1.11. Since μ=100 is exactly centred, Cp = Cpk = 1.11."},{"id":"q3","type":"true-false","text":"It is valid to perform process capability analysis on an unstable (out-of-control) process.","correct":false,"explanation":"Process capability analysis assumes the process is in statistical control (stable). Calculating Cp/Cpk on an unstable process gives misleading results — the control chart must confirm stability first."},{"id":"q4","type":"multiple-choice","text":"A process has Cp = 1.60 but Cpk = 0.90. The best immediate action is:","options":["Reduce process variation by upgrading equipment","Recentre the process mean toward the midpoint of the spec limits","Widen the specification limits","Stop production — the process is not capable"],"correct":1,"explanation":"High Cp but low Cpk means the process is capable of fitting inside the specs but is off-centred. Simply recentring the mean (without changing variability) will improve Cpk immediately."},{"id":"q5","type":"true-false","text":"A Cpk of exactly 1.00 means that the process produces approximately 2700 defects per million opportunities (DPMO).","correct":true,"explanation":"Cpk = 1.00 corresponds to ±3σ — a process centred at 3σ from the nearest spec limit. The area beyond 3σ in a normal distribution is about 0.0027, or roughly 2700 DPMO."}]},"_assessments/quizzes/module-03-lesson-02.json":{"id":"module-03-lesson-02","title":"Quiz: Measurement System Analysis — Gauge R&R","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A Gauge R&R study finds % GR&R = 35%. What does this mean?","options":["The measurement system is excellent","35% of total variation comes from the measurement system — it is unacceptable","35% of parts are defective","The process is 35% capable"],"correct":1,"explanation":"% GR&R > 30% means over 30% of total observed variation is caused by the measurement system itself. This is unacceptable — the measurement system must be improved before trusting any quality data."},{"id":"q2","type":"multiple-choice","text":"What is the difference between repeatability and reproducibility in a Gauge R&R study?","options":["Repeatability is operator variation; reproducibility is equipment variation","Repeatability is how consistent the gauge is for one operator; reproducibility is how consistent results are across different operators","They are the same concept measured at different times","Repeatability applies to attribute data; reproducibility applies to variables data"],"correct":1,"explanation":"Repeatability (EV) = same operator, same part, same gauge — how consistent is the equipment? Reproducibility (AV) = different operators, same part — how much do operators differ from each other?"},{"id":"q3","type":"true-false","text":"A high % GR&R is especially harmful in Big Data contexts because it means sensors and data collection scripts introduce systematic variation that contaminates downstream analyses.","correct":true,"explanation":"In Big Data, the 'gauge' is often a sensor or API. High GR&R means a large fraction of variation in the data comes from the measurement system, not the process. This can mislead models, dashboards, and control charts."},{"id":"q4","type":"multiple-choice","text":"The Number of Distinct Categories (ndc) in a Gauge R&R study should be:","options":["≥ 1","≥ 3","≥ 5","≥ 10"],"correct":2,"explanation":"ndc ≥ 5 indicates the measurement system can distinguish at least 5 distinct categories of parts. Fewer than 5 means the gauge cannot reliably detect differences between parts."},{"id":"q5","type":"true-false","text":"The standard crossed Gauge R&R study design uses 10 parts, 2–3 operators, and 2–3 measurements per part per operator.","correct":true,"explanation":"The standard AIAG-recommended design is 10 parts × 3 operators × 3 replicates = 90 total measurements. This design allows estimation of both repeatability and reproducibility with adequate statistical power."}]},"_assessments/quizzes/module-04-lesson-01.json":{"id":"module-04-lesson-01","title":"Quiz: The Shewhart Cycle — PDCA and PDSA","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In the PDSA cycle, an engineer runs a new algorithm on 5% of production traffic for one week and records results. This is the __ phase.","options":["Plan","Do","Study","Act"],"correct":1,"explanation":"Running a small-scale pilot test is the Do phase — implementing the plan on a limited scale to test the change before full deployment."},{"id":"q2","type":"multiple-choice","text":"After confirming that a new data validation script reduced errors from 2.8% to 0.4%, the team deploys it to all production pipelines and updates the documentation. This is the __ phase.","options":["Plan","Do","Study","Act"],"correct":3,"explanation":"Standardising a confirmed improvement (deploying to production, updating documentation) is the Act phase. If the improvement had failed, Act would mean adjusting the plan and restarting the cycle."},{"id":"q3","type":"true-false","text":"The Shewhart Cycle ends once a successful improvement has been standardised in the Act phase.","correct":false,"explanation":"The cycle never truly ends — it is iterative. Each completed cycle identifies the next improvement opportunity. Continuous improvement (Kaizen) means the cycle restarts at a higher baseline."},{"id":"q4","type":"multiple-choice","text":"Which SQC tool is most directly used in the Study/Check phase of the Shewhart Cycle?","options":["Fishbone diagram","SIPOC diagram","Control chart","Value stream map"],"correct":2,"explanation":"Control charts are the primary tool in the Study/Check phase — they determine whether a change produced a real process improvement or just random variation."},{"id":"q5","type":"true-false","text":"Deming preferred PDSA over PDCA because 'Study' emphasises understanding why results occurred, not just whether a number improved.","correct":true,"explanation":"Deming argued that 'Check' encourages a pass/fail mindset. 'Study' emphasises learning — understanding the mechanism behind the results — which enables better decisions in the Act phase."}]},"_assessments/quizzes/module-04-lesson-02.json":{"id":"module-04-lesson-02","title":"Quiz: DMAIC Framework and Root Cause Analysis Tools","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A Six Sigma team discovers that 78% of customer returns are caused by just 2 of 12 product defect types. Which tool revealed this finding?","options":["Fishbone diagram","SIPOC diagram","Pareto chart","Control chart"],"correct":2,"explanation":"The Pareto chart ranks defects by frequency and shows the cumulative percentage. Finding that 78% of returns come from 2 defect types is a classic Pareto (80/20) finding."},{"id":"q2","type":"multiple-choice","text":"The Control phase of DMAIC is primarily concerned with:","options":["Identifying the root cause of variation","Collecting baseline performance data","Sustaining the gains made in the Improve phase","Defining the scope of the problem"],"correct":2,"explanation":"The Control phase sustains improvements by implementing control charts, control plans, and dashboards to ensure the process does not regress after the project closes."},{"id":"q3","type":"true-false","text":"A Fishbone (Ishikawa) diagram alone is sufficient to identify the true root cause of a quality problem.","correct":false,"explanation":"The Fishbone diagram generates hypotheses about possible causes — it is a brainstorming tool. Confirmation requires data collection and statistical analysis (hypothesis tests, regression, etc.) in the Analyze phase."},{"id":"q4","type":"multiple-choice","text":"In the DMAIC Measure phase, a team discovers their measurement system has 38% GR&R. What should they do?","options":["Proceed with capability analysis — 38% is close to 30%","Improve the measurement system before collecting baseline performance data","Skip the Measure phase and move to Analyze","Widen the specification limits to compensate"],"correct":1,"explanation":"A measurement system with > 30% GR&R is unacceptable. Data collected with it is unreliable. The team must fix the measurement system in the Measure phase before any further analysis is valid."},{"id":"q5","type":"multiple-choice","text":"A data engineering team's ETL pipeline has a high error rate. They draw a Fishbone and identify 'analysts use different transformation scripts' as a cause. Which 6M bone does this belong to?","options":["Man","Machine","Method","Material"],"correct":2,"explanation":"Different transformation scripts represent inconsistent Methods (procedures/processes). When the method is not standardised, variation and errors increase."}]},"_assessments/quizzes/module-05-lesson-01.json":{"id":"module-05-lesson-01","title":"Quiz: Acceptance Sampling Plans and OC Curves","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A single sampling plan has n=50, c=1. A batch of 500 items is inspected. What happens if 3 defectives are found in the sample?","options":["Accept the lot — 3 defectives out of 500 is acceptable","Reject the lot — 3 > c=1","Accept the lot — 3 out of 50 is within the AQL","Take another sample"],"correct":1,"explanation":"The decision rule is: if the number of defectives d > c, reject the lot. Here d=3 > c=1, so the lot is rejected regardless of the lot size."},{"id":"q2","type":"multiple-choice","text":"Producer's risk (α) is the probability of:","options":["Accepting a bad lot (Type II error)","Rejecting a good lot (Type I error)","Producing a defective item","The sample size being too small"],"correct":1,"explanation":"Producer's risk (α) is the probability of rejecting a lot that is actually good quality (at or better than the AQL). It is a Type I error — rejecting a true null hypothesis."},{"id":"q3","type":"true-false","text":"A steeper OC curve means the sampling plan is better at discriminating between good and bad lots.","correct":true,"explanation":"A steep OC curve means Pa drops sharply as p increases past the AQL. This means the plan reliably accepts good lots and reliably rejects bad ones. An ideal OC curve would be a vertical line at the AQL."},{"id":"q4","type":"multiple-choice","text":"LTPD (Lot Tolerance Percent Defective) is the quality level at which:","options":["The producer considers the lot to be of acceptable quality","The consumer considers the lot to be unacceptably bad","100% inspection is required","The process is declared out of control"],"correct":1,"explanation":"LTPD is the quality level that the consumer (buyer) considers unacceptable. At the LTPD, the probability of accepting the lot should be low (equal to the consumer's risk β)."},{"id":"q5","type":"true-false","text":"Acceptance sampling can be used to improve process quality by identifying and removing defects.","correct":false,"explanation":"Acceptance sampling only makes accept/reject decisions on batches — it does not improve the process. SPC and DMAIC are the tools for process improvement. Acceptance sampling is a form of inspection, not improvement."}]},"_assessments/quizzes/module-05-lesson-02.json":{"id":"module-05-lesson-02","title":"Quiz: Six Sigma — DPMO, Performance Levels, and DMAIC","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A process produces 45 defects per day, processes 1,500 units per day, and each unit has 3 opportunities for a defect. What is the DPMO?","options":["45 / 1500 × 1,000,000 = 30,000","45 / (1500 × 3) × 1,000,000 = 10,000","45 × 1,000,000 / 1500 = 30,000","45 / 3 × 1,000,000 = 15,000,000"],"correct":1,"explanation":"DPMO = defects / (units × opportunities per unit) × 1,000,000 = 45 / (1500 × 3) × 1,000,000 = 10,000 DPMO, which corresponds to approximately 3.8σ."},{"id":"q2","type":"multiple-choice","text":"A process at 3σ performance has a DPMO of approximately:","options":["3.4","6,210","66,807","308,537"],"correct":2,"explanation":"3σ corresponds to 66,807 DPMO and 93.32% process yield. This is the baseline for many traditional manufacturing processes."},{"id":"q3","type":"true-false","text":"A Six Sigma Black Belt works full-time on quality improvement projects, typically running 3–6 DMAIC projects per year.","correct":true,"explanation":"Black Belts are full-time Six Sigma project leaders who undergo extensive statistical training. They typically run 3–6 DMAIC projects per year and are responsible for meeting financial improvement targets."},{"id":"q4","type":"multiple-choice","text":"In DMAIC, which phase validates that root causes are real using statistical evidence rather than brainstorming alone?","options":["Define","Measure","Analyze","Control"],"correct":2,"explanation":"The Analyze phase moves beyond brainstorming (Fishbone) to statistical confirmation of root causes using hypothesis tests, regression, ANOVA, and other analytical tools."},{"id":"q5","type":"true-false","text":"Improving from 4σ to 5σ is more difficult than improving from 2σ to 3σ, because fewer defects remain to eliminate.","correct":true,"explanation":"Moving from 4σ (6,210 DPMO) to 5σ (233 DPMO) requires eliminating 5,977 DPMO. Moving from 2σ to 3σ requires eliminating 241,730 DPMO. Both jumps are hard, but 4σ→5σ is harder because the remaining defects are the rarest, most elusive problems."}]},"_assessments/quizzes/module-05-lesson-03.json":{"id":"module-05-lesson-03","title":"Quiz: Lean Six Sigma — Waste Elimination and Quality Tools","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A data team generates a daily summary report that is never read by anyone. Which Lean waste category is this?","options":["Defects","Overproduction","Waiting","Overprocessing"],"correct":1,"explanation":"Producing output that is not needed or used is Overproduction — one of the 8 Lean wastes. Resources are consumed without delivering value."},{"id":"q2","type":"multiple-choice","text":"Process Cycle Efficiency (PCE) is calculated as:","options":["Total time / Value-adding time × 100%","Value-adding time / Total time × 100%","NVA time / Total time × 100%","VA time / NVA time × 100%"],"correct":1,"explanation":"PCE = Value-adding time / Total lead time × 100%. A Lean target is typically > 25% PCE; most traditional processes run at 5–15%."},{"id":"q3","type":"true-false","text":"Poka-Yoke (mistake-proofing) is designed to make it impossible or very difficult to create a defect, rather than detecting defects after they occur.","correct":true,"explanation":"Poka-Yoke is a preventive Lean tool — it designs the process so errors cannot be made (e.g., a USB plug that only fits one way). This is more effective than inspection-based defect detection."},{"id":"q4","type":"multiple-choice","text":"In a Big Data pipeline, data records sitting idle in a landing zone for 4 hours waiting for a scheduled batch job is an example of which Lean waste?","options":["Transportation","Inventory","Defects","Motion"],"correct":1,"explanation":"Idle data waiting to be processed is the data equivalent of Inventory waste — work in progress that has been started but is not yet complete, consuming storage and delaying value delivery."},{"id":"q5","type":"true-false","text":"Lean Six Sigma combines Lean's focus on speed and waste elimination with Six Sigma's focus on variation reduction and defect elimination.","correct":true,"explanation":"Lean Six Sigma integrates both approaches: Lean tools (VSM, 5S, Kanban) eliminate waste and improve flow, while Six Sigma tools (control charts, DMAIC, DOE) reduce variation and defects."}]},"_assessments/quizzes/module-06-lesson-01.json":{"id":"module-06-lesson-01","title":"Quiz: Total Quality Management and Cost of Poor Quality","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"A data team spends £12,000 per year re-running failed ETL jobs and correcting bad data before it reaches the warehouse. This is which COPQ category?","options":["Prevention Costs","Appraisal Costs","Internal Failure Costs","External Failure Costs"],"correct":2,"explanation":"Rework and reprocessing before the output reaches the customer is an Internal Failure Cost — the defect was caught internally but still required resources to fix."},{"id":"q2","type":"multiple-choice","text":"Deming's 14 Points include 'Cease dependence on inspection to achieve quality.' Which TQM principle does this support?","options":["Fact-Based Decision Making","Customer Focus","Process-Centred Approach — build quality into the process","Total Employee Involvement"],"correct":2,"explanation":"This point supports the TQM principle of managing and improving the process. If the process is well-designed, inspection becomes unnecessary — quality is built in, not tested in."},{"id":"q3","type":"true-false","text":"Crosby's phrase 'Quality is Free' means quality improvement has no cost.","correct":false,"explanation":"'Quality is Free' means the cost of achieving quality (prevention + appraisal) is less than the cost of not achieving it (failures + rework + customer losses). Quality improvement does have a cost, but it pays for itself."},{"id":"q4","type":"multiple-choice","text":"A company loses £200,000 per year in customer churn due to inaccurate product recommendations. This is classified as:","options":["Appraisal Cost","Internal Failure Cost","External Failure Cost","Prevention Cost"],"correct":2,"explanation":"Customer churn due to quality failures is an External Failure Cost — the defect has reached the customer and caused business harm. This is the most expensive COPQ category."},{"id":"q5","type":"true-false","text":"TQM requires that quality responsibility be distributed across all employees, not concentrated in a dedicated QC department.","correct":true,"explanation":"A core TQM principle is Total Employee Involvement — everyone from top management to frontline workers is responsible for quality. This contrasts with traditional approaches where QC is a separate inspection department."}]},"_assessments/quizzes/module-06-lesson-02.json":{"id":"module-06-lesson-02","title":"Quiz: Big Data Applications in SQC — EWMA, CUSUM, and ML","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"An EWMA chart uses λ = 0.05. What does this small value of λ mean?","options":["Recent observations are weighted more heavily — sensitive to large sudden shifts","More smoothing — the chart is more sensitive to small, sustained shifts","The chart is equivalent to a Shewhart chart","Control limits are wider than a standard 3σ chart"],"correct":1,"explanation":"A small λ applies heavy smoothing — old observations contribute significantly to the EWMA. This makes the chart very sensitive to small, persistent shifts in the mean, but slower to react to sudden large shifts."},{"id":"q2","type":"multiple-choice","text":"The CUSUM chart detects small shifts faster than the Shewhart chart because it:","options":["Uses wider control limits","Accumulates deviations from the target over time","Requires a larger sample size","Uses the range instead of the standard deviation"],"correct":1,"explanation":"CUSUM accumulates the sum of deviations from the target. Even if each individual deviation is small, the accumulated sum grows with each observation, eventually crossing the decision interval H and signalling a shift."},{"id":"q3","type":"true-false","text":"In a Lean Six Sigma Big Data architecture, Apache Kafka is used to stream data into a real-time SPC system, enabling sub-second control chart updates.","correct":true,"explanation":"Kafka is a high-throughput distributed streaming platform. Paired with Spark Streaming or Flink, it enables real-time computation of EWMA, CUSUM, or other control statistics as each new data point arrives."},{"id":"q4","type":"multiple-choice","text":"A hybrid SPC + ML anomaly detection system uses control charts for interpretability and an Isolation Forest for:","options":["Setting control limits","Detecting complex, multivariate anomalies that univariate charts miss","Computing DPMO from streaming data","Replacing the EWMA when sample size is small"],"correct":1,"explanation":"Isolation Forest and similar ML models (Autoencoders, One-Class SVM) detect anomalies in high-dimensional data where correlations between many variables create patterns that a single univariate chart cannot capture."},{"id":"q5","type":"true-false","text":"Traditional Shewhart control charts are always preferable to EWMA in Big Data environments because they are simpler and more widely understood.","correct":false,"explanation":"EWMA and CUSUM are preferred in Big Data when small, persistent shifts must be detected quickly. The Shewhart chart is better for detecting large, sudden shifts and is simpler to explain, but it has poor average run length (ARL) performance for small shifts."}]}},"clarificationsIndex":{},"clarifications":{}};
+  var _f = window.fetch;
+  function mock(body, isJson) {
+    return Promise.resolve({
+      ok: true, status: 200,
+      text: function () { return Promise.resolve(isJson ? JSON.stringify(body) : body); },
+      json: function () { return Promise.resolve(isJson ? body : JSON.parse(body)); }
+    });
+  }
+  window.fetch = function (url) {
+    if (url === '_course/course.json')               return mock(D.course, true);
+    if (url === '_course/clarifications/index.json') return mock(D.clarificationsIndex, true);
+    if (D.lessons        && url in D.lessons)        return mock(D.lessons[url],        false);
+    if (D.quizzes        && url in D.quizzes)        return mock(D.quizzes[url],        true);
+    if (D.clarifications && url in D.clarifications) return mock(D.clarifications[url], false);
+    return _f ? _f.apply(this, arguments) : Promise.reject(new Error('Not found: ' + url));
+  };
+})();
+</script>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body>
+<div id="app">
 
-  <!-- Hero -->
-  <header class="bg-gradient-to-br from-blue-900 to-blue-700 text-white px-6 py-16 text-center">
-    <p class="text-blue-300 text-sm font-semibold tracking-widest uppercase mb-2">BDAT 614</p>
-    <h1 class="text-4xl font-bold mb-3">Statistical Quality Control</h1>
-    <p class="text-blue-200 max-w-xl mx-auto text-lg">and Improvement</p>
-    <p class="mt-4 text-blue-300 text-sm">Prof. Louis Asiedu · 14 Lessons · Python Exercises</p>
-  </header>
+  <!-- Top bar -->
+  <div id="topbar">
+    <h1 id="course-title">Loading...</h1>
+    <div id="progress-bar-wrap">
+      <div id="progress-label">0 of 0 lessons</div>
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+  </div>
 
-  <main class="max-w-4xl mx-auto px-6 py-12 space-y-10">
+  <div id="body-wrap">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div id="sidebar-header">Lessons</div>
+      <div id="lesson-nav"></div>
+    </nav>
 
-    <!-- Module 1 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 1 — Foundations of Quality</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-01.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 1</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">What is Quality?</h3>
-          <p class="text-slate-500 text-sm mt-1">Definitions, Garvin's 8 dimensions, QC vs QA</p>
-          <span class="text-xs text-slate-400 mt-3 block">~25 min</span>
-        </a>
-        <a href="lesson-02.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 2</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Process Variation</h3>
-          <p class="text-slate-500 text-sm mt-1">Common cause vs special cause, 6Ms, 5 Whys</p>
-          <span class="text-xs text-slate-400 mt-3 block">~30 min</span>
-        </a>
+    <!-- Main area -->
+    <main id="main-content">
+
+      <div id="loading" class="screen active">
+        Loading course...
       </div>
-    </section>
 
-    <!-- Module 2 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 2 — Statistical Process Control</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-03.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 3</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Xbar-R and Xbar-S Charts</h3>
-          <p class="text-slate-500 text-sm mt-1">Variables control charts, control limits, Western Electric rules</p>
-          <span class="text-xs text-slate-400 mt-3 block">~45 min</span>
-        </a>
-        <a href="lesson-04.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 4</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">I-MR Charts</h3>
-          <p class="text-slate-500 text-sm mt-1">Individual measurements, real-time Big Data monitoring</p>
-          <span class="text-xs text-slate-400 mt-3 block">~40 min</span>
-        </a>
-        <a href="lesson-05.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group sm:col-span-2">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 5</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Attribute Control Charts — p, np, c, u</h3>
-          <p class="text-slate-500 text-sm mt-1">Counting defectives vs defects, variable sample sizes</p>
-          <span class="text-xs text-slate-400 mt-3 block">~40 min</span>
-        </a>
+      <div id="error-screen" class="screen">
+        <div class="error-box">
+          <h3 id="error-title">Could not load course</h3>
+          <p id="error-msg"></p>
+        </div>
       </div>
-    </section>
 
-    <!-- Module 3 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 3 — Process Capability & Measurement</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-06.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 6</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Process Capability — Cp and Cpk</h3>
-          <p class="text-slate-500 text-sm mt-1">Capability indices, interpretation, centring</p>
-          <span class="text-xs text-slate-400 mt-3 block">~35 min</span>
-        </a>
-        <a href="lesson-07.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 7</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Gauge R&R</h3>
-          <p class="text-slate-500 text-sm mt-1">Measurement system analysis, repeatability, reproducibility</p>
-          <span class="text-xs text-slate-400 mt-3 block">~40 min</span>
-        </a>
+      <div id="empty-state" class="screen">
+        <span class="badge">Base Repo</span>
+        <h2 style="margin-top:16px">No course loaded yet</h2>
+        <p>This is the Tutor base. A teacher will fill this in before you receive it.</p>
+
+        <div class="steps">
+          <h3>For Teachers — Getting Started</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Fill in <code>_teacher/course-description.md</code> — describe your course</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Fill in <code>_teacher/requirements.md</code> — list learning outcomes and prerequisites</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Open the terminal in VS Code and type to Claude Code:<br><br>
+              <code>Use the course description and requirements to create a complete self-paced course.</code>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">Review the generated course, then reload this page</div>
+          </div>
+        </div>
+
+        <div class="steps" style="margin-top:12px">
+          <h3>For Students — If You Received This Folder</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Ask your teacher — the course may not be ready yet</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Make sure you are opening <code>index.html</code> via <strong>Live Server</strong> (right-click → Open with Live Server)</div>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <!-- Module 4 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 4 — Continuous Improvement</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-08.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 8</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Shewhart Cycle — PDCA/PDSA</h3>
-          <p class="text-slate-500 text-sm mt-1">Plan–Do–Study–Act for iterative improvement</p>
-          <span class="text-xs text-slate-400 mt-3 block">~25 min</span>
-        </a>
-        <a href="lesson-09.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 9</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">DMAIC & Root Cause Analysis</h3>
-          <p class="text-slate-500 text-sm mt-1">DMAIC framework, Fishbone diagram, Pareto analysis</p>
-          <span class="text-xs text-slate-400 mt-3 block">~40 min</span>
-        </a>
+      <div id="lesson-view" class="screen">
+        <div id="lesson-header">
+          <div class="lesson-meta" id="lesson-meta"></div>
+          <h2 id="lesson-title"></h2>
+        </div>
+        <div id="lesson-body"></div>
+
+        <div id="quiz-panel" style="display:none">
+          <h3 id="quiz-title">Quiz</h3>
+          <div id="quiz-questions"></div>
+          <div id="quiz-result" style="display:none"></div>
+          <div style="margin-top:16px; display:flex; gap:10px">
+            <button class="btn btn-primary" id="quiz-submit-btn">Submit Quiz</button>
+            <button class="btn btn-secondary" id="quiz-retry-btn" style="display:none">Try Again</button>
+          </div>
+        </div>
+
+        <div id="reflection-section" style="display:none">
+          <label id="reflection-label">Reflection</label>
+          <textarea id="reflection-input" placeholder="Write your answer here..."></textarea>
+        </div>
+
+        <div id="lesson-actions">
+          <button class="btn btn-secondary" id="prev-btn">← Previous</button>
+          <button class="btn btn-success" id="complete-btn">Mark Complete ✓</button>
+          <button class="btn btn-secondary" id="next-btn">Next →</button>
+        </div>
+
+        <div id="clarifications-section" style="display:none">
+          <h3>💬 Clarifications</h3>
+          <div id="clarifications-list"></div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-top:8px">
+            These notes were added when students asked for better explanations. If you have Claude Code, you can ask for more.
+          </p>
+        </div>
+
+        <div id="claude-panel">
+          <h4>Need a better explanation? Ask Claude Code</h4>
+          <p>If you have Claude Code installed, open the terminal in VS Code and paste this prompt. Your question will be answered and saved as a note in this lesson for all students.</p>
+          <textarea id="claude-prompt" readonly></textarea>
+          <div class="copy-hint">Click to copy → paste into the Claude Code terminal → Claude explains and saves the note here.</div>
+        </div>
       </div>
-    </section>
 
-    <!-- Module 5 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 5 — Acceptance Sampling & Six Sigma</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-10.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 10</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Acceptance Sampling & OC Curves</h3>
-          <p class="text-slate-500 text-sm mt-1">AQL, LTPD, producer's risk, consumer's risk</p>
-          <span class="text-xs text-slate-400 mt-3 block">~40 min</span>
-        </a>
-        <a href="lesson-11.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 11</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Six Sigma — DPMO & Performance Levels</h3>
-          <p class="text-slate-500 text-sm mt-1">3.4 DPMO goal, sigma levels, DMAIC roadmap</p>
-          <span class="text-xs text-slate-400 mt-3 block">~35 min</span>
-        </a>
-        <a href="lesson-12.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group sm:col-span-2">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 12</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Lean Six Sigma — Waste Elimination</h3>
-          <p class="text-slate-500 text-sm mt-1">8 Lean wastes, Value Stream Mapping, Lean tools</p>
-          <span class="text-xs text-slate-400 mt-3 block">~35 min</span>
-        </a>
+      <div id="completion-banner">
+        <h2>🎉 Course Complete!</h2>
+        <p id="completion-msg">You have finished all lessons. Well done.</p>
+        <div style="margin-top:20px">
+          <button class="btn btn-secondary" id="submit-btn" style="display:none">Submit Results to Teacher</button>
+        </div>
       </div>
-    </section>
 
-    <!-- Module 6 -->
-    <section>
-      <h2 class="text-xs font-bold tracking-widest uppercase text-slate-400 mb-4">Module 6 — TQM & Big Data</h2>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <a href="lesson-13.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 13</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Total Quality Management</h3>
-          <p class="text-slate-500 text-sm mt-1">TQM principles, Deming's 14 Points, Cost of Poor Quality</p>
-          <span class="text-xs text-slate-400 mt-3 block">~30 min</span>
-        </a>
-        <a href="lesson-14.html" class="block bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition group">
-          <span class="text-xs text-blue-500 font-semibold">Lesson 14</span>
-          <h3 class="font-bold text-slate-800 mt-1 group-hover:text-blue-700">Big Data SQC — EWMA, CUSUM & ML</h3>
-          <p class="text-slate-500 text-sm mt-1">Advanced charts, real-time streaming, ML integration</p>
-          <span class="text-xs text-slate-400 mt-3 block">~50 min</span>
-        </a>
-      </div>
-    </section>
+    </main>
+  </div>
+</div>
 
-  </main>
+<script>
+(function () {
+  // ─── State ────────────────────────────────────────────────────────────────
+  let course = null;
+  let progress = {};
+  let currentLesson = null;
+  let currentModule = null;
+  let currentQuizData = null;
+  let allLessons = [];
+  let clarificationsIndex = {};
 
-  <footer class="text-center text-slate-400 text-xs py-10">
-    BDAT 614 · Prof. Louis Asiedu · MSc Big Data Analytics
-  </footer>
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function renderMath(el) {
+    if (window.renderMathInElement) {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$',  right: '$',  display: false },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '\\(', right: '\\)', display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  }
 
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  function progressKey() { return 'tutor_progress_' + (course ? course.id || 'default' : 'default'); }
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(progressKey());
+      return raw ? JSON.parse(raw) : { completedLessons: [], quizScores: {}, reflections: {} };
+    } catch { return { completedLessons: [], quizScores: {}, reflections: {} }; }
+  }
+
+  function saveProgress() {
+    localStorage.setItem(progressKey(), JSON.stringify(progress));
+  }
+
+  function isCompleted(lessonId) {
+    return progress.completedLessons && progress.completedLessons.includes(lessonId);
+  }
+
+  function markComplete(lessonId) {
+    if (!progress.completedLessons) progress.completedLessons = [];
+    if (!progress.completedLessons.includes(lessonId)) {
+      progress.completedLessons.push(lessonId);
+    }
+    saveProgress();
+  }
+
+  function flatLessons(courseData) {
+    const out = [];
+    for (const mod of (courseData.modules || [])) {
+      for (const lesson of (mod.lessons || [])) {
+        out.push({ mod, lesson });
+      }
+    }
+    return out;
+  }
+
+  // ─── Progress bar ─────────────────────────────────────────────────────────
+  function updateProgressBar() {
+    const total = allLessons.length;
+    const done = allLessons.filter(({lesson}) => isCompleted(lesson.id)).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    $('progress-fill').style.width = pct + '%';
+    $('progress-label').textContent = `${done} of ${total} lessons`;
+    if (done === total && total > 0) {
+      $('completion-banner').classList.add('visible');
+    }
+  }
+
+  // ─── Sidebar ──────────────────────────────────────────────────────────────
+  function buildSidebar() {
+    const nav = $('lesson-nav');
+    nav.innerHTML = '';
+    for (const mod of (course.modules || [])) {
+      const mt = document.createElement('div');
+      mt.className = 'module-title';
+      mt.textContent = mod.title;
+      nav.appendChild(mt);
+      for (const lesson of (mod.lessons || [])) {
+        const item = document.createElement('div');
+        item.className = 'lesson-item' + (isCompleted(lesson.id) ? ' completed' : '');
+        item.dataset.lessonId = lesson.id;
+        item.dataset.modId = mod.id;
+        item.innerHTML = `<div class="lesson-dot"></div><span>${lesson.title}</span>`;
+        item.addEventListener('click', () => openLesson(mod, lesson));
+        nav.appendChild(item);
+      }
+    }
+  }
+
+  function highlightSidebar(modId, lessonId) {
+    document.querySelectorAll('.lesson-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.lessonId === lessonId && el.dataset.modId === modId);
+    });
+  }
+
+  // ─── Lesson loading ────────────────────────────────────────────────────────
+  async function openLesson(mod, lesson) {
+    currentModule = mod;
+    currentLesson = lesson;
+    show('lesson-view');
+    highlightSidebar(mod.id, lesson.id);
+
+    $('lesson-meta').textContent = mod.title;
+    $('lesson-title').textContent = lesson.title;
+    $('lesson-body').innerHTML = '<em style="color:#6b7280">Loading...</em>';
+    $('quiz-panel').style.display = 'none';
+    $('reflection-section').style.display = 'none';
+
+    // Load lesson markdown
+    if (lesson.files && lesson.files.lesson) {
+      try {
+        const res = await fetch(lesson.files.lesson);
+        if (!res.ok) throw new Error('Could not load ' + lesson.files.lesson);
+        const md = await res.text();
+        $('lesson-body').innerHTML = marked.parse(md);
+        renderMath($('lesson-body'));
+      } catch (err) {
+        $('lesson-body').innerHTML = `<p style="color:#dc2626">Could not load lesson: ${err.message}</p>`;
+      }
+    } else {
+      $('lesson-body').innerHTML = '<p>No lesson file found for this lesson.</p>';
+    }
+
+    // Load quiz if present
+    if (lesson.quiz) {
+      await loadQuiz(lesson.quiz);
+    }
+
+    // Load clarifications for this lesson
+    await loadClarifications(mod.id, lesson.id);
+
+    // Reflection question placeholder
+    if (lesson.reflectionQuestion) {
+      $('reflection-section').style.display = 'block';
+      $('reflection-label').textContent = '💬 Reflection: ' + lesson.reflectionQuestion;
+      const saved = progress.reflections && progress.reflections[lesson.id];
+      $('reflection-input').value = saved || '';
+    }
+
+    // Update nav buttons
+    const idx = allLessons.findIndex(x => x.lesson.id === lesson.id);
+    $('prev-btn').disabled = idx <= 0;
+    $('next-btn').disabled = idx >= allLessons.length - 1;
+
+    // Update complete button
+    const done = isCompleted(lesson.id);
+    $('complete-btn').textContent = done ? '✓ Completed' : 'Mark Complete ✓';
+    $('complete-btn').className = 'btn ' + (done ? 'btn-secondary' : 'btn-success');
+
+    // Update Claude prompt
+    updateClaudePrompt(mod, lesson);
+
+    // Scroll to top
+    $('main-content').scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  function updateClaudePrompt(mod, lesson) {
+    $('claude-prompt').value =
+      `I'm studying "${course.title}" — module "${mod.title}", lesson "${lesson.title}".\n` +
+      `I need help understanding something. [Describe what you don't understand here.]\n\n` +
+      `Please give me a hint or explanation without giving me the full solution.`;
+  }
+
+  // ─── Clarifications ───────────────────────────────────────────────────────
+  async function loadClarificationsIndex() {
+    try {
+      const res = await fetch('_course/clarifications/index.json');
+      if (!res.ok) return;
+      const data = await res.json();
+      // Strip internal _note/_example keys
+      Object.keys(data).forEach(k => { if (!k.startsWith('_')) clarificationsIndex[k] = data[k]; });
+    } catch { /* index may not exist yet */ }
+  }
+
+  async function loadClarifications(moduleId, lessonId) {
+    const key = `${moduleId}-${lessonId}`;
+    const entries = clarificationsIndex[key];
+    const section = $('clarifications-section');
+    const list = $('clarifications-list');
+    list.innerHTML = '';
+
+    if (!entries || entries.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+
+    for (const entry of entries) {
+      let content = '';
+      try {
+        const res = await fetch(entry.file);
+        if (res.ok) content = await res.text();
+      } catch { content = ''; }
+
+      const card = document.createElement('div');
+      card.className = 'clarification-card';
+
+      const header = document.createElement('div');
+      header.className = 'clarification-header';
+      header.innerHTML = `<span>${entry.title}</span><span class="clarification-toggle">▼ show</span>`;
+      card.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'clarification-body';
+      if (content) {
+        body.innerHTML = marked.parse(content);
+        renderMath(body);
+        // Remove the H1 title line since we show it in the header
+        const h1 = body.querySelector('h1');
+        if (h1) h1.remove();
+        // Remove the "Added after a student asked" italic line
+        const firstEm = body.querySelector('em');
+        if (firstEm && firstEm.textContent.startsWith('Added after')) {
+          const p = firstEm.closest('p');
+          if (p) { const src = document.createElement('div'); src.className = 'clarification-source'; src.textContent = firstEm.textContent; body.insertBefore(src, body.firstChild); p.remove(); }
+        }
+      } else {
+        body.textContent = 'Could not load clarification file.';
+      }
+      card.appendChild(body);
+
+      header.addEventListener('click', () => {
+        const open = body.classList.toggle('open');
+        header.querySelector('.clarification-toggle').textContent = open ? '▲ hide' : '▼ show';
+      });
+
+      list.appendChild(card);
+    }
+  }
+
+  // ─── Quiz ─────────────────────────────────────────────────────────────────
+  async function loadQuiz(quizPath) {
+    try {
+      const res = await fetch(quizPath);
+      if (!res.ok) return;
+      const quiz = await res.json();
+      currentQuizData = quiz;
+      renderQuiz(quiz);
+    } catch { /* quiz file may not exist yet */ }
+  }
+
+  function renderQuiz(quiz) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) return;
+    $('quiz-panel').style.display = 'block';
+    $('quiz-title').textContent = quiz.title || 'Quiz';
+    $('quiz-result').style.display = 'none';
+
+    const qContainer = $('quiz-questions');
+    qContainer.innerHTML = '';
+
+    for (const q of quiz.questions) {
+      const block = document.createElement('div');
+      block.className = 'question-block';
+      block.dataset.questionId = q.id;
+      block.dataset.correct = q.type === 'true-false'
+        ? (q.correct === true || q.correct === 'true' ? 'true' : 'false')
+        : String(q.correct);
+
+      const qText = document.createElement('div');
+      qText.className = 'question-text';
+      qText.textContent = q.text || q.question;
+      block.appendChild(qText);
+
+      const opts = document.createElement('div');
+      opts.className = 'options';
+
+      if (q.type === 'true-false') {
+        ['True', 'False'].forEach((label, i) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'option-label';
+          lbl.innerHTML = `<input type="radio" name="q_${q.id}" value="${label.toLowerCase()}"> ${label}`;
+          opts.appendChild(lbl);
+        });
+      } else {
+        (q.options || []).forEach((opt, i) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'option-label';
+          lbl.innerHTML = `<input type="radio" name="q_${q.id}" value="${i}"> ${opt}`;
+          opts.appendChild(lbl);
+        });
+      }
+      block.appendChild(opts);
+
+      const expl = document.createElement('div');
+      expl.className = 'explanation';
+      expl.textContent = q.explanation || '';
+      block.appendChild(expl);
+
+      qContainer.appendChild(block);
+    }
+  }
+
+  $('quiz-submit-btn').addEventListener('click', () => {
+    if (!currentQuizData) return;
+    const questions = document.querySelectorAll('.question-block');
+    let correct = 0;
+    let answered = 0;
+
+    questions.forEach(block => {
+      const qId = block.dataset.questionId;
+      const correctVal = block.dataset.correct;
+      const selected = block.querySelector(`input[name="q_${qId}"]:checked`);
+      if (!selected) return;
+      answered++;
+
+      const isCorrect = String(selected.value) === String(correctVal);
+      if (isCorrect) correct++;
+
+      block.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        if (String(inp.value) === String(correctVal)) lbl.classList.add('correct');
+        else if (inp.checked && !isCorrect) lbl.classList.add('wrong');
+        inp.disabled = true;
+      });
+      block.querySelector('.explanation').classList.add('visible');
+    });
+
+    if (answered < currentQuizData.questions.length) {
+      alert('Please answer all questions before submitting.');
+      return;
+    }
+
+    const pct = Math.round((correct / currentQuizData.questions.length) * 100);
+    const passing = currentQuizData.passingScore || 70;
+    const passed = pct >= passing;
+
+    const result = $('quiz-result');
+    result.style.display = 'block';
+    result.className = 'quiz-result ' + (passed ? 'pass' : 'fail');
+    result.textContent = passed
+      ? `✅ Passed! You scored ${pct}%. Great work.`
+      : `❌ ${pct}% — you need ${passing}% to pass. Review the lesson and try again.`;
+
+    // Save score
+    if (!progress.quizScores) progress.quizScores = {};
+    const key = currentModule.id + '-' + currentLesson.id;
+    if (!progress.quizScores[key] || pct > (progress.quizScores[key].score || 0)) {
+      progress.quizScores[key] = { score: pct, passed, completedAt: new Date().toISOString() };
+      saveProgress();
+    }
+
+    $('quiz-submit-btn').style.display = 'none';
+    $('quiz-retry-btn').style.display = passed ? 'none' : 'inline-block';
+  });
+
+  $('quiz-retry-btn').addEventListener('click', () => {
+    if (currentLesson && currentLesson.quiz) {
+      loadQuiz(currentLesson.quiz);
+    }
+  });
+
+  // ─── Complete button ───────────────────────────────────────────────────────
+  $('complete-btn').addEventListener('click', () => {
+    if (!currentLesson) return;
+
+    // Save reflection
+    if ($('reflection-section').style.display !== 'none') {
+      if (!progress.reflections) progress.reflections = {};
+      progress.reflections[currentLesson.id] = $('reflection-input').value;
+    }
+
+    markComplete(currentLesson.id);
+    $('complete-btn').textContent = '✓ Completed';
+    $('complete-btn').className = 'btn btn-secondary';
+
+    // Update sidebar dot
+    const sideItem = document.querySelector(`.lesson-item[data-mod-id="${currentModule.id}"][data-lesson-id="${currentLesson.id}"]`);
+    if (sideItem) sideItem.classList.add('completed');
+
+    updateProgressBar();
+
+    // Auto-advance
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx < allLessons.length - 1) {
+      setTimeout(() => {
+        const next = allLessons[idx + 1];
+        openLesson(next.mod, next.lesson);
+      }, 600);
+    }
+  });
+
+  // ─── Navigation ───────────────────────────────────────────────────────────
+  $('prev-btn').addEventListener('click', () => {
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx > 0) openLesson(allLessons[idx - 1].mod, allLessons[idx - 1].lesson);
+  });
+
+  $('next-btn').addEventListener('click', () => {
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx < allLessons.length - 1) openLesson(allLessons[idx + 1].mod, allLessons[idx + 1].lesson);
+  });
+
+  // ─── Claude prompt copy ───────────────────────────────────────────────────
+  $('claude-prompt').addEventListener('click', function () {
+    this.select();
+    document.execCommand('copy');
+    this.style.borderColor = 'var(--success)';
+    setTimeout(() => { this.style.borderColor = ''; }, 1000);
+  });
+
+  // ─── Submit button ────────────────────────────────────────────────────────
+  if ($('submit-btn')) {
+    $('submit-btn').addEventListener('click', () => {
+      alert('To submit, run:\n\n  npm run submit\n\nin the VS Code terminal.');
+    });
+  }
+
+  // ─── Boot ─────────────────────────────────────────────────────────────────
+  async function boot() {
+    try {
+      const res = await fetch('_course/course.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      course = await res.json();
+    } catch (err) {
+      // Likely opened as file:// — show helpful error
+      if (location.protocol === 'file:') {
+        show('error-screen');
+        $('error-title').textContent = 'Please use Live Server';
+        $('error-msg').innerHTML =
+          'Open this file via <strong>Live Server</strong> in VS Code:<br><br>' +
+          'Right-click <code>index.html</code> → <em>Open with Live Server</em><br><br>' +
+          'Or install the Live Server extension if prompted.';
+      } else {
+        show('error-screen');
+        $('error-title').textContent = 'Could not load course';
+        $('error-msg').textContent = 'Failed to load _course/course.json: ' + err.message;
+      }
+      return;
+    }
+
+    document.title = course.title || 'Course';
+    $('course-title').textContent = course.title || 'Course';
+
+    progress = loadProgress();
+    if (!progress.startedAt) {
+      progress.startedAt = new Date().toISOString();
+      saveProgress();
+    }
+
+    allLessons = flatLessons(course);
+    await loadClarificationsIndex();
+
+    if (!course.modules || course.modules.length === 0) {
+      show('empty-state');
+      return;
+    }
+
+    buildSidebar();
+    updateProgressBar();
+
+    // Show submission button if API enabled
+    if (course.apiSubmission && course.apiSubmission.enabled && $('submit-btn')) {
+      $('submit-btn').style.display = 'inline-block';
+    }
+
+    // Open first incomplete lesson or first lesson
+    const firstIncomplete = allLessons.find(({lesson}) => !isCompleted(lesson.id));
+    const start = firstIncomplete || allLessons[0];
+    if (start) {
+      openLesson(start.mod, start.lesson);
+    } else {
+      show('lesson-view');
+    }
+  }
+
+  boot();
+})();
+</script>
 </body>
 </html>

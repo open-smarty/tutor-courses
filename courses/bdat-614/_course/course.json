@@ -24,12 +24,12 @@
           "title": "What is Quality? Definitions and Dimensions",
           "difficulty": "beginner",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-01/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-01/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-01/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-01/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-01-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-01-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-01-lesson-01.json",
+          "task": "_assessments/tasks/module-01-lesson-01.md",
           "required": true,
           "estimatedMinutes": 25
         },
@@ -38,12 +38,12 @@
           "title": "Process Variation — Sources and Types",
           "difficulty": "beginner",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-01/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-01/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-01/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-01/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-01-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-01-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-01-lesson-02.json",
+          "task": "_assessments/tasks/module-01-lesson-02.md",
           "required": true,
           "estimatedMinutes": 30
         }
@@ -59,12 +59,12 @@
           "title": "Variables Control Charts — Xbar-R and Xbar-S",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-02/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-01.json",
+          "task": "_assessments/tasks/module-02-lesson-01.md",
           "required": true,
           "estimatedMinutes": 45
         },
@@ -73,12 +73,12 @@
           "title": "Individuals and Moving Range (I-MR) Charts",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-02/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-02.json",
+          "task": "_assessments/tasks/module-02-lesson-02.md",
           "required": true,
           "estimatedMinutes": 40
         },
@@ -87,12 +87,12 @@
           "title": "Attribute Control Charts — p, np, c, and u Charts",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-02/lesson-03/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-02/lesson-03/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-02/lesson-03/solution.py"
+            "lesson": "_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-03/exercise.py",
+            "solution": "_course/lessons/module-02/lesson-03/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-02-lesson-03.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-02-lesson-03.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-03.json",
+          "task": "_assessments/tasks/module-02-lesson-03.md",
           "required": true,
           "estimatedMinutes": 40
         }
@@ -108,12 +108,12 @@
           "title": "Process Capability Analysis — Cp and Cpk",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-03/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-03/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-03/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-03/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-03-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-03-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-03-lesson-01.json",
+          "task": "_assessments/tasks/module-03-lesson-01.md",
           "required": true,
           "estimatedMinutes": 35
         },
@@ -122,12 +122,12 @@
           "title": "Measurement System Analysis — Gauge R&R",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-03/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-03/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-03/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-03/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-03-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-03-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-03-lesson-02.json",
+          "task": "_assessments/tasks/module-03-lesson-02.md",
           "required": true,
           "estimatedMinutes": 40
         }
@@ -143,12 +143,12 @@
           "title": "The Shewhart Cycle — PDCA and PDSA",
           "difficulty": "beginner",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-04/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-04/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-04/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-04/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-04-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-04-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-04-lesson-01.json",
+          "task": "_assessments/tasks/module-04-lesson-01.md",
           "required": true,
           "estimatedMinutes": 25
         },
@@ -157,12 +157,12 @@
           "title": "DMAIC Framework and Root Cause Analysis Tools",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-04/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-04/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-04/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-04/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-04-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-04-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-04-lesson-02.json",
+          "task": "_assessments/tasks/module-04-lesson-02.md",
           "required": true,
           "estimatedMinutes": 40
         }
@@ -178,12 +178,12 @@
           "title": "Acceptance Sampling Plans and OC Curves",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-05/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-01.json",
+          "task": "_assessments/tasks/module-05-lesson-01.md",
           "required": true,
           "estimatedMinutes": 40
         },
@@ -192,12 +192,12 @@
           "title": "Six Sigma — DPMO, Performance Levels, and DMAIC Roadmap",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-05/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-02.json",
+          "task": "_assessments/tasks/module-05-lesson-02.md",
           "required": true,
           "estimatedMinutes": 35
         },
@@ -206,12 +206,12 @@
           "title": "Lean Six Sigma — Waste Elimination and Quality Tools",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-05/lesson-03/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-05/lesson-03/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-05/lesson-03/solution.py"
+            "lesson": "_course/lessons/module-05/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-03/exercise.py",
+            "solution": "_course/lessons/module-05/lesson-03/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-05-lesson-03.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-05-lesson-03.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-03.json",
+          "task": "_assessments/tasks/module-05-lesson-03.md",
           "required": true,
           "estimatedMinutes": 35
         }
@@ -227,12 +227,12 @@
           "title": "Total Quality Management (TQM) and Cost of Poor Quality",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-06/lesson-01/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-06/lesson-01/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-06/lesson-01/solution.py"
+            "lesson": "_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-01/exercise.py",
+            "solution": "_course/lessons/module-06/lesson-01/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-06-lesson-01.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-06-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-06-lesson-01.json",
+          "task": "_assessments/tasks/module-06-lesson-01.md",
           "required": true,
           "estimatedMinutes": 30
         },
@@ -241,12 +241,12 @@
           "title": "Big Data Applications in SQC — EWMA, CUSUM, and ML Integration",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-614/_course/lessons/module-06/lesson-02/lesson.md",
-            "exercise": "courses/bdat-614/_course/lessons/module-06/lesson-02/exercise.py",
-            "solution": "courses/bdat-614/_course/lessons/module-06/lesson-02/solution.py"
+            "lesson": "_course/lessons/module-06/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-02/exercise.py",
+            "solution": "_course/lessons/module-06/lesson-02/solution.py"
           },
-          "quiz": "courses/bdat-614/_assessments/quizzes/module-06-lesson-02.json",
-          "task": "courses/bdat-614/_assessments/tasks/module-06-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-06-lesson-02.json",
+          "task": "_assessments/tasks/module-06-lesson-02.md",
           "required": true,
           "estimatedMinutes": 50
         }

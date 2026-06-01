@@ -29,12 +29,12 @@
           "title": "What is a Stochastic Process?",
           "difficulty": "beginner",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-01/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-01/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-01/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-01/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-01-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-01-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-01-lesson-01.json",
+          "task": "_assessments/tasks/module-01-lesson-01.md",
           "required": true,
           "estimatedMinutes": 30
         },
@@ -43,12 +43,12 @@
           "title": "Probability Distributions and Transition Probabilities",
           "difficulty": "beginner",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-01/lesson-02/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-01/lesson-02/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-01/lesson-02/solution.R"
+            "lesson": "_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-02/exercise.R",
+            "solution": "_course/lessons/module-01/lesson-02/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-01-lesson-02.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-01-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-01-lesson-02.json",
+          "task": "_assessments/tasks/module-01-lesson-02.md",
           "required": true,
           "estimatedMinutes": 35
         }
@@ -64,12 +64,12 @@
           "title": "The Markov Property and Transition Matrices",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-02/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-01.json",
+          "task": "_assessments/tasks/module-02-lesson-01.md",
           "required": true,
           "estimatedMinutes": 40
         },
@@ -78,12 +78,12 @@
           "title": "Chapman-Kolmogorov Equations and Stationary Distributions",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-02/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-02/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-02/solution.R"
+            "lesson": "_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-02/exercise.R",
+            "solution": "_course/lessons/module-02/lesson-02/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-02.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-02.json",
+          "task": "_assessments/tasks/module-02-lesson-02.md",
           "required": true,
           "estimatedMinutes": 45
         },
@@ -92,12 +92,12 @@
           "title": "State Classification — Recurrence, Transience, and Ergodicity",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-03/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-03/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-03/solution.R"
+            "lesson": "_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-03/exercise.R",
+            "solution": "_course/lessons/module-02/lesson-03/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-03.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-03.md",
+          "quiz": "_assessments/quizzes/module-02-lesson-03.json",
+          "task": "_assessments/tasks/module-02-lesson-03.md",
           "required": true,
           "estimatedMinutes": 45
         }
@@ -113,12 +113,12 @@
           "title": "Branching Processes — Extinction and Population Growth",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-03/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-03/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-03/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-03/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-03-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-03-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-03-lesson-01.json",
+          "task": "_assessments/tasks/module-03-lesson-01.md",
           "required": true,
           "estimatedMinutes": 45
         },
@@ -127,12 +127,12 @@
           "title": "The Poisson Process and Renewal Counting",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-03/lesson-02/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-03/lesson-02/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-03/lesson-02/solution.R"
+            "lesson": "_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-02/exercise.R",
+            "solution": "_course/lessons/module-03/lesson-02/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-03-lesson-02.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-03-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-03-lesson-02.json",
+          "task": "_assessments/tasks/module-03-lesson-02.md",
           "required": true,
           "estimatedMinutes": 45
         }
@@ -148,12 +148,12 @@
           "title": "The Pure Birth Process — Yule Model",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-04/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-04-lesson-01.json",
+          "task": "_assessments/tasks/module-04-lesson-01.md",
           "required": true,
           "estimatedMinutes": 45
         },
@@ -162,12 +162,12 @@
           "title": "The Pure Death Process",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-02/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-02/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-02/solution.R"
+            "lesson": "_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-02/exercise.R",
+            "solution": "_course/lessons/module-04/lesson-02/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-02.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-04-lesson-02.json",
+          "task": "_assessments/tasks/module-04-lesson-02.md",
           "required": true,
           "estimatedMinutes": 35
         },
@@ -176,12 +176,12 @@
           "title": "Birth-Death Process — Linear Growth and Extinction",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-03/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-03/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-03/solution.R"
+            "lesson": "_course/lessons/module-04/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-03/exercise.R",
+            "solution": "_course/lessons/module-04/lesson-03/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-03.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-03.md",
+          "quiz": "_assessments/quizzes/module-04-lesson-03.json",
+          "task": "_assessments/tasks/module-04-lesson-03.md",
           "required": true,
           "estimatedMinutes": 50
         }
@@ -197,12 +197,12 @@
           "title": "Survival Functions and Kaplan-Meier Estimation",
           "difficulty": "intermediate",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-05/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-01.json",
+          "task": "_assessments/tasks/module-05-lesson-01.md",
           "required": true,
           "estimatedMinutes": 45
         },
@@ -211,12 +211,12 @@
           "title": "Cox Proportional Hazards Model",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-02/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-02/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-02/solution.R"
+            "lesson": "_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-02/exercise.R",
+            "solution": "_course/lessons/module-05/lesson-02/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-02.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-02.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-02.json",
+          "task": "_assessments/tasks/module-05-lesson-02.md",
           "required": true,
           "estimatedMinutes": 50
         },
@@ -225,12 +225,12 @@
           "title": "Parametric Survival Models and AFT",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-03/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-03/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-03/solution.R"
+            "lesson": "_course/lessons/module-05/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-03/exercise.R",
+            "solution": "_course/lessons/module-05/lesson-03/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-03.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-03.md",
+          "quiz": "_assessments/quizzes/module-05-lesson-03.json",
+          "task": "_assessments/tasks/module-05-lesson-03.md",
           "required": true,
           "estimatedMinutes": 50
         }
@@ -246,12 +246,12 @@
           "title": "Competing Risks and Multi-State Models",
           "difficulty": "advanced",
           "files": {
-            "lesson": "courses/bdat-624/_course/lessons/module-06/lesson-01/lesson.md",
-            "exercise": "courses/bdat-624/_course/lessons/module-06/lesson-01/exercise.R",
-            "solution": "courses/bdat-624/_course/lessons/module-06/lesson-01/solution.R"
+            "lesson": "_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-01/exercise.R",
+            "solution": "_course/lessons/module-06/lesson-01/solution.R"
           },
-          "quiz": "courses/bdat-624/_assessments/quizzes/module-06-lesson-01.json",
-          "task": "courses/bdat-624/_assessments/tasks/module-06-lesson-01.md",
+          "quiz": "_assessments/quizzes/module-06-lesson-01.json",
+          "task": "_assessments/tasks/module-06-lesson-01.md",
           "required": true,
           "estimatedMinutes": 60
         }
