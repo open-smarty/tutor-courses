@@ -1,0 +1,84 @@
+---
+title: "BDAT 608 | Module 1, Lesson 2 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Install Packages
+
+```{r install, eval=FALSE}
+install.packages(c(
+  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
+  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
+  "glmnet", "broom", "hexbin"
+))
+```
+
+## Task 2 — Load Libraries
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(splines)
+library(ggfortify)
+library(caret)
+library(mice)
+library(cvAUC)
+library(mgcv)
+library(rpart)
+library(rpart.plot)
+library(nycflights13)
+library(MASS)
+library(glmnet)
+library(broom)
+
+select <- dplyr::select
+filter <- dplyr::filter
+```
+
+## Task 3 — Global Option
+
+```{r global-option}
+options(na.action = na.warn)
+```
+
+## Task 4 — Package Check
+
+```{r package-check}
+required_packages <- c(
+  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
+  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
+  "glmnet", "broom", "hexbin"
+)
+package_check <- sapply(required_packages, requireNamespace, quietly = TRUE)
+print(package_check)
+```
+
+All entries should be `TRUE`. If any are `FALSE`, run the install chunk above.
+
+## Task 5 — Explore sim1
+
+```{r explore-sim1}
+data("sim1", package = "modelr")
+glimpse(sim1)
+```
+
+```{r first-plot}
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 3, colour = "#1B3A6B") +
+  labs(title = "sim1: Ready to model") +
+  theme_minimal()
+```
+
+## Reflection
+
+`options(na.action = na.warn)` makes R emit a warning whenever `lm()` (or any modelling function) silently drops rows with `NA` values before fitting. Without it, the warning is suppressed: you might call `lm(y ~ x, data = df)` on a dataset with 50 rows but get a model fitted on only 43 rows — without any indication. The practical danger is that predictions and residuals will have the wrong number of rows, causing misalignment when you try to merge them back with the original data.

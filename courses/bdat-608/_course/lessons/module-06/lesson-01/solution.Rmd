@@ -1,0 +1,175 @@
+---
+title: "BDAT 608 | Module 6, Lesson 1 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5, fig.align = "center")
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(nycflights13)
+library(broom)
+options(na.action = na.warn)
+data("diamonds", package = "ggplot2")
+select <- dplyr::select
+filter <- dplyr::filter
+```
+
+# Case Study 1: Diamonds
+
+## EDA
+
+```{r diamonds-eda}
+glimpse(diamonds)
+
+ggplot(diamonds, aes(carat, price)) +
+  geom_bin2d(bins = 60) + scale_fill_viridis_c() +
+  labs(title = "Price vs Carat (raw scale)") + theme_minimal(base_size = 13)
+
+ggplot(diamonds, aes(log(carat), log(price))) +
+  geom_bin2d(bins = 60) + scale_fill_viridis_c() +
+  labs(title = "log(price) vs log(carat) — much more linear!") + theme_minimal(base_size = 13)
+```
+
+## Log-Log Model
+
+```{r log-log-model}
+mod_d1 <- lm(log(price) ~ log(carat), data = diamonds)
+cat("R²:", round(summary(mod_d1)$r.squared, 3), "\n")
+coef(mod_d1)
+# Slope ≈ 1.68: a 1% increase in carat → ~1.68% increase in price (power law)
+```
+
+## Adding Quality Attributes
+
+```{r quality-model}
+mod_d2 <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)
+cat("R² (carat only):   ", round(summary(mod_d1)$r.squared, 3), "\n")
+cat("R² (full model):   ", round(summary(mod_d2)$r.squared, 3), "\n")
+AIC(mod_d1, mod_d2)
+```
+
+## Residuals by Cut
+
+```{r diamonds-residuals}
+diamonds |>
+  add_residuals(mod_d2, var = "resid2") |>
+  ggplot(aes(log(carat), resid2)) +
+  geom_bin2d(bins = 50) + scale_fill_viridis_c() +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ cut) +
+  labs(title = "Residuals by cut — after controlling for carat", y = "Residual (log scale)") +
+  theme_minimal(base_size = 11)
+```
+
+# Case Study 2: Flights
+
+## Fit Per-Carrier Models
+
+```{r carrier-models}
+carrier_models <- flights |>
+  filter(!is.na(dep_delay)) |>
+  group_by(carrier) |>
+  nest() |>
+  mutate(
+    mod  = map(data, ~ lm(dep_delay ~ hour + month, data = .x)),
+    rsq  = map_dbl(mod, ~ summary(.x)$r.squared),
+    rmse = map_dbl(mod, ~ sqrt(mean(residuals(.x)^2)))
+  ) |>
+  arrange(desc(rsq))
+
+carrier_models |> select(carrier, rsq, rmse)
+```
+
+## Extract Hour Coefficients
+
+```{r carrier-coefs}
+carrier_coefs <- carrier_models |>
+  mutate(tidy = map(mod, broom::tidy)) |>
+  unnest(tidy) |>
+  filter(term == "hour")
+
+ggplot(carrier_coefs,
+       aes(x = reorder(carrier, estimate), y = estimate,
+           ymin = estimate - 2*std.error, ymax = estimate + 2*std.error)) +
+  geom_pointrange(colour = "#1B3A6B") +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "#C9A84C") +
+  coord_flip() +
+  labs(title = "Effect of hour on departure delay, by carrier",
+       x = "Carrier", y = "Estimated slope (min per hour)") +
+  theme_minimal(base_size = 12)
+```
+
+# Case Study 3: Logistic Growth
+
+## Simulate Data
+
+```{r logistic-data}
+set.seed(5)
+t_seq <- seq(0, 20, by = 0.5)
+logistic_growth <- tibble(
+  t = t_seq,
+  y = 100 / (1 + exp(-0.5 * (t - 10))) + rnorm(length(t_seq), sd = 3)
+)
+ggplot(logistic_growth, aes(t, y)) +
+  geom_point(colour = "#1B3A6B") + theme_minimal(base_size = 13)
+```
+
+## Fit nls()
+
+```{r nls-fit}
+mod_nls <- nls(
+  y ~ K / (1 + exp(-r * (t - t0))),
+  data  = logistic_growth,
+  start = list(K = 100, r = 0.5, t0 = 10)
+)
+coef(mod_nls)
+```
+
+## Plot Fitted S-Curve
+
+```{r nls-plot}
+logistic_growth |>
+  data_grid(t = seq_range(t, 60)) |>
+  add_predictions(mod_nls) |>
+  ggplot(aes(t, pred)) +
+  geom_line(colour = "#C9A84C", linewidth = 1.2) +
+  geom_point(data = logistic_growth, aes(y = y), colour = "#1B3A6B", alpha = 0.6) +
+  labs(title = "Logistic growth: nls() fit",
+       subtitle = paste0("K=", round(coef(mod_nls)["K"],1),
+                         "  r=", round(coef(mod_nls)["r"],3),
+                         "  t0=", round(coef(mod_nls)["t0"],2))) +
+  theme_minimal(base_size = 13)
+```
+
+# Extension: Largest Residuals
+
+```{r largest-residuals}
+diamonds_500   <- diamonds |> slice_head(n = 500)
+mod_d1_500     <- lm(log(price) ~ log(carat), data = diamonds_500)
+
+broom::augment(mod_d1_500, data = diamonds_500) |>
+  mutate(abs_resid = abs(.resid)) |>
+  arrange(desc(abs_resid)) |>
+  slice_head(n = 5) |>
+  select(carat, cut, color, clarity, price, .fitted, .resid)
+```
+
+**Pattern:** Large positive residuals (actual >> predicted) tend to be diamonds with exceptional quality (Ideal/Premium cut, colourless D/E colour, high clarity). Large negative residuals are diamonds with poor quality that are "overpriced" relative to their carat weight.
+
+## Reflection
+
+All three case studies follow the same core cycle: **fit → visualise residuals → diagnose → revise**. In diamonds, residuals by cut revealed missing quality predictors. In flights, R² near zero revealed that time and month cannot explain delays — prompting us to question the variable selection. In the NLS case, providing good starting values (from domain knowledge: K = carrying capacity, t0 = inflection time) was essential because without them the iterative algorithm cannot converge. The unifying lesson: residuals tell you what your model missed — reading them is a skill more important than knowing any particular model family.

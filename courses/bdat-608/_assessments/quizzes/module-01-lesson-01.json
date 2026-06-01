@@ -1,0 +1,66 @@
+{
+  "id": "module-01-lesson-01",
+  "title": "Quiz: What Is a Statistical Model?",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the equation y = f(x) + ε, what does ε represent?",
+      "options": [
+        "The fitted value predicted by the model",
+        "Random variation that no model can explain",
+        "The slope of the regression line",
+        "The difference between two model families"
+      ],
+      "correct": 1,
+      "explanation": "ε (epsilon) is the noise — irreducible random variation due to measurement error, unobserved factors, and pure chance. f(x) is the signal (fitted value)."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "What is the difference between a model family and a fitted model?",
+      "options": [
+        "A model family is for training data; a fitted model is for test data",
+        "A model family defines the equation shape; a fitted model is the specific member closest to the data",
+        "A model family always has more parameters than a fitted model",
+        "There is no difference — the terms are interchangeable"
+      ],
+      "correct": 1,
+      "explanation": "The model family (e.g., all straight lines y = a1 + a2·x) defines the shape. The fitted model is the one specific line whose parameters were estimated from the observed data."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In the statistical modelling cycle, you only need to fit a model once and then you are done.",
+      "correct": false,
+      "explanation": "Modelling is iterative. After fitting, you inspect residuals; if they show patterns, you revise the model family and refit. The cycle repeats until residuals look like random noise."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "What does it mean when a residuals-vs-predictor plot shows a clear curved pattern?",
+      "options": [
+        "The model fits the data perfectly",
+        "The noise ε is normally distributed",
+        "The model has captured all the systematic variation",
+        "There is remaining structure the model has not captured — the model family is likely misspecified"
+      ],
+      "correct": 3,
+      "explanation": "A curved pattern in residuals means the model missed a non-linear component. The residuals should look like random scatter if the model family is correctly specified."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "George Box's quote 'All models are wrong, but some are useful' implies that:",
+      "options": [
+        "We should never use statistical models because they are always wrong",
+        "A model does not need to be literally true to be practically useful for describing data",
+        "Useful models always have zero residuals",
+        "The best model is the one with the most parameters"
+      ],
+      "correct": 1,
+      "explanation": "Box's point is that a model is an approximation — it simplifies reality. The relevant question is not 'Is it true?' but 'Is it useful/adequate for describing the data and making predictions?'"
+    }
+  ]
+}

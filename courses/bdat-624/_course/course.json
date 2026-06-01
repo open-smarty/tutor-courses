@@ -1,0 +1,261 @@
+{
+  "id": "bdat-624",
+  "title": "Biostatistical Processes and Analytics",
+  "description": "An MSc-level course covering stochastic processes (Markov chains, branching processes, Poisson, birth-death) and survival analysis (Kaplan-Meier, Cox PH, AFT, competing risks). Rigorous derivations with accessible notation and R-based exercises using real biostatistics datasets.",
+  "author": "Prof. Louis Asiedu",
+  "version": "1.0.0",
+  "subject": "biostatistics",
+  "level": "advanced",
+  "estimatedHours": 38,
+  "prerequisites": [
+    "Calculus: differentiation, integration, first-order ODEs",
+    "Probability: random variables, expectation, variance, conditional probability",
+    "Distributions: Binomial, Poisson, Exponential, Gamma",
+    "Introductory R (or willingness to learn from in-lesson walkthroughs)"
+  ],
+  "apiSubmission": {
+    "enabled": false,
+    "endpoint": "",
+    "courseId": ""
+  },
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Foundations of Stochastic Processes",
+      "description": "What is a stochastic process? We build intuition from everyday randomness to formal definitions, decode the notation, and classify processes by their state and parameter spaces.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "What is a Stochastic Process?",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-01/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-01/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-01-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-01-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-02",
+          "title": "Probability Distributions and Transition Probabilities",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-01/lesson-02/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-01/lesson-02/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-01-lesson-02.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-01-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 35
+        }
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Markov Chains",
+      "description": "The Markov property is one of the most powerful simplifications in probability — the future depends only on the present, not the past. We build transition matrices, prove Chapman-Kolmogorov, find stationary distributions, and classify every state in a chain.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "The Markov Property and Transition Matrices",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "lesson-02",
+          "title": "Chapman-Kolmogorov Equations and Stationary Distributions",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-02/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-02/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-02.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 45
+        },
+        {
+          "id": "lesson-03",
+          "title": "State Classification — Recurrence, Transience, and Ergodicity",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-02/lesson-03/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-02/lesson-03/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-02-lesson-03.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-02-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 45
+        }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Branching and Counting Processes",
+      "description": "Branching processes model how populations grow or die out — from viral spread to family trees. Poisson and renewal processes count events in continuous time. Both connect to real biological questions.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Branching Processes — Extinction and Population Growth",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-03/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-03/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-03-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-03-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 45
+        },
+        {
+          "id": "lesson-02",
+          "title": "The Poisson Process and Renewal Counting",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-03/lesson-02/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-03/lesson-02/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-03-lesson-02.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-03-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 45
+        }
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Birth-Death Processes and Population Dynamics",
+      "description": "Pure birth and death processes model populations that only grow or only shrink. The full birth-death process — where both happen simultaneously — is the foundation of queueing theory, epidemiology, and ecological modelling.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "The Pure Birth Process — Yule Model",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 45
+        },
+        {
+          "id": "lesson-02",
+          "title": "The Pure Death Process",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-02/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-02/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-02.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-03",
+          "title": "Birth-Death Process — Linear Growth and Extinction",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-04/lesson-03/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-04/lesson-03/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-04/lesson-03/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-04-lesson-03.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-04-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 50
+        }
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Survival Analysis",
+      "description": "Survival analysis answers: how long until an event happens, and what affects that time? We go from non-parametric curves to semi-parametric regression to fully parametric models.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Survival Functions and Kaplan-Meier Estimation",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 45
+        },
+        {
+          "id": "lesson-02",
+          "title": "Cox Proportional Hazards Model",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-02/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-02/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-02.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 50
+        },
+        {
+          "id": "lesson-03",
+          "title": "Parametric Survival Models and AFT",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-05/lesson-03/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-05/lesson-03/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-05/lesson-03/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-05-lesson-03.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-05-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 50
+        }
+      ]
+    },
+    {
+      "id": "module-06",
+      "title": "Competing Risks and Multi-State Models",
+      "description": "Real patients can experience multiple types of events. Competing risks and multi-state models extend survival analysis to handle this complexity — and bring us full circle to continuous-time Markov chains from Arc 1.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Competing Risks and Multi-State Models",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "courses/bdat-624/_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "courses/bdat-624/_course/lessons/module-06/lesson-01/exercise.R",
+            "solution": "courses/bdat-624/_course/lessons/module-06/lesson-01/solution.R"
+          },
+          "quiz": "courses/bdat-624/_assessments/quizzes/module-06-lesson-01.json",
+          "task": "courses/bdat-624/_assessments/tasks/module-06-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 60
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "id": "module-01-lesson-02",
+  "title": "Quiz: Probability Distributions and Transition Probabilities",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A transition probability matrix P for a finite-state Markov chain must satisfy:",
+      "options": [
+        "All entries are strictly positive",
+        "Each column sums to 1",
+        "Each row sums to 1",
+        "The matrix is symmetric"
+      ],
+      "correct": 2,
+      "explanation": "Each row of a transition probability matrix must sum to 1 because row i represents the probability distribution over all possible next states given the current state is i. The total probability of transitioning to some state must be 1. Entries can be zero (some transitions are impossible), columns need not sum to 1, and the matrix is not generally symmetric."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The notation P_{ij}^{(n)} represents:",
+      "options": [
+        "The probability of transitioning from state j to state i in one step",
+        "The probability of transitioning from state i to state j in exactly n steps",
+        "The n-th power of the single entry P_{ij}",
+        "The probability of being in state i at time n, regardless of starting state"
+      ],
+      "correct": 1,
+      "explanation": "P_{ij}^{(n)} = P(X_n = j | X_0 = i) is the n-step transition probability from state i to state j. It is the (i,j) entry of the matrix P raised to the n-th power (P^n), not the n-th power of the scalar P_{ij}. Note the direction: i is the starting state (row), j is the destination state (column)."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A time-homogeneous Markov chain has the same transition probabilities regardless of the absolute time — only the elapsed time (number of steps) matters.",
+      "correct": true,
+      "explanation": "This is exactly the definition of time-homogeneity. P_{ij}^{(m,n)} = P_{ij}^{(n-m)} depends only on the gap n - m, not on the absolute values of m and n. This means a single transition matrix P fully characterises the chain, and multi-step probabilities are just powers of P."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In the 3-state patient model with states {Healthy, Sick, Dead} and one-month TPM P, the quantity P(Dead at month 6 | Healthy at month 0) is found by computing:",
+      "options": [
+        "The (1, 3) entry of P",
+        "The (1, 3) entry of P⁶",
+        "6 times the (1, 3) entry of P",
+        "The (3, 1) entry of P⁶"
+      ],
+      "correct": 1,
+      "explanation": "Multi-step transition probabilities are given by entries of P raised to the appropriate power. The probability of being in state 3 (Dead, column 3) after 6 months, starting from state 1 (Healthy, row 1), is the (1, 3) entry of P⁶. Multiplying by 6 would be wrong — transition probabilities do not scale linearly with the number of steps."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The matrix [[0.4, 0.6], [0.2, 0.8]] is a valid stochastic matrix.",
+      "correct": true,
+      "explanation": "A valid stochastic matrix requires (1) all entries between 0 and 1, and (2) each row sums to 1. Checking: all four entries are in [0, 1]; row 1: 0.4 + 0.6 = 1.0 ✓; row 2: 0.2 + 0.8 = 1.0 ✓. The matrix is therefore a valid transition probability matrix for a 2-state Markov chain."
+    }
+  ]
+}

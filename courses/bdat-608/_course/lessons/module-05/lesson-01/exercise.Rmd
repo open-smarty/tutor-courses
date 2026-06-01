@@ -1,0 +1,81 @@
+---
+title: "BDAT 608 | Module 5, Lesson 1 — Generalised Linear Models"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(cvAUC)
+options(na.action = na.warn)
+
+data("admissions", package = "cvAUC")
+admit <- as_tibble(admissions)
+
+set.seed(77)
+claims <- tibble(
+  age     = runif(300, 18, 70),
+  veh_age = runif(300, 0, 15),
+  n_claims = rpois(300, lambda = exp(0.02 * age - 0.05 * veh_age - 0.5))
+)
+```
+
+---
+
+## Task 1 — Logistic Regression
+
+```{r logistic-fit}
+# TODO: Fit mod_logit on admit: Y ~ quant + verbal + gpa + toptier
+# family = binomial(link = "logit")
+# Print summary() and exp(coef())
+```
+
+---
+
+## Task 2 — Admission Probability Plot
+
+```{r logistic-plot}
+# TODO: Create a prediction grid:
+# data_grid(verbal = seq_range(verbal, 20), quant, gpa, toptier)
+# Add predictions with type = "response".
+# Plot pred vs verbal, coloured by factor(toptier).
+# Use scale_colour_manual with values "#1B3A6B" and "#C9A84C".
+```
+
+---
+
+## Task 3 — Poisson Regression
+
+```{r poisson-fit}
+# TODO: Fit mod_pois: n_claims ~ age + veh_age, family = poisson("log")
+# Print exp(coef(mod_pois)) rounded to 3 decimal places.
+```
+
+---
+
+## Task 4 — Claims Prediction Plot
+
+```{r poisson-plot}
+# TODO: data_grid(age = seq_range(age, 10), veh_age = c(2, 8))
+# Add predictions (type = "response").
+# Plot pred vs age, coloured by factor(veh_age).
+```
+
+---
+
+## Reflection
+
+<!-- The coefficient for gpa in logistic regression is 0.8.
+     What is wrong with saying "probability increases by 0.8 per grade point"?
+     What is the correct interpretation? (2–3 sentences) -->

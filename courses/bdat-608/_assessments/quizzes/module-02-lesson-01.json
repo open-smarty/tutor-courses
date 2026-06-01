@@ -1,0 +1,60 @@
+{
+  "id": "module-02-lesson-01",
+  "title": "Quiz: Loss Functions — RMSE and MAE",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Why does RMSE penalise large residuals more than MAE does?",
+      "options": [
+        "RMSE takes the square root, which amplifies small values",
+        "RMSE squares each residual before averaging, so large errors grow quadratically",
+        "RMSE divides by n-2 while MAE divides by n",
+        "RMSE only counts residuals greater than 1"
+      ],
+      "correct": 1,
+      "explanation": "Squaring a residual of 10 gives 100; squaring a residual of 1 gives 1. The squared scale amplifies large errors far more than the absolute scale used by MAE."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "Minimising RMSE over the parameter space is mathematically equivalent to Ordinary Least Squares (OLS).",
+      "correct": true,
+      "explanation": "OLS minimises the sum of squared residuals — which is equivalent to minimising their mean, and hence their root mean. RMSE is the square root of the OLS criterion."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "You have a dataset of hospital lengths-of-stay (in days) where 95% of stays are 1–7 days but 5% exceed 30 days. Which loss function is more appropriate for fitting a model to this data?",
+      "options": [
+        "RMSE, because it is the standard and always preferred",
+        "MAE, because the extreme stays would otherwise dominate the RMSE and pull the model toward them",
+        "RMSE, because its square root makes it symmetric",
+        "Neither — you should use the log loss instead"
+      ],
+      "correct": 1,
+      "explanation": "The extreme stays (outliers relative to the bulk) would be squared by RMSE and pull the fitted line toward them. MAE's linear penalty treats extreme stays as proportionally, not quadratically, influential."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In R, the expression data$y - model1(mod, data) computes the:",
+      "options": [
+        "Fitted values",
+        "Loss function",
+        "Residuals (observed minus predicted)",
+        "Parameter estimates"
+      ],
+      "correct": 2,
+      "explanation": "Residuals = observed y minus predicted y-hat. model1(mod, data) returns predicted values, so the difference is the vector of residuals."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "For a given dataset, the candidate parameters that minimise RMSE and the candidate parameters that minimise MAE will always be identical.",
+      "correct": false,
+      "explanation": "RMSE and MAE define different optimal parameters because they penalise large residuals differently. They agree when noise is symmetric and light-tailed (near-normal), but diverge when the data contains outliers or heavy-tailed noise."
+    }
+  ]
+}

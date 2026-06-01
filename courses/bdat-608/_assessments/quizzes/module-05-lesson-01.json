@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-01",
+  "title": "Quiz: Generalised Linear Models — Logistic and Poisson Regression",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In logistic regression, what does add_predictions(mod, type = 'response') return for each observation?",
+      "options": [
+        "The log-odds (linear predictor)",
+        "The predicted probability P(Y=1)",
+        "The binary prediction (0 or 1)",
+        "The residual for each observation"
+      ],
+      "correct": 1,
+      "explanation": "type = 'response' applies the inverse link function (logistic function) to the linear predictor, transforming log-odds into probabilities between 0 and 1."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "A Poisson regression coefficient of 0.05 for 'age' means that each additional year of age increases the expected count by 5 units.",
+      "correct": false,
+      "explanation": "Poisson coefficients are on the log scale. exp(0.05) ≈ 1.051 — each additional year multiplies the expected count by 1.051, a 5.1% multiplicative increase, not an additive increase of 5 units."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "Why can't ordinary linear regression (OLS) be directly used for a binary 0/1 response?",
+      "options": [
+        "OLS requires the response to be a count variable",
+        "OLS can predict values outside [0, 1] which are not valid probabilities",
+        "OLS requires all predictors to be categorical",
+        "OLS cannot handle large datasets efficiently"
+      ],
+      "correct": 1,
+      "explanation": "OLS is unconstrained — it can predict negative values or values greater than 1. These are not valid probabilities. Logistic regression constrains predictions to (0,1) via the logistic link function."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In glm(), which family argument fits a logistic regression model for a binary outcome?",
+      "options": [
+        "family = gaussian()",
+        "family = poisson(link = 'log')",
+        "family = binomial(link = 'logit')",
+        "family = Gamma(link = 'log')"
+      ],
+      "correct": 2,
+      "explanation": "Logistic regression uses the binomial family with the logit link. The binomial family models proportions/counts of successes; the logit link maps probabilities to the real line."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "An exponentiated logistic regression coefficient for 'toptier' is 7.0. Which interpretation is correct?",
+      "options": [
+        "Top-tier students have a 7-unit higher probability of admission",
+        "Top-tier students are 7 times more likely to be admitted in absolute terms",
+        "Attending a top-tier school multiplies the odds of admission by 7",
+        "Top-tier students have 7% higher admission rates"
+      ],
+      "correct": 2,
+      "explanation": "Exponentiated logistic coefficients are odds ratios. OR = 7 means the odds of admission for top-tier school students are 7 times the odds for non-top-tier students. This is not a direct statement about probability differences."
+    }
+  ]
+}

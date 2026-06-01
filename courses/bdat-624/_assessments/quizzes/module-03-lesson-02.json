@@ -1,0 +1,60 @@
+{
+  "id": "module-03-lesson-02",
+  "title": "Quiz: The Poisson Process and Renewal Counting",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The Poisson process postulates that two events can occur simultaneously:",
+      "options": [
+        "With probability λΔt",
+        "Never — the probability is o(Δt), which is negligible compared to Δt as Δt → 0",
+        "With probability 1/λ",
+        "Only when λ is large enough"
+      ],
+      "correct": 1,
+      "explanation": "Postulate 4 states that the probability of two or more events in a small interval (t, t+Δt] is o(Δt). By definition, o(Δt)/Δt → 0 as Δt → 0, meaning this probability shrinks faster than the interval length and is negligible. In the limit, simultaneous events are impossible — each event occurs at a distinct instant."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "X(t) ~ Poisson(λt) means:",
+      "options": [
+        "The rate of arrivals changes with t",
+        "In any interval of length t, the number of events has a Poisson distribution with mean λt",
+        "Exactly λt events occur in every time interval of length t",
+        "The variance of X(t) equals λ (not λt)"
+      ],
+      "correct": 1,
+      "explanation": "X(t) ~ Poisson(λt) means the count of events in an interval of length t follows a Poisson distribution with mean λt (and variance λt). The rate λ is constant (homogeneous process), so longer intervals accumulate more events on average. It does not mean exactly λt events occur — that would make X(t) deterministic."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The time between consecutive events in a Poisson process follows a Gamma distribution.",
+      "correct": false,
+      "explanation": "False. Individual interarrival times (time between the (k-1)-th and k-th events) follow an Exponential(λ) distribution, which is Gamma(1, λ). It is the waiting time to the n-th event — the sum of n i.i.d. exponential interarrivals — that follows a Gamma(n, λ) distribution."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The memoryless property of the exponential distribution means:",
+      "options": [
+        "The future waiting time is independent of how long you have already been waiting",
+        "The mean of the distribution equals its variance",
+        "The distribution has no mode",
+        "It is equivalent to the Poisson distribution"
+      ],
+      "correct": 0,
+      "explanation": "The memoryless property states P(T > t + s | T > s) = P(T > t). If you have already waited s time units with no arrival, the remaining waiting time has the same Exponential(λ) distribution as if you had just started. The past wait carries no information about the future wait. This is the defining property of the exponential distribution — it is the only continuous distribution with this property."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "For a Poisson process, the identity P(T_n ≤ t) = P(X(t) ≥ n) connects the distribution of waiting times to the distribution of counts.",
+      "correct": true,
+      "explanation": "True. Both sides of this equation describe the same event: 'the n-th arrival has occurred by time t.' The left side frames it as a statement about the waiting time T_n; the right side frames it as a statement about the count X(t). This duality is why the CDF of the Gamma(n, λ) distribution equals the tail of the Poisson(λt) PMF summed from n to infinity."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "module-01-lesson-02",
+  "title": "Quiz: Setting Up the R Modelling Environment",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "After loading the MASS package, which line should you run immediately to avoid broken dplyr pipelines?",
+      "options": [
+        "detach('package:MASS')",
+        "select <- dplyr::select; filter <- dplyr::filter",
+        "library(tidyverse, mask = TRUE)",
+        "options(conflicts.policy = 'depends.ok')"
+      ],
+      "correct": 1,
+      "explanation": "MASS exports select() and filter() which overwrite dplyr's versions. Reassigning select <- dplyr::select and filter <- dplyr::filter restores the tidyverse functions."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "The splines package must be installed separately using install.packages('splines') before you can use ns().",
+      "correct": false,
+      "explanation": "splines ships with base R — it is always available. You only need to call library(splines) to make ns() accessible; no install.packages() step is needed."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "What is the purpose of setting options(na.action = na.warn)?",
+      "options": [
+        "It causes lm() to stop with an error if any NA values are present",
+        "It replaces all NA values with the column mean before fitting",
+        "It prints a warning whenever modelling functions silently drop rows with missing values",
+        "It removes the NA values from the dataset permanently"
+      ],
+      "correct": 2,
+      "explanation": "na.warn issues a message when rows are dropped due to NA, making the data loss visible. Without it, rows are silently omitted, which can cause subtle bugs in downstream analysis."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Which modelr dataset has a categorical predictor x?",
+      "options": ["sim1", "sim2", "sim3", "sim4"],
+      "correct": 1,
+      "explanation": "sim2 has a categorical x variable, making it the right dataset for exploring dummy coding and categorical predictors in Module 4."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Putting install.packages() inside a chunk with eval=FALSE ensures the packages are reinstalled every time the document is knitted.",
+      "correct": false,
+      "explanation": "eval=FALSE means the chunk is shown in the output but NOT executed when knitting. The packages are not reinstalled — they are only installed when the user manually runs that specific chunk."
+    }
+  ]
+}

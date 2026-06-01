@@ -1,0 +1,60 @@
+{
+  "id": "module-05-lesson-01",
+  "title": "Quiz: Survival Functions and Kaplan-Meier Estimation",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The hazard function h(t) represents:",
+      "options": [
+        "The probability of dying at exactly time t",
+        "The instantaneous rate of the event at time t, given survival up to t",
+        "The survival probability at time t",
+        "The cumulative probability of the event by time t"
+      ],
+      "correct": 1,
+      "explanation": "h(t) = f(t)/S(t) is a conditional rate: h(t)Δt ≈ P(event in (t, t+Δt] | survived to t). It is not a probability (it can exceed 1) and it conditions on having survived to t. Options (a), (c), and (d) describe f(t), S(t), and F(t) respectively."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A patient is enrolled in a 5-year clinical trial but withdraws after 3 years without experiencing the event. Their observation is:",
+      "options": [
+        "Excluded from the analysis",
+        "Right-censored at 3 years",
+        "Counted as an event at 3 years",
+        "Left-censored at 3 years"
+      ],
+      "correct": 1,
+      "explanation": "The patient survived at least 3 years without the event — we know only T > 3. This is right censoring: the true event time T is censored from above. Excluding this patient (option a) would waste information and bias results. Left censoring (option d) would mean we know the event occurred before 3 years but not exactly when."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The Kaplan-Meier estimator requires assuming an underlying parametric distribution (such as exponential or Weibull) for the survival time T.",
+      "correct": false,
+      "explanation": "The KM estimator is non-parametric — it is the non-parametric maximum likelihood estimator of S(t). It makes no assumption about the shape of the survival distribution. The estimated curve is a step function that drops only at observed event times. This flexibility is one of its key advantages over parametric models."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The log-rank test (implemented as survdiff() in R) compares:",
+      "options": [
+        "Mean survival times between groups",
+        "The survival functions between groups at all time points simultaneously",
+        "The hazard rates between groups at a single pre-specified time point",
+        "Censoring rates between groups"
+      ],
+      "correct": 1,
+      "explanation": "The log-rank test is a global non-parametric test of H₀: S₁(t) = S₂(t) for all t. It accumulates evidence over all event times. It does not compare means (option a — means may not exist if curves do not reach 0), it is not restricted to one time point (option c), and it does not test censoring patterns (option d)."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "For a survival time T with cumulative hazard H(t) = ∫₀ᵗ h(u) du, we have S(t) = e^{−H(t)}. For an exponential distribution with rate λ, this gives H(t) = λt and S(t) = e^{−λt}.",
+      "correct": true,
+      "explanation": "This follows from integrating h(t) = −d/dt ln S(t), which gives H(t) = −ln S(t), and therefore S(t) = e^{−H(t)}. For the exponential distribution, h(t) = λ (constant), so H(t) = ∫₀ᵗ λ du = λt, and S(t) = e^{−λt}. The exponential is the only continuous distribution with constant hazard — the survival probability depends only on the length of the interval, not on how much time has already elapsed."
+    }
+  ]
+}

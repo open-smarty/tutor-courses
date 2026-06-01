@@ -1,0 +1,60 @@
+{
+  "id": "module-04-lesson-01",
+  "title": "Quiz: The Pure Birth Process — Yule Model",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the Yule process, the birth rate when the population is n is:",
+      "options": [
+        "λ (constant, regardless of population size)",
+        "nλ (proportional to the current population size)",
+        "λ/n (decreasing as population grows)",
+        "n²λ (quadratically proportional to population)"
+      ],
+      "correct": 1,
+      "explanation": "The defining property of the Yule process is λₙ = nλ. Each individual reproduces independently at rate λ, so the total rate when there are n individuals is nλ. This is what distinguishes it from the Poisson process (constant rate λ)."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The ODE P_j'(t) = −jλP_j(t) arises in the Yule process because:",
+      "options": [
+        "The process has no death events",
+        "Starting at population j, the only possible event is a birth that moves the process to state j+1, so the only way to leave state j is through that single birth event",
+        "j individuals each die at rate λ, reducing the population",
+        "The process is at j and receives j immigrants per unit time"
+      ],
+      "correct": 1,
+      "explanation": "When n = j (the starting state), the term (n−1)λP_{n−1}(t) = (j−1)λP_{j−1}(t) = 0 because P_{j−1}(0) = 0 and the pure birth process cannot descend from j to j−1. So only the outflow term −jλP_j(t) remains, reflecting that a birth occurs at total rate jλ and takes the process out of state j."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The population size X(t) in a Yule process starting at j = 1 follows a geometric distribution with parameter p = e^{−λt}.",
+      "correct": true,
+      "explanation": "With j = 1, the general formula P_n(t) = C(n−1, 0) e^{−λt}(1−e^{−λt})^{n−1} simplifies to (1−e^{−λt})^{n−1} × e^{−λt}, which is the Geometric(p) PMF with p = e^{−λt}. The negative binomial NegBin(j=1, p) is the geometric distribution."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "E[X(t) | X(0) = j] = je^{λt} means:",
+      "options": [
+        "The population grows linearly at rate jλ",
+        "The population doubles at a constant absolute rate",
+        "The expected population grows exponentially with intrinsic rate λ",
+        "The population size is normally distributed around je^{λt}"
+      ],
+      "correct": 2,
+      "explanation": "je^{λt} is an exponential function of t with rate constant λ. Exponential growth means the per-capita rate of increase is constant at λ, not that the absolute increment is constant (linear) or that the distribution is normal. The doubling time is ln(2)/λ."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "In the Yule process, increasing λ increases both the mean and the variance of X(t) at any fixed time t > 0.",
+      "correct": true,
+      "explanation": "E[X(t)] = je^{λt} and Var[X(t)] = je^{λt}(e^{λt}−1). Both are strictly increasing functions of λ for t > 0. A faster birth rate produces a larger expected population and wider spread around that mean."
+    }
+  ]
+}

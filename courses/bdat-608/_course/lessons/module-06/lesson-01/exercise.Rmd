@@ -1,0 +1,138 @@
+---
+title: "BDAT 608 | Module 6, Lesson 1 — Extended Case Studies"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5, fig.align = "center")
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(nycflights13)
+library(broom)
+options(na.action = na.warn)
+data("diamonds", package = "ggplot2")
+select <- dplyr::select
+filter <- dplyr::filter
+```
+
+---
+
+# Case Study 1: Diamonds — Progressive Model Building
+
+## EDA
+
+```{r diamonds-eda}
+glimpse(diamonds)
+# TODO: Create two scatter plots:
+# (a) price vs carat (raw scale) using geom_bin2d
+# (b) log(price) vs log(carat) using geom_bin2d
+# Which scale shows a more linear, homoscedastic relationship?
+```
+
+## Log-Log Model
+
+```{r log-log-model}
+# TODO: Fit mod_d1 <- lm(log(price) ~ log(carat), data = diamonds)
+# Print R² and coef().
+```
+
+## Adding Quality Attributes
+
+```{r quality-model}
+# TODO: Fit mod_d2 <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)
+# Compare AIC(mod_d1, mod_d2).
+# Print R² for both.
+```
+
+## Residuals by Cut
+
+```{r diamonds-residuals}
+# TODO: Add residuals from mod_d2 to diamonds.
+# Plot: geom_bin2d(aes(log(carat), resid2)) + facet_wrap(~ cut)
+# Interpret: do any cuts show systematic patterns?
+```
+
+---
+
+# Case Study 2: Flights — Many Models
+
+## Fit Per-Carrier Models
+
+```{r carrier-models}
+# TODO: group_by(carrier) |> nest() |>
+#   mutate(mod = map(...), rsq = map_dbl(...), rmse = map_dbl(...))
+# Print carrier, rsq, rmse arranged by descending rsq.
+```
+
+## Extract Hour Coefficients
+
+```{r carrier-coefs}
+# TODO: Use broom::tidy() to extract the 'hour' coefficient for each carrier.
+# Plot: geom_pointrange(aes(x=reorder(carrier, estimate), y=estimate, ymin/ymax))
+# Add geom_hline(yintercept=0) and coord_flip().
+```
+
+---
+
+# Case Study 3: Logistic Growth with nls()
+
+## Simulate Data
+
+```{r logistic-data}
+set.seed(5)
+t_seq <- seq(0, 20, by = 0.5)
+logistic_growth <- tibble(
+  t = t_seq,
+  y = 100 / (1 + exp(-0.5 * (t - 10))) + rnorm(length(t_seq), sd = 3)
+)
+# TODO: Plot the data (scatter plot)
+```
+
+## Fit nls()
+
+```{r nls-fit}
+# TODO: Fit mod_nls using:
+# y ~ K / (1 + exp(-r * (t - t0)))
+# start = list(K = 100, r = 0.5, t0 = 10)
+# Print coef(mod_nls)
+```
+
+## Plot Fitted S-Curve
+
+```{r nls-plot}
+# TODO: Build a prediction grid and plot the fitted S-curve over the data.
+# Use add_predictions(mod_nls).
+```
+
+---
+
+# Extension: Largest Residuals in Diamonds
+
+```{r largest-residuals}
+diamonds_500    <- diamonds |> slice_head(n = 500)
+mod_d1_500      <- lm(log(price) ~ log(carat), data = diamonds_500)
+
+# TODO: Use broom::augment() to find the 5 diamonds with the largest |.resid|.
+# What cut/color/clarity characteristics do they share?
+```
+
+---
+
+## Reflection
+
+<!-- What common thread runs through all three case studies?
+     How did inspecting residuals guide each next modelling step?
+     (3–5 sentences) -->

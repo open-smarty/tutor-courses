@@ -1,0 +1,52 @@
+---
+title: "BDAT 608 | Module 1, Lesson 1 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Prerequisites
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+```
+
+---
+
+## Task 1 — Explore sim1
+
+```{r explore-sim1}
+data("sim1", package = "modelr")
+glimpse(sim1)
+# 30 rows, 2 columns: x (integer), y (double)
+```
+
+**Answer:** `sim1` has **30 rows** and **2 columns** (`x` and `y`).
+
+---
+
+## Task 2 — Scatter Plot
+
+```{r scatter-plot}
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 3, colour = "#1B3A6B") +
+  labs(title = "sim1: My first look") +
+  theme_minimal()
+```
+
+The plot shows a clear upward linear trend: as `x` increases from 1 to 10, `y` increases roughly proportionally, with random scatter around the line.
+
+---
+
+## Reflection
+
+"Zero residuals" on the training data means the model has **memorised** the noise in addition to the signal. Such a model will fail on new data because noise does not repeat. The goal of modelling is to capture the signal — the repeatable pattern — not the noise. A model with zero training residuals is overfit: it is too tightly tuned to this particular sample.

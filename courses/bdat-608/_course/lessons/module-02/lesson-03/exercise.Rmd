@@ -1,0 +1,69 @@
+---
+title: "BDAT 608 | Module 2, Lesson 3 — Closed-Form OLS with lm()"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+```
+
+---
+
+## Task 1 — Fit the Model
+
+```{r fit-model}
+# TODO: Fit sim1_mod <- lm(y ~ x, data = sim1)
+# Extract coef() and print summary()
+```
+
+---
+
+## Task 2 — Interpret R²
+
+```{r r-squared}
+# TODO: Pull out the R-squared from summary(sim1_mod)$r.squared
+# Write an interpretation below as a comment.
+```
+
+---
+
+## Task 3 — Compare with optim()
+
+```{r compare-optim}
+model1 <- function(a, data) a[1] + data$x * a[2]
+measure_distance <- function(mod, data) sqrt(mean((data$y - model1(mod, data))^2))
+
+best_optim <- optim(c(0, 0), measure_distance, data = sim1)
+
+# TODO: Print a comparison table of lm() vs optim() coefficients.
+# How close are they?
+```
+
+---
+
+## Task 4 — Confidence Interval
+
+```{r confint}
+# TODO: Compute a 95% confidence interval for all coefficients using confint().
+# Interpret the interval for the slope in one sentence.
+```
+
+---
+
+## Reflection
+
+<!-- In 2–3 sentences: why prefer lm() over optim() for OLS,
+     even though they give the same coefficient estimates? -->

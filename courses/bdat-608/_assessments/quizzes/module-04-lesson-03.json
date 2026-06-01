@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-03",
+  "title": "Quiz: Splines, Cross-Validation, and Missing Values",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "What is the key advantage of natural splines over high-degree polynomial models for non-linear relationships?",
+      "options": [
+        "Natural splines always have lower training RMSE than polynomials",
+        "Natural splines are constrained to be linear in the tails, preventing extreme extrapolation",
+        "Natural splines use fewer parameters than polynomials for the same df",
+        "Natural splines can only be fitted with glm(), not lm()"
+      ],
+      "correct": 1,
+      "explanation": "Natural splines impose linearity constraints at the boundary knots. This prevents the wild oscillations and extrapolations that high-degree polynomials exhibit outside the training data range."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In 10-fold cross-validation, the CV-RMSE curve is U-shaped. What does the left (rising) part of the U represent?",
+      "options": [
+        "Overfitting — the model has too many parameters",
+        "Underfitting — too few df means the model cannot capture the pattern (high bias)",
+        "Data leakage between the training and test folds",
+        "Perfect fit on the training data"
+      ],
+      "correct": 1,
+      "explanation": "The left/low-df side of the U-curve is high because too few knots means the spline cannot flex enough to follow the pattern — it underfits. Increasing df reduces this bias."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "na.exclude and na.omit both drop rows with missing values before fitting, but na.exclude inserts NA placeholders in residuals/predictions at the positions of the dropped rows.",
+      "correct": true,
+      "explanation": "Both drop NA rows for fitting. na.exclude then 'pads' the output vectors with NA at the original positions, making it safe to cbind() residuals back onto the original data frame."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Why are pooled standard errors from multiple imputation (MI) typically larger than complete-case standard errors?",
+      "options": [
+        "MI uses fewer observations than complete-case analysis",
+        "MI adds extra parameters to the model",
+        "MI propagates uncertainty due to missingness; complete-case analysis ignores that uncertainty",
+        "MI always uses a different estimation algorithm than lm()"
+      ],
+      "correct": 2,
+      "explanation": "Multiple imputation uses Rubin's rules to combine estimates across m imputed datasets. The pooled SE includes both within-imputation variance and between-imputation variance — the latter reflects the extra uncertainty from not knowing the missing values."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "The one-SE rule for choosing spline df selects the:",
+      "options": [
+        "Df value that minimises CV-RMSE, regardless of model complexity",
+        "Smallest df whose CV-RMSE is within one standard error of the minimum CV-RMSE",
+        "Df that is exactly one greater than the minimum CV-RMSE df",
+        "Df value where the CV curve first becomes flat"
+      ],
+      "correct": 1,
+      "explanation": "The one-SE rule is a parsimony rule: prefer the simplest model (fewest df) that is statistically indistinguishable from the best model. 'Indistinguishable' is defined as within one standard error of the minimum CV-RMSE."
+    }
+  ]
+}

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Course...</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9fafb;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-secondary: #6b7280;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --accent-hover: #4338ca;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --error: #dc2626;
+      --error-light: #fef2f2;
+      --sidebar-width: 280px;
+      --topbar-height: 56px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Layout */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-height);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px; gap: 16px; z-index: 100;
+    }
+
+    #topbar h1 { font-size: 16px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #progress-bar-wrap { flex: 0 0 200px; }
+    #progress-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    #progress-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; width: 0%; }
+
+    #body-wrap { display: flex; margin-top: var(--topbar-height); min-height: calc(100vh - var(--topbar-height)); }
+
+    #sidebar {
+      position: fixed; top: var(--topbar-height); left: 0; bottom: 0;
+      width: var(--sidebar-width); background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 16px 0;
+    }
+
+    #sidebar-header { padding: 0 16px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+
+    .module-title {
+      padding: 6px 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px;
+    }
+
+    .lesson-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; cursor: pointer; font-size: 14px; transition: background 0.15s;
+    }
+    .lesson-item:hover { background: var(--accent-light); }
+    .lesson-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+    .lesson-item.completed .lesson-dot { background: var(--success); }
+
+    .lesson-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--border); border: 2px solid transparent;
+    }
+    .lesson-item.active .lesson-dot { background: var(--accent); }
+
+    #main-content { margin-left: var(--sidebar-width); flex: 1; padding: 40px; max-width: 900px; }
+
+    /* Screens */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Empty state */
+    #empty-state { text-align: center; padding: 80px 20px; }
+    #empty-state h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    #empty-state p { color: var(--text-secondary); max-width: 540px; margin: 0 auto 24px; }
+
+    .steps { text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; max-width: 540px; margin: 0 auto 24px; }
+    .steps h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+    .step { display: flex; gap: 14px; margin-bottom: 14px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-text { font-size: 14px; padding-top: 4px; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; background: var(--accent-light); color: var(--accent); }
+
+    /* Lesson view */
+    #lesson-header { margin-bottom: 32px; }
+    #lesson-header .lesson-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    #lesson-header h2 { font-size: 26px; font-weight: 700; }
+    #lesson-body { font-size: 15px; line-height: 1.75; }
+
+    /* Markdown styles */
+    #lesson-body h1 { font-size: 22px; font-weight: 700; margin: 28px 0 10px; }
+    #lesson-body h2 { font-size: 18px; font-weight: 600; margin: 24px 0 8px; padding-top: 24px; border-top: 1px solid var(--border); }
+    #lesson-body h2:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    #lesson-body h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+    #lesson-body p { margin-bottom: 14px; }
+    #lesson-body ul, #lesson-body ol { margin: 0 0 14px 20px; }
+    #lesson-body li { margin-bottom: 4px; }
+    #lesson-body code { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace; font-size: 13px; }
+    #lesson-body pre { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 20px; overflow-x: auto; margin: 0 0 16px; }
+    #lesson-body pre code { background: none; border: none; padding: 0; color: inherit; font-size: 13px; }
+    #lesson-body blockquote { border-left: 4px solid var(--accent); padding: 10px 16px; background: var(--accent-light); border-radius: 0 8px 8px 0; margin: 0 0 14px; color: var(--text); }
+    #lesson-body strong { font-weight: 600; }
+    #lesson-body a { color: var(--accent); }
+
+    /* Action bar */
+    #lesson-actions { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    .btn {
+      padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Quiz */
+    #quiz-panel { margin-top: 32px; padding: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    #quiz-panel h3 { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+    .question-block { margin-bottom: 24px; }
+    .question-text { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option-label {
+      display: flex; align-items: flex-start; gap: 10; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+      font-size: 14px; transition: all 0.15s;
+    }
+    .option-label:hover { border-color: var(--accent); background: var(--accent-light); }
+    .option-label input { margin-right: 10px; margin-top: 3px; }
+    .option-label.correct { border-color: var(--success); background: var(--success-light); }
+    .option-label.wrong { border-color: var(--error); background: var(--error-light); }
+    .explanation { font-size: 13px; color: var(--text-secondary); margin-top: 8px; padding: 8px 12px; background: var(--bg); border-radius: 6px; display: none; }
+    .explanation.visible { display: block; }
+
+    #quiz-result { padding: 16px; border-radius: 8px; margin-top: 20px; font-size: 15px; font-weight: 500; }
+    #quiz-result.pass { background: var(--success-light); color: var(--success); }
+    #quiz-result.fail { background: var(--error-light); color: var(--error); }
+
+    /* Reflection */
+    #reflection-section { margin-top: 28px; }
+    #reflection-section label { font-size: 15px; font-weight: 500; display: block; margin-bottom: 8px; }
+    #reflection-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; resize: vertical; min-height: 80px; font-family: inherit; }
+    #reflection-input:focus { outline: none; border-color: var(--accent); }
+
+    /* Loading */
+    #loading { text-align: center; padding: 80px; color: var(--text-secondary); }
+
+    /* Error */
+    #error-screen { padding: 40px; }
+    #error-screen .error-box { background: var(--error-light); border: 1px solid var(--error); border-radius: 12px; padding: 24px; }
+    #error-screen h3 { color: var(--error); margin-bottom: 8px; }
+
+    /* Clarifications */
+    #clarifications-section { margin-top: 40px; }
+    #clarifications-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .clarification-card { background: var(--warning-light); border: 1px solid #fde68a; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .clarification-header { padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; }
+    .clarification-header:hover { background: #fef3c7; }
+    .clarification-toggle { font-size: 12px; color: var(--text-secondary); }
+    .clarification-body { padding: 0 16px 16px; font-size: 14px; line-height: 1.7; display: none; }
+    .clarification-body.open { display: block; }
+    .clarification-body p { margin-bottom: 10px; }
+    .clarification-body code { background: rgba(0,0,0,0.06); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 13px; }
+    .clarification-body pre { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 16px; overflow-x: auto; }
+    .clarification-body pre code { background: none; padding: 0; }
+    .clarification-source { font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 10px; }
+
+    /* Ask Claude panel */
+    #claude-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+    #claude-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    #claude-panel p { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+    #claude-prompt { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: monospace; color: var(--text); cursor: text; min-height: 60px; resize: vertical; }
+    .copy-hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* Completion banner */
+    #completion-banner { display: none; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-radius: 12px; padding: 32px; text-align: center; margin-top: 40px; }
+    #completion-banner h2 { font-size: 24px; margin-bottom: 8px; }
+    #completion-banner p { opacity: 0.85; }
+    #completion-banner.visible { display: block; }
+
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      #main-content { margin-left: 0; padding: 20px; }
+    }
+  </style>
+
+<script>
+/* ── Tutor static build: embedded course data + fetch override ── */
+(function () {
+  var D = {"course":{"id":"bdat-608","title":"BDAT 608: Computational Statistics in Big Data II","description":"The complete statistical modelling workflow in R: defining model families, fitting with OLS and custom loss functions, visualising predictions and residuals, writing R formulas for interactions and splines, handling missing data, and extending to GLMs, robust regression, GAMs, penalised regression, and decision trees. Anchored by two real-data case studies using diamonds and nycflights13.","author":"Richard Minkah, PhD and E. Somua-Wiafe, PhD — Department of Statistics & Actuarial Science, University of Ghana, Legon","version":"1.0.0","subject":"Computational Statistics / R","level":"intermediate","estimatedHours":8,"prerequisites":["Basic R and ggplot2","First statistics course (regression concepts)","BDAT 607 or equivalent"],"apiSubmission":{"enabled":false,"endpoint":"","courseId":""},"modules":[{"id":"module-01","title":"Introduction to Statistical Modelling","description":"What a statistical model is, the signal/noise decomposition, and the iterative modelling cycle that drives the entire course.","lessons":[{"id":"lesson-01","title":"What Is a Statistical Model?","difficulty":"beginner","files":{"lesson":"_course/lessons/module-01/lesson-01/lesson.md","exercise":"_course/lessons/module-01/lesson-01/exercise.Rmd","solution":"_course/lessons/module-01/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-01-lesson-01.json","task":"_assessments/tasks/module-01-lesson-01.md","required":true,"estimatedMinutes":15},{"id":"lesson-02","title":"Setting Up the R Modelling Environment","difficulty":"beginner","files":{"lesson":"_course/lessons/module-01/lesson-02/lesson.md","exercise":"_course/lessons/module-01/lesson-02/exercise.Rmd","solution":"_course/lessons/module-01/lesson-02/solution.Rmd"},"quiz":"_assessments/quizzes/module-01-lesson-02.json","task":"_assessments/tasks/module-01-lesson-02.md","required":true,"estimatedMinutes":20}]},{"id":"module-02","title":"Fitting a Simple Linear Model","description":"From scratch: define loss functions, search the parameter space, and arrive at closed-form OLS — understanding what lm() is actually doing.","lessons":[{"id":"lesson-01","title":"Loss Functions — RMSE and MAE","difficulty":"beginner","files":{"lesson":"_course/lessons/module-02/lesson-01/lesson.md","exercise":"_course/lessons/module-02/lesson-01/exercise.Rmd","solution":"_course/lessons/module-02/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-02-lesson-01.json","task":"_assessments/tasks/module-02-lesson-01.md","required":true,"estimatedMinutes":25},{"id":"lesson-02","title":"Search Strategies and Numerical Optimisation","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-02/lesson-02/lesson.md","exercise":"_course/lessons/module-02/lesson-02/exercise.Rmd","solution":"_course/lessons/module-02/lesson-02/solution.Rmd"},"quiz":"_assessments/quizzes/module-02-lesson-02.json","task":"_assessments/tasks/module-02-lesson-02.md","required":true,"estimatedMinutes":30},{"id":"lesson-03","title":"Closed-Form OLS with lm()","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-02/lesson-03/lesson.md","exercise":"_course/lessons/module-02/lesson-03/exercise.Rmd","solution":"_course/lessons/module-02/lesson-03/solution.Rmd"},"quiz":"_assessments/quizzes/module-02-lesson-03.json","task":"_assessments/tasks/module-02-lesson-03.md","required":true,"estimatedMinutes":25}]},{"id":"module-03","title":"Visualising Models","description":"Generate prediction grids, overlay fitted lines, plot residuals, and read the four standard diagnostic plots that reveal model failures.","lessons":[{"id":"lesson-01","title":"Predictions and Residuals with modelr","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-03/lesson-01/lesson.md","exercise":"_course/lessons/module-03/lesson-01/exercise.Rmd","solution":"_course/lessons/module-03/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-03-lesson-01.json","task":"_assessments/tasks/module-03-lesson-01.md","required":true,"estimatedMinutes":30},{"id":"lesson-02","title":"Diagnostic Plots and Model Comparison","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-03/lesson-02/lesson.md","exercise":"_course/lessons/module-03/lesson-02/exercise.Rmd","solution":"_course/lessons/module-03/lesson-02/solution.Rmd"},"quiz":"_assessments/quizzes/module-03-lesson-02.json","task":"_assessments/tasks/module-03-lesson-02.md","required":true,"estimatedMinutes":25}]},{"id":"module-04","title":"Formulas, Model Families, and Missing Data","description":"R's formula language in depth: dummy coding, interactions, polynomial terms, natural splines, cross-validation for complexity selection, and principled missing-data handling.","lessons":[{"id":"lesson-01","title":"Formula Notation, Model Matrix, and Categorical Predictors","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-04/lesson-01/lesson.md","exercise":"_course/lessons/module-04/lesson-01/exercise.Rmd","solution":"_course/lessons/module-04/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-04-lesson-01.json","task":"_assessments/tasks/module-04-lesson-01.md","required":true,"estimatedMinutes":30},{"id":"lesson-02","title":"Interactions and Transformations","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-04/lesson-02/lesson.md","exercise":"_course/lessons/module-04/lesson-02/exercise.Rmd","solution":"_course/lessons/module-04/lesson-02/solution.Rmd"},"quiz":"_assessments/quizzes/module-04-lesson-02.json","task":"_assessments/tasks/module-04-lesson-02.md","required":true,"estimatedMinutes":35},{"id":"lesson-03","title":"Splines, Cross-Validation, and Missing Values","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-04/lesson-03/lesson.md","exercise":"_course/lessons/module-04/lesson-03/exercise.Rmd","solution":"_course/lessons/module-04/lesson-03/solution.Rmd"},"quiz":"_assessments/quizzes/module-04-lesson-03.json","task":"_assessments/tasks/module-04-lesson-03.md","required":true,"estimatedMinutes":40}]},{"id":"module-05","title":"Beyond Linear Models","description":"When OLS is not enough: GLMs for binary and count responses, robust regression for outlier-contaminated data, GAMs for non-linear effects, and penalised regression and trees for high-dimensional or non-linear settings.","lessons":[{"id":"lesson-01","title":"Generalised Linear Models — Logistic and Poisson Regression","difficulty":"intermediate","files":{"lesson":"_course/lessons/module-05/lesson-01/lesson.md","exercise":"_course/lessons/module-05/lesson-01/exercise.Rmd","solution":"_course/lessons/module-05/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-05-lesson-01.json","task":"_assessments/tasks/module-05-lesson-01.md","required":true,"estimatedMinutes":35},{"id":"lesson-02","title":"Robust Regression and Generalised Additive Models","difficulty":"advanced","files":{"lesson":"_course/lessons/module-05/lesson-02/lesson.md","exercise":"_course/lessons/module-05/lesson-02/exercise.Rmd","solution":"_course/lessons/module-05/lesson-02/solution.Rmd"},"quiz":"_assessments/quizzes/module-05-lesson-02.json","task":"_assessments/tasks/module-05-lesson-02.md","required":true,"estimatedMinutes":40},{"id":"lesson-03","title":"Penalised Regression and Decision Trees","difficulty":"advanced","files":{"lesson":"_course/lessons/module-05/lesson-03/lesson.md","exercise":"_course/lessons/module-05/lesson-03/exercise.Rmd","solution":"_course/lessons/module-05/lesson-03/solution.Rmd"},"quiz":"_assessments/quizzes/module-05-lesson-03.json","task":"_assessments/tasks/module-05-lesson-03.md","required":true,"estimatedMinutes":40}]},{"id":"module-06","title":"Extended Case Studies","description":"Three real-data case studies that integrate the full course: progressive model building on diamonds, many-model pipelines with purrr on nycflights13, and non-linear growth models with nls().","lessons":[{"id":"lesson-01","title":"Model Building in Practice — Diamonds, Flights, and Growth Models","difficulty":"advanced","files":{"lesson":"_course/lessons/module-06/lesson-01/lesson.md","exercise":"_course/lessons/module-06/lesson-01/exercise.Rmd","solution":"_course/lessons/module-06/lesson-01/solution.Rmd"},"quiz":"_assessments/quizzes/module-06-lesson-01.json","task":"_assessments/tasks/module-06-lesson-01.md","required":true,"estimatedMinutes":60}]}]},"lessons":{"_course/lessons/module-01/lesson-01/lesson.md":"# Lesson 1: What Is a Statistical Model?\n\n## Goal\n\nExplain what a statistical model is by decomposing observed data into signal (the systematic pattern) and noise (random variation), and describe the two key objects: the model family and the fitted model.\n\n## Concept\n\nA statistical model is a mathematical device for separating what we can explain from what we cannot.\n\nEvery observation $y$ is written as:\n\n$y = \\underbrace{f(x)}_{\\text{signal}} + \\underbrace{\\varepsilon}_{\\text{noise}}$\n\n- **Signal** $f(x)$ is the structural relationship between the predictor $x$ and the response $y$. It is what we want to learn.\n- **Noise** $\\varepsilon$ is random variation — measurement error, unobserved factors, pure chance. No model can explain this.\n\n### Two distinct objects\n\n| Object | What it is | Example |\n|--------|-----------|---------|\n| **Model family** | The *shape* of the equation; all possible versions | All straight lines: $y = a_1 + a_2 x$ |\n| **Fitted model** | The *specific member* of the family closest to the data | $\\hat{y} = 4.22 + 2.05\\,x$ |\n\nChoosing a model family is an **assumption** about how the world works. You cannot verify the assumption from the data alone — you can only check whether it is reasonable by inspecting the residuals (what the model missed).\n\n### The modelling cycle\n\nStatistical modelling is iterative, not linear:\n\n```\nObserve Data → Choose Model Family → Fit Model → Generate Predictions\n      ↑                                                      ↓\n Revise Model ← Inspect Residuals ←────────────────────────┘\n```\n\nThis cycle repeats until the residuals look like random noise — meaning the model has captured all available systematic variation.\n\n> \"All models are wrong, but some are useful.\" — George E. P. Box\n\nThe question is never *Is the model true?* but *Is the model adequate for this purpose?*\n\n## Example\n\nConsider the `sim1` dataset from the `modelr` package. It has 30 rows with two columns: `x` (a predictor) and `y` (a response).\n\n```r\nlibrary(modelr)\ndata(\"sim1\")\nglimpse(sim1)\n# $ x <int> 1 1 1 2 2 2 3 3 3 ... (each x-value repeated 3 times)\n# $ y <dbl> 4.20 7.51 2.13 8.99 ...\n```\n\nPlotting `sim1` reveals a clear **linear** trend with random scatter around it:\n\n```r\nlibrary(ggplot2)\nggplot(sim1, aes(x, y)) +\n  geom_point(size = 3, colour = \"#1B3A6B\") +\n  labs(title = \"sim1: Response vs Predictor\") +\n  theme_minimal()\n```\n\nThe model family we choose is: $y = a_1 + a_2 x + \\varepsilon$ (a straight line).\n\nThe fitted model — found by minimising a loss function, as we will learn in Module 2 — turns out to be approximately $\\hat{y} = 4.22 + 2.05\\,x$.\n\nThe **residuals** (observed minus fitted) are what the straight line could not explain. Plotting them reveals whether any systematic pattern remains.\n\n## Task\n\nOpen `exercise.Rmd` and complete the two marked chunks:\n\n1. Load `sim1` from `modelr` and call `glimpse()` on it. Report: how many rows? How many columns?\n2. Create a scatter plot of `y` versus `x` using `ggplot2`. Add a title \"sim1: My first look\".\n\nKnit the document when done. All chunks must run without errors.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-01 lesson-01\n```\n\n## Reflection\n\nA classmate says: \"We just need to find the equation that fits the data perfectly — zero residuals.\" What is wrong with this goal, and what does it tell us about the difference between fitting training data and predicting new observations?\n","_course/lessons/module-01/lesson-02/lesson.md":"# Lesson 2: Setting Up the R Modelling Environment\n\n## Goal\n\nInstall and load the R packages used throughout BDAT 608, verify that key datasets are available, and produce your first diagnostic scatter plot of the `sim1` data.\n\n## Concept\n\nBefore fitting any model, you need a reproducible environment: the right packages loaded, global options set, and an understanding of the datasets you will use.\n\n### Core packages\n\n| Package | Key functions | Why we use it |\n|---------|--------------|---------------|\n| `tidyverse` | `ggplot2`, `dplyr`, `purrr`, `tidyr` | Data manipulation and visualisation |\n| `modelr` | `data_grid()`, `add_predictions()`, `add_residuals()` | Model-centric helpers for tidy workflows |\n| `splines` | `ns()` | Natural spline basis (ships with base R) |\n| `ggfortify` | `autoplot()` | ggplot2-style diagnostics for `lm` objects |\n| `caret` | `createFolds()` | Cross-validation helpers |\n| `mice` | `mice()`, `pool()` | Multiple imputation for missing data |\n| `mgcv` | `gam()`, `s()`, `te()` | Generalised Additive Models |\n| `rpart` | `rpart()` | Decision trees |\n| `MASS` | `rlm()` | Robust linear regression |\n| `glmnet` | `glmnet()`, `cv.glmnet()` | Ridge and LASSO regularisation |\n| `broom` | `tidy()`, `augment()`, `glance()` | Tidy model outputs |\n\n### One important global option\n\n```r\noptions(na.action = na.warn)\n```\n\nThis makes R warn you whenever a modelling function silently drops rows with missing values. Without it, you can lose data without realising it.\n\n### The `sim1`–`sim4` datasets\n\nAll four are built into `modelr`. Each is a small teaching dataset designed to illustrate a different modelling scenario:\n\n| Dataset | Predictors | Purpose |\n|---------|-----------|---------|\n| `sim1` | 1 continuous | Simple linear relationship |\n| `sim2` | 1 categorical | Categorical predictors |\n| `sim3` | 1 continuous + 1 categorical | Interactions |\n| `sim4` | 2 continuous | Two-predictor interaction surfaces |\n\n### MASS masks dplyr\n\n**Important:** `MASS` exports a function also called `select()`. When loaded after `tidyverse`, it will overwrite `dplyr::select()`, breaking many pipelines. Always restore the tidyverse versions:\n\n```r\nlibrary(MASS)\nselect <- dplyr::select   # restore after MASS masks it\nfilter <- dplyr::filter\n```\n\n## Example\n\n```r\nlibrary(tidyverse)\nlibrary(modelr)\n\noptions(na.action = na.warn)\n\ndata(\"sim1\", package = \"modelr\")\nglimpse(sim1)\n\nggplot(sim1, aes(x, y)) +\n  geom_point(size = 3, colour = \"#1B3A6B\") +\n  labs(\n    title    = \"sim1: Response vs Predictor\",\n    subtitle = \"There is a clear linear trend with random scatter around it.\"\n  ) +\n  theme_minimal(base_size = 13)\n```\n\nA quick `glimpse()` confirms `sim1` has 30 rows and 2 columns. The scatter plot shows a clear upward linear trend: each unit increase in `x` is associated with an increase in `y`.\n\n## Task\n\nOpen `exercise.Rmd` and complete the tasks:\n\n1. Install any missing packages (use the `eval=FALSE` chunk so it does not run on every knit).\n2. Load all required packages and restore `dplyr::select` and `dplyr::filter`.\n3. Set `options(na.action = na.warn)`.\n4. Run the package check and confirm all packages return `TRUE`.\n5. Produce a `glimpse()` of `sim1` and a scatter plot with title \"sim1: Ready to model\".\n\nKnit the document. It must produce HTML with no errors.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-01 lesson-02\n```\n\n## Reflection\n\nWhy do we set `options(na.action = na.warn)` at the start of every modelling session, rather than relying on R's default behaviour? Give a concrete example of the kind of mistake this option helps prevent.\n","_course/lessons/module-02/lesson-01/lesson.md":"# Lesson 3: Loss Functions — RMSE and MAE\n\n## Goal\n\nImplement Root Mean Squared Error (RMSE) and Mean Absolute Error (MAE) as R functions, evaluate them on candidate models, and explain when each is preferred.\n\n## Concept\n\nTo \"fit\" a model means to find the parameter values that bring the model's predictions as close as possible to the observed data. But \"close\" needs a precise definition — that is what a **loss function** provides.\n\n### RMSE — Root Mean Squared Error\n\n$\\text{RMSE} = \\sqrt{\\frac{1}{n}\\sum_{i=1}^n (y_i - \\hat{y}_i)^2}$\n\n- Residuals are **squared** before averaging, so large errors are penalised much more heavily than small ones.\n- Minimising RMSE is mathematically equivalent to **Ordinary Least Squares (OLS)**.\n- The squaring makes OLS sensitive to outliers: a single extreme point can pull the entire fitted line toward itself.\n\n### MAE — Mean Absolute Error\n\n$\\text{MAE} = \\frac{1}{n}\\sum_{i=1}^n |y_i - \\hat{y}_i|$\n\n- All residuals are weighted by their **absolute** magnitude — no squaring.\n- No single large residual dominates.\n- MAE is more resistant to outliers than RMSE.\n\n### When to prefer each\n\n| Criterion | Prefer when |\n|-----------|------------|\n| RMSE (OLS) | Noise is approximately normally distributed; outliers are rare |\n| MAE | Noise has heavy tails; outliers are present or expected |\n\n> The choice of loss function is a modelling decision that affects which line you end up with. It is worth making consciously.\n\n## Example\n\n```r\nlibrary(modelr)\ndata(\"sim1\")\n\n# Predicted values for a given (intercept, slope) pair\nmodel1 <- function(a, data) {\n  a[1] + data$x * a[2]\n}\n\n# RMSE: penalises large errors quadratically\nmeasure_distance <- function(mod, data) {\n  resid <- data$y - model1(mod, data)\n  sqrt(mean(resid^2))\n}\n\n# MAE: penalises all errors on the absolute scale\nmeasure_mae <- function(mod, data) {\n  resid <- data$y - model1(mod, data)\n  mean(abs(resid))\n}\n\nmeasure_distance(c(7, 1.5), sim1)   # RMSE for intercept=7, slope=1.5\nmeasure_mae(c(7, 1.5), sim1)        # MAE for the same candidate\n```\n\nRunning these reveals that `c(7, 1.5)` is a poor fit. A better line will have a lower loss value. The best line is the one where **no small change in the parameters can reduce the loss further**.\n\nTo see why MAE is more robust, simulate data with heavy-tailed noise:\n\n```r\nset.seed(42)\nsim1a <- tibble(\n  x = rep(1:10, each = 3),\n  y = x * 1.5 + 6 + rt(length(x), df = 2)   # Student-t(df=2) = very heavy tails\n)\n```\n\nStudent-$t$ with $df = 2$ occasionally generates extreme values. OLS squares those extremes; MAE does not — so MAE stays closer to the true slope.\n\n## Task\n\nOpen `exercise.Rmd` and complete the tasks:\n\n1. Implement `model1()`, `measure_distance()`, and `measure_mae()` as shown above.\n2. Evaluate both loss functions for three candidate models: `c(7,1.5)`, `c(5,2)`, and `c(4,2)` on `sim1`. Which candidate has the lowest RMSE?\n3. Create `sim1a` (Student-$t$ noise) and compare RMSE vs MAE for the same three candidates. Do the two criteria agree on the best candidate?\n\n## Check\n\n```\nnpm run check -- bdat-608 module-02 lesson-01\n```\n\n## Reflection\n\nYou have two loss functions for the same dataset — RMSE and MAE — and they give different \"best\" candidates. What does this tell you about the relationship between the choice of loss function and the choice of model?\n","_course/lessons/module-02/lesson-02/lesson.md":"# Lesson 4: Search Strategies and Numerical Optimisation\n\n## Goal\n\nUse random search, grid search, and `optim()` to find the parameter values that minimise a loss function, and understand the relationship between these methods and the RMSE landscape.\n\n## Concept\n\nOnce you have a loss function, fitting a model means finding the parameter values at the **minimum** of that function. There are three strategies, ordered from least to most efficient:\n\n### 1. Random Search\n\nGenerate many random parameter pairs, evaluate the loss for each, and keep the best ones.\n\n```r\nmodels <- tibble(\n  a1 = runif(250, -20, 40),\n  a2 = runif(250, -5, 5)\n) |>\n  mutate(dist = map2_dbl(a1, a2, sim1_dist))\n```\n\n**Pro:** Simple to implement.  \n**Con:** Wastes evaluations in poor regions; unlikely to find the true minimum precisely.\n\n### 2. Grid Search\n\nEvaluate the loss on a structured, evenly spaced grid of parameter values.\n\n```r\ngrid_search <- expand.grid(\n  a1 = seq(-5, 20, length = 25),\n  a2 = seq(1, 3, length = 25)\n) |>\n  mutate(dist = map2_dbl(a1, a2, sim1_dist))\n```\n\n**Pro:** Systematic; explores the space evenly.  \n**Con:** Exponentially expensive as the number of parameters grows (the *curse of dimensionality*). With 50 parameters and 10 grid points each, you need $10^{50}$ evaluations.\n\n### 3. `optim()` — Numerical Optimisation\n\n`optim()` starts at a given point and iteratively moves toward lower loss values using an algorithm (default: Nelder-Mead simplex).\n\n```r\nbest <- optim(par = c(0, 0), fn = measure_distance, data = sim1)\nbest$par    # optimal (intercept, slope)\nbest$value  # minimum RMSE achieved\n```\n\n**Pro:** Scales to many parameters; converges to the minimum far more efficiently than search.  \n**Con:** Requires sensible starting values; can get trapped in local minima for non-convex loss surfaces.\n\n### The RMSE landscape\n\nIt helps to visualise the loss as a surface over the parameter space:\n\n```r\nggplot(models, aes(a1, a2, colour = dist)) +\n  geom_point(size = 2) +\n  scale_colour_viridis_c(name = \"RMSE\") +\n  labs(title = \"RMSE landscape over (intercept, slope)\")\n```\n\nThe low-RMSE region (yellow in viridis) is a narrow valley. `optim()` walks down into that valley; random and grid search just sample from it.\n\n## Example\n\n```r\nlibrary(modelr); library(tidyverse)\ndata(\"sim1\")\n\nmodel1 <- function(a, data) a[1] + data$x * a[2]\nmeasure_distance <- function(mod, data) {\n  sqrt(mean((data$y - model1(mod, data))^2))\n}\nsim1_dist <- function(a1, a2) measure_distance(c(a1, a2), sim1)\n\n# optim() finds the minimum\nbest <- optim(c(0, 0), measure_distance, data = sim1)\ncat(\"Intercept:\", round(best$par[1], 4), \"  Slope:\", round(best$par[2], 4))\ncat(\"Min RMSE:\", round(best$value, 4))\n```\n\nRunning this gives approximately intercept = 4.22, slope = 2.05 — the same as `lm()`. The difference is that `optim()` uses an iterative algorithm while `lm()` has a closed-form solution (more on that in Lesson 5).\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Run a random search with 500 candidate models on `sim1`. Plot the top 10 lines (ranked by RMSE) overlaid on the scatter plot.\n2. Plot the RMSE landscape — a scatter plot of `a1` vs `a2` coloured by `dist`.\n3. Run `optim()` to find the best (intercept, slope) for RMSE. Print the result.\n4. Compare: which search method came closest to `optim()`'s answer?\n\n## Check\n\n```\nnpm run check -- bdat-608 module-02 lesson-02\n```\n\n## Reflection\n\nGrid search is systematic but impractical for many parameters. `optim()` is efficient but needs starting values. What is the risk of providing poor starting values to `optim()`, and how would you mitigate it?\n","_course/lessons/module-02/lesson-03/lesson.md":"# Lesson 5: Closed-Form OLS with lm()\n\n## Goal\n\nFit a linear model using `lm()`, interpret the `summary()` output, and explain why `lm()` is preferred over `optim()` for standard linear models.\n\n## Concept\n\nIn the previous lessons you used `optim()` to find the parameters that minimise RMSE. For ordinary linear models there is a better way: the **closed-form OLS solution**.\n\n### The normal equations\n\nFor the linear model $\\mathbf{y} = \\mathbf{X}\\boldsymbol{\\beta} + \\boldsymbol{\\varepsilon}$, the parameters that minimise the sum of squared residuals satisfy:\n\n$\\hat{\\boldsymbol{\\beta}} = (\\mathbf{X}^\\top \\mathbf{X})^{-1} \\mathbf{X}^\\top \\mathbf{y}$\n\nThis is called the **normal equations**. For simple regression ($y = a_1 + a_2 x$), this reduces to:\n\n$\\hat{a}_2 = \\frac{\\sum(x_i - \\bar{x})(y_i - \\bar{y})}{\\sum(x_i - \\bar{x})^2}, \\qquad \\hat{a}_1 = \\bar{y} - \\hat{a}_2 \\bar{x}$\n\n`lm()` computes this via **QR decomposition** — a numerically stable algorithm that avoids explicitly inverting $\\mathbf{X}^\\top \\mathbf{X}$.\n\n### Key `lm()` output\n\n```r\nsim1_mod <- lm(y ~ x, data = sim1)\nsummary(sim1_mod)\n```\n\nThe `summary()` table contains:\n\n| Output | What it means |\n|--------|--------------|\n| `Estimate` | The fitted $\\hat{\\beta}$ values |\n| `Std. Error` | Standard error of each estimate |\n| `t value` | Estimate / Std. Error — how many SEs from zero |\n| `Pr(>|t|)` | p-value: probability of a t this extreme if $\\beta = 0$ |\n| `R-squared` | Fraction of variance in $y$ explained by the model |\n| `F-statistic` | Overall model significance |\n\n### `coef()` and `nobs()`\n\n```r\ncoef(sim1_mod)    # named vector: (Intercept), x\nnobs(sim1_mod)    # number of observations used (important if NAs were dropped)\n```\n\n### Why lm() instead of optim()?\n\n| | `optim()` | `lm()` |\n|--|-----------|--------|\n| Algorithm | Iterative (Nelder-Mead) | Direct (QR decomposition) |\n| Speed | Slower; may not converge | Fast; always exact |\n| Output | Only parameters and loss value | Full inference table (SEs, p-values, R²) |\n| Requires starting values | Yes | No |\n| Use case | Custom loss functions | Standard OLS |\n\nFor standard OLS, always use `lm()`.\n\n## Example\n\n```r\nlibrary(modelr)\ndata(\"sim1\")\n\nsim1_mod <- lm(y ~ x, data = sim1)\ncoef(sim1_mod)\n# (Intercept)         x\n#    4.220822  2.051533\n\nsummary(sim1_mod)\n# R-squared: 0.8634 — 86% of variance explained\n```\n\nThe slope ≈ 2.05 means: on average, a one-unit increase in `x` is associated with a 2.05-unit increase in `y`. The intercept ≈ 4.22 is the expected `y` when `x = 0`.\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Fit `sim1_mod <- lm(y ~ x, data = sim1)`. Extract `coef()` and print `summary()`.\n2. What is the R² value? Interpret it in one sentence.\n3. Compare the `lm()` coefficients with those found by `optim()` in Lesson 4. How close are they?\n4. Compute a 95% confidence interval for the slope using `confint(sim1_mod)`.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-02 lesson-03\n```\n\n## Reflection\n\n`lm()` and `optim(RMSE)` give the same intercept and slope estimates. If the answers are identical, why would we ever prefer `lm()` over `optim()`? Think about what extra information `lm()` provides that `optim()` does not.\n","_course/lessons/module-03/lesson-01/lesson.md":"# Lesson 6: Predictions and Residuals with modelr\n\n## Goal\n\nUse `data_grid()`, `add_predictions()`, and `add_residuals()` from the `modelr` package to visualise a fitted model and inspect its residuals.\n\n## Concept\n\nAfter fitting a model with `lm()`, you need to see what it predicts and what it missed. The `modelr` package provides three helper functions that work with **any** model that has a `predict()` method:\n\n### `data_grid()` — create a prediction grid\n\n```r\ngrid <- sim1 |> data_grid(x)\n```\n\n`data_grid()` creates a clean data frame spanning the range of each predictor, with evenly spaced values. This is the input to your prediction step.\n\n### `add_predictions()` — overlay fitted values\n\n```r\ngrid <- grid |> add_predictions(sim1_mod)\n# adds a column named `pred`\n```\n\n`add_predictions()` calls `predict()` internally for you. The result is a tidy data frame with a `pred` column ready for `ggplot2`.\n\n### `add_residuals()` — compute residuals on the original data\n\n```r\nsim1 <- sim1 |> add_residuals(sim1_mod)\n# adds a column named `resid`\n```\n\n`add_residuals()` computes $y - \\hat{y}$ for each row of the original data.\n\n### What to look for in residual plots\n\nA well-specified model produces residuals that:\n\n1. **Centre at zero** — no systematic over- or under-prediction\n2. **Show no pattern against predictors** — all structure has been captured\n3. **Have roughly constant spread** — no fan-shaped heteroscedasticity\n\nIf you see a curved band, a fan shape, or a non-zero mean, the model is misspecified or assumptions are violated.\n\n## Example\n\n```r\nlibrary(modelr)\ndata(\"sim1\")\nsim1_mod <- lm(y ~ x, data = sim1)\n\n# Prediction grid + fitted line\ngrid <- sim1 |>\n  data_grid(x) |>\n  add_predictions(sim1_mod)\n\nggplot(sim1, aes(x)) +\n  geom_point(aes(y = y), colour = \"#1B3A6B\", size = 2.5) +\n  geom_line(aes(y = pred), data = grid, colour = \"#C9A84C\", linewidth = 1.3) +\n  labs(title = \"sim1: Data and Fitted Line\") +\n  theme_minimal()\n\n# Residuals\nsim1 <- sim1 |> add_residuals(sim1_mod)\n\nggplot(sim1, aes(x, resid)) +\n  geom_ref_line(h = 0, colour = \"#C9A84C\") +\n  geom_point(colour = \"#1B3A6B\", size = 2.5) +\n  labs(title = \"Residuals vs x\") +\n  theme_minimal()\n```\n\nThe residuals plot shows random scatter around zero with no visible curve — confirming that the linear model is correctly specified for `sim1`.\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Fit `sim1_mod <- lm(y ~ x, data = sim1)`.\n2. Build a prediction grid and plot observed data + fitted line.\n3. Add residuals to `sim1` and plot a frequency polygon of the residuals.\n4. Plot residuals vs `x`. Is the linear model well-specified?\n\n## Check\n\n```\nnpm run check -- bdat-608 module-03 lesson-01\n```\n\n## Reflection\n\nIf a residuals-vs-predictor plot showed an upward-curving band (positive residuals for low and high x, negative residuals in the middle), what would this tell you about the model? What would you do next?\n","_course/lessons/module-03/lesson-02/lesson.md":"# Lesson 7: Diagnostic Plots and Model Comparison\n\n## Goal\n\nRead and interpret the four standard OLS diagnostic plots, use `ggfortify::autoplot()` as a ggplot2 alternative, and compare two competing models by overlaying their predictions and residuals.\n\n## Concept\n\n### The four standard OLS diagnostics\n\nCalling `plot(lm_object)` produces a 2×2 grid:\n\n| Plot | What it shows | Ideal appearance |\n|------|--------------|-----------------|\n| **Residuals vs Fitted** | Non-linearity; heteroscedasticity | Random horizontal band around 0 |\n| **Normal Q-Q** | Normality of residuals | Points lying on the 45° diagonal |\n| **Scale-Location** | Homoscedasticity (constant variance) | Flat red loess line |\n| **Cook's Distance** | Influential observations | No point much greater than 1 |\n\n```r\npar(mfrow = c(2, 2))\nplot(sim1_mod)\npar(mfrow = c(1, 1))\n```\n\n### ggplot2-style diagnostics with `ggfortify`\n\n```r\nlibrary(ggfortify)\nautoplot(sim1_mod, which = 1:4, colour = \"#1B3A6B\", smooth.colour = \"#C9A84C\")\n```\n\n`autoplot()` produces the same four diagnostics but as ggplot2 objects — easier to customise and embed in Rmd reports.\n\n### Comparing multiple models\n\n`gather_predictions()` stacks predictions from multiple models into one long data frame for faceted comparison:\n\n```r\nmod_a <- lm(y ~ x,          data = sim1)\nmod_b <- lm(y ~ x + I(x^2), data = sim1)\n\ngrid_multi <- sim1 |>\n  data_grid(x) |>\n  gather_predictions(mod_a, mod_b)\n\nggplot(sim1, aes(x, y)) +\n  geom_point(colour = \"grey40\") +\n  geom_line(data = grid_multi, aes(y = pred, colour = model)) +\n  facet_wrap(~ model) +\n  theme_minimal()\n```\n\nSimilarly, `gather_residuals()` stacks residuals for side-by-side comparison.\n\n### Cook's Distance\n\nCook's Distance measures how much each observation influences the fitted coefficients. A value > 1 (or > 4/n as a stricter rule) indicates a potentially influential point. Large Cook's D combined with a large residual is the most concerning combination.\n\n## Example\n\nFor `sim1`, all four diagnostic plots look clean:\n- Residuals vs Fitted: random scatter around 0, flat red line.\n- Q-Q: points track the diagonal well.\n- Scale-Location: flat line — constant variance.\n- Cook's Distance: all values small — no single point dominates.\n\nAdding a quadratic term (`mod_b`) makes negligible difference for `sim1` because the relationship is already linear:\n\n```r\nAIC(mod_a, mod_b)   # mod_a has lower AIC despite fewer parameters\n```\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Produce the base R 2×2 diagnostic panel for `sim1_mod`.\n2. Produce the same diagnostics using `autoplot()`.\n3. Fit a quadratic model `mod_b <- lm(y ~ x + I(x^2), data = sim1)`.\n4. Use `gather_predictions()` to overlay both models' fitted lines on `sim1`.\n5. Use `gather_residuals()` to compare residuals side-by-side with `facet_wrap`.\n6. Compare AIC for both models. Which is preferred and why?\n\n## Check\n\n```\nnpm run check -- bdat-608 module-03 lesson-02\n```\n\n## Reflection\n\nA colleague looks at the Normal Q-Q plot for their model and sees that the points deviate strongly from the diagonal at both ends (heavy tails). They say: \"The residuals are not normal, so the model is wrong.\" Is this conclusion correct? What can you say about when normality of residuals matters and when it does not?\n","_course/lessons/module-04/lesson-01/lesson.md":"# Lesson 8: Formula Notation, Model Matrix, and Categorical Predictors\n\n## Goal\n\nWrite R formulas using the `+`, `-`, and `*` operators, inspect the resulting design matrix with `model_matrix()`, and correctly fit and interpret a model with a categorical predictor.\n\n## Concept\n\nR uses a compact **formula notation** to specify model structure. Every modelling function (`lm`, `glm`, `gam`, ...) interprets the same formula language.\n\n### Formula operators\n\n| Syntax | Meaning | Example |\n|--------|---------|---------|\n| `y ~ x1 + x2` | Add predictors | Two main effects |\n| `y ~ x1 - 1` | Remove intercept | No intercept column |\n| `y ~ x1 * x2` | Main effects + interaction | `x1 + x2 + x1:x2` |\n| `y ~ x1:x2` | Interaction only | Cross-product term |\n| `y ~ I(x^2)` | Literal arithmetic | `I()` shields `^` from formula parsing |\n| `y ~ poly(x, 3)` | Polynomial basis | Degrees 1, 2, 3 |\n| `y ~ ns(x, 5)` | Natural spline | 5 degrees of freedom |\n\n### The model matrix\n\n`model_matrix()` shows exactly which columns `lm()` will create — no surprises:\n\n```r\ndf <- tribble(~y, ~x1, ~x2,  4, 2, 5,  5, 1, 6)\nmodel_matrix(df, y ~ x1)         # intercept added automatically\nmodel_matrix(df, y ~ x1 - 1)     # no intercept\nmodel_matrix(df, y ~ x1 + x2)    # two predictors\n```\n\n### Categorical predictors — dummy coding\n\nWhen a predictor is a `factor`, R automatically creates **dummy variables**: one binary column per level, minus one for the reference level.\n\n```r\ndata(\"sim2\", package = \"modelr\")\nmod2 <- lm(y ~ x, data = sim2)\nmodel_matrix(sim2, y ~ x) |> head(8)\ncoef(mod2)\n```\n\n- The intercept is the mean of the **reference level** (the first alphabetical category).\n- Each dummy coefficient is the **difference** from the reference level mean.\n- Under OLS, the predicted value for each category equals the **sample mean** of that group.\n\n> This is why linear regression with a categorical predictor and OLS is equivalent to a one-way ANOVA.\n\n## Example\n\n```r\nlibrary(modelr)\ndata(\"sim2\")\n\nmod2 <- lm(y ~ x, data = sim2)\ncoef(mod2)\n# (Intercept)    xb    xc    xd\n#        1.15  6.15  7.72  4.58\n\n# Predicted values = group means\nsim2 |>\n  data_grid(x) |>\n  add_predictions(mod2)\n```\n\nThe predicted value for group `a` is 1.15 (the intercept = mean of `a`). For group `b`, it is 1.15 + 6.15 = 7.30 (= mean of `b`).\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Use `model_matrix()` to inspect `y ~ x1`, `y ~ x1 - 1`, and `y ~ x1 + x2` on the small `df` example.\n2. Fit `mod2 <- lm(y ~ x, data = sim2)`. Print the model matrix (first 8 rows) and `coef()`.\n3. Generate predictions for each level of `x` using `data_grid(x)` + `add_predictions()`.\n4. Plot: jittered points + gold diamond at each group's predicted value.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-04 lesson-01\n```\n\n## Reflection\n\nIn the `sim2` model, the coefficient for `xb` is 6.15. A student says: \"This means that group b has a mean of 6.15.\" Is this correct? What does the coefficient actually represent?\n","_course/lessons/module-04/lesson-02/lesson.md":"# Lesson 9: Interactions and Transformations\n\n## Goal\n\nUse `*` and `:` to model interactions between predictors, interpret the resulting coefficients, and apply `I()` to protect arithmetic expressions inside formulas.\n\n## Concept\n\n### Interactions\n\nAn **interaction** means the effect of one predictor on the response depends on the value of another predictor.\n\n| Formula | Meaning |\n|---------|---------|\n| `y ~ x1 + x2` | **Additive**: one slope for `x1` in all groups |\n| `y ~ x1 * x2` | **Interaction**: slope of `x1` differs by group (`x1 + x2 + x1:x2`) |\n| `y ~ x1:x2` | Interaction term only (no main effects) — rarely used alone |\n\nWhen `x2` is categorical, `x1 * x2` fits a **separate regression line** for each group (different intercepts and slopes):\n- Group `a`: $\\hat{y} = \\beta_0 + \\beta_1 x_1$\n- Group `b`: $\\hat{y} = (\\beta_0 + \\beta_2) + (\\beta_1 + \\beta_5) x_1$\n\n**How to choose between additive and interaction:**\n1. Plot residuals by group — if the additive model leaves colour-graded patterns, slopes differ.\n2. Compare AIC — lower AIC is preferred (penalises extra parameters).\n\n### Transformations with `I()`\n\nIn R formulas, `^` is a **formula operator** (crossing), not arithmetic exponentiation. Use `I()` to shield literal arithmetic:\n\n```r\n# WRONG — collapses to y ~ x\nmodel_matrix(sim1, y ~ x^2 + x)\n\n# CORRECT — two distinct columns: x and x²\nmodel_matrix(sim1, y ~ I(x^2) + x)\n\n# Log transformation on the response\nlm(log(y) ~ x, data = sim1_base)\n```\n\n### Two continuous predictors\n\nWith two continuous predictors and an interaction:\n- **Additive model** (`x1 + x2`): parallel planes — same slope for `x1` regardless of `x2`.\n- **Interaction model** (`x1 * x2`): twisted plane — the slope of `x1` increases or decreases with `x2`.\n\nThe signature in residual plots: if the additive model residuals show a colour gradient (coloured by `x2`), the interaction is missing.\n\n## Example\n\n```r\nlibrary(modelr)\ndata(\"sim3\")\n\nmod_add <- lm(y ~ x1 + x2, data = sim3)   # parallel lines\nmod_int <- lm(y ~ x1 * x2, data = sim3)   # different slopes per group\n\nAIC(mod_add, mod_int)\n```\n\nThe interaction model has lower AIC because the slopes genuinely differ by group in `sim3`.\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Fit additive and interaction models on `sim3`. Plot predictions for both side by side.\n2. Compare residuals: `gather_residuals(mod_add, mod_int)` faceted by model and group.\n3. Compare AIC. Which model is preferred?\n4. Verify that `model_matrix(sim1_base, y ~ x^2 + x)` and `model_matrix(sim1_base, y ~ I(x^2) + x)` give different results.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-04 lesson-02\n```\n\n## Reflection\n\nYour additive model on `sim3` has a lower AIC than the interaction model on another dataset where the slopes are genuinely identical. Explain what principle this illustrates about model selection.\n","_course/lessons/module-04/lesson-03/lesson.md":"# Lesson 10: Splines, Cross-Validation, and Missing Values\n\n## Goal\n\nFit natural spline models with `ns()`, select the optimal degrees of freedom by 10-fold cross-validation, and handle missing values correctly using `na.exclude` and multiple imputation with `mice`.\n\n## Concept\n\n### Natural splines with `ns()`\n\n`poly()` polynomials capture non-linearity but extrapolate wildly outside the data range. **Natural splines** are a better-behaved alternative:\n\n- They divide the predictor range into segments at **knots** and fit smooth low-degree polynomials within each segment.\n- The key constraint: **linear in the tails** — no wild extrapolation.\n- `df` controls the complexity: more degrees of freedom → more knots → more flexibility.\n\n```r\nlibrary(splines)\nset.seed(1)\nsim5 <- tibble(x = seq(0, 3.5 * pi, length = 50), y = 4 * sin(x) + rnorm(50))\n\nsp_mods <- list(\n  df1 = lm(y ~ ns(x, 1), data = sim5),\n  df3 = lm(y ~ ns(x, 3), data = sim5),\n  df5 = lm(y ~ ns(x, 5), data = sim5)\n)\n```\n\n### Choosing `df` by 10-fold cross-validation\n\nCross-validation estimates out-of-sample performance to prevent overfitting:\n\n1. Split data into 10 folds.\n2. For each fold: train on 9, test on 1, compute RMSE.\n3. Average across the 10 held-out RMSEs.\n4. Choose the `df` at the **minimum CV-RMSE** (or the one-SE rule: smallest `df` within 1 SE of the minimum).\n\n```r\nlibrary(caret)\nset.seed(42)\ncv_rmse <- sapply(1:8, function(df) {\n  folds <- createFolds(sim5$y, k = 10)\n  mean(sapply(folds, function(idx) {\n    train <- sim5[-idx, ]; test <- sim5[idx, ]\n    sqrt(mean((test$y - predict(lm(y ~ ns(x, df), data = train), test))^2))\n  }))\n})\n```\n\nThe CV curve is **U-shaped**: too few df = underfit (high bias); too many = overfit (high variance on new data).\n\n### Missing values\n\n`lm()` silently drops rows with `NA` values. Two important options:\n\n| Option | Behaviour |\n|--------|----------|\n| `na.omit` (default) | Drops NA rows; output vectors are shorter than the input |\n| `na.exclude` | Drops NA rows but **preserves row positions** in output vectors |\n\nUse `na.exclude` when you need to merge predictions or residuals back to the original data frame — it inserts `NA` in the output at the positions of dropped rows.\n\n#### Multiple imputation with `mice`\n\nWhen missingness is substantial (> 5–10%), dropping rows wastes information and can introduce bias. Multiple imputation generates $m$ complete datasets, fits the model on each, and pools results using **Rubin's rules**:\n\n```r\nlibrary(mice)\nimp <- mice(df_miss, m = 5, method = \"pmm\", printFlag = FALSE)\nfit_imp <- with(imp, lm(y ~ x))\npool(fit_imp) |> summary()\n```\n\nThe pooled standard errors are always at least as large as complete-case standard errors because they account for uncertainty due to missing data.\n\n## Example\n\n```r\n# Cross-validation for ns() on sim5\ntibble(df = 1:8, cv_rmse) |>\n  ggplot(aes(df, cv_rmse)) +\n  geom_line(colour = \"#1B3A6B\") + geom_point(colour = \"#C9A84C\", size = 3) +\n  labs(title = \"10-fold CV RMSE vs spline df\") + theme_minimal()\n```\n\nThe minimum is typically at df = 4 or 5 for `sim5`, matching the sinusoidal pattern that spans ~1.75 wavelengths.\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Fit spline models with df = 1, 3, 5 on `sim5`. Plot all three fits faceted by model.\n2. Run 10-fold CV for df = 1 to 8. Plot the CV curve and identify the optimal df.\n3. Demonstrate `na.exclude` vs `na.omit` on a small data frame with two NA rows. Check that `na.exclude` preserves row positions.\n4. Apply multiple imputation to `sim1_base` with 10% of `y` values artificially set to `NA`. Compare pooled estimates to complete-case `lm()`.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-04 lesson-03\n```\n\n## Reflection\n\nCross-validation involves withholding observations from model fitting. Explain the trade-off between using few folds (e.g., 3-fold) versus many folds (e.g., leave-one-out CV) in terms of bias and variance of the CV estimate.\n","_course/lessons/module-05/lesson-01/lesson.md":"# Lesson 11: Generalised Linear Models — Logistic and Poisson Regression\n\n## Goal\n\nFit logistic regression for binary responses and Poisson regression for count responses using `glm()`, and correctly interpret exponentiated coefficients as odds ratios and rate ratios.\n\n## Concept\n\n### Why not OLS for binary or count responses?\n\nOrdinary linear regression can predict values outside $[0,1]$ for probabilities and negative values for counts — both physically impossible. **Generalised Linear Models (GLMs)** solve this by introducing a *link function* that maps the linear predictor to a valid range.\n\n### Logistic Regression (binary response)\n\nThe response $Y \\in \\{0,1\\}$. The model is:\n\n$\\log\\!\\left(\\frac{p}{1-p}\\right) = \\beta_0 + \\beta_1 x_1 + \\cdots$\n\nwhere $p = P(Y=1)$. Back-transforming gives $p = e^\\eta / (1+e^\\eta) \\in (0,1)$.\n\n```r\nmod_logit <- glm(Y ~ quant + verbal + gpa + toptier,\n                 data   = admit,\n                 family = binomial(link = \"logit\"))\n```\n\n**Interpreting coefficients:**\n- Exponentiate with `exp(coef(mod_logit))` to get **odds ratios**.\n- An odds ratio of 1.8 means a one-unit increase in the predictor multiplies the odds of the event by 1.8 (+80%).\n- Use `type = \"response\"` in `add_predictions()` to get probabilities, not log-odds.\n\n### Poisson Regression (count response)\n\nThe response $Y \\in \\{0, 1, 2, \\ldots\\}$. The model is:\n\n$\\log(\\mu) = \\beta_0 + \\beta_1 x_1 + \\cdots$\n\n```r\nmod_pois <- glm(n_claims ~ age + veh_age,\n                data   = claims,\n                family = poisson(link = \"log\"))\n```\n\n**Interpreting coefficients:**\n- Exponentiate to get **rate ratios**.\n- A rate ratio of 1.02 means a one-unit increase in the predictor multiplies the expected count by 1.02 (+2%).\n\n### The modelr workflow still applies\n\n```r\nadd_predictions(mod_logit, type = \"response\")   # predicted probabilities\nadd_predictions(mod_pois,  type = \"response\")   # predicted counts\n```\n\n## Example\n\n```r\nlibrary(cvAUC)\ndata(\"admissions\")\nadmit <- as_tibble(admissions)\n\nmod_logit <- glm(Y ~ quant + verbal + gpa + toptier,\n                 data = admit, family = binomial(\"logit\"))\n\nexp(coef(mod_logit))\n# toptier: ~7 → attending a top-tier school multiplies admission odds by 7\n```\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Fit `mod_logit` on `admissions`. Print `summary()` and `exp(coef())`.\n2. Create a prediction plot: P(admit) vs `verbal`, coloured by `toptier`.\n3. Fit `mod_pois` on the simulated `claims` data. Print `exp(coef())`.\n4. Create a prediction plot: expected claims vs `age` for `veh_age = 2` and `veh_age = 8`.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-05 lesson-01\n```\n\n## Reflection\n\nA logistic regression coefficient for `gpa` is 0.8. A student says \"an extra grade point increases the probability of admission by 0.8.\" What is wrong with this interpretation, and what is the correct interpretation?\n","_course/lessons/module-05/lesson-02/lesson.md":"# Lesson 12: Robust Regression and Generalised Additive Models\n\n## Goal\n\nApply `MASS::rlm()` to fit regression models that resist outlier influence, and use `mgcv::gam()` to estimate flexible smooth relationships from data.\n\n## Concept\n\n### Robust Regression with `MASS::rlm()`\n\nOLS **squares** each residual, so a single large outlier can pull the fitted line dramatically toward itself. Robust regression replaces the squared loss with a loss that grows more slowly for large residuals.\n\n**Huber M-estimator** (`method = \"M\"`):\n\n$\\text{loss}(r) = \\begin{cases} r^2/2 & |r| \\leq k \\\\ k|r| - k^2/2 & |r| > k \\end{cases}$\n\nLarge residuals (beyond threshold $k$) are down-weighted — they contribute linearly, not quadratically, to the loss.\n\n```r\nlibrary(MASS)\nmod_ols <- lm(y ~ x,                      data = sim1_out)\nmod_rob <- MASS::rlm(y ~ x, method = \"M\", data = sim1_out)\n```\n\nUse `rlm()` when:\n- Residual plots show a few extreme points.\n- The Normal Q-Q plot has heavy tails.\n- Domain knowledge suggests outliers are errors, not real data.\n\n### Generalised Additive Models with `mgcv::gam()`\n\nGAMs replace each linear term $\\beta_j x_j$ with a **smooth function** $f_j(x_j)$ estimated from the data:\n\n$y = \\beta_0 + f_1(x_1) + f_2(x_2) + \\varepsilon$\n\nKey functions:\n- `s(x)` — a smooth for a single variable (default: thin plate regression spline)\n- `te(x1, x2)` — a 2D tensor-product smooth (full interaction surface)\n- `method = \"REML\"` — preferred criterion for smoothness selection\n- **edf** (effective degrees of freedom): edf ≈ 1 → nearly linear; edf > 3 → substantial curvature\n\n```r\nlibrary(mgcv)\nmod_gam <- gam(y ~ s(x1) + s(x2), data = sim4, method = \"REML\")\nsummary(mod_gam)  # shows edf for each smooth\nplot(mod_gam, shade = TRUE)  # plots estimated smooth effects\n```\n\n### Comparing OLS, robust, and GAM\n\nAll three use the same `modelr` workflow (`add_predictions()`, `add_residuals()`). The choice depends on data properties:\n\n| Model | Use when |\n|-------|---------|\n| OLS `lm()` | Normal errors, no outliers, linear mean |\n| Robust `rlm()` | Heavy-tailed errors or contaminated data |\n| GAM `gam()` | Non-linear smooth effects, complex surfaces |\n\n## Example\n\n```r\n# Inject two outliers into sim1\nsim1_out <- sim1_base |> mutate(y = ifelse(row_number() %in% c(3,17), y+15, y))\n\nmod_ols <- lm(y ~ x,                      data = sim1_out)\nmod_rob <- MASS::rlm(y ~ x, method = \"M\", data = sim1_out)\n\ncat(\"OLS slope:    \", coef(mod_ols)[2])   # pulled toward outliers\ncat(\"Robust slope: \", coef(mod_rob)[2])   # close to true ~2.05\n```\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Create `sim1_out` by injecting outliers at rows 3 and 17. Fit OLS and robust. Plot both lines.\n2. Print both coefficient tables and compare slopes.\n3. Fit a GAM on `sim4`: `gam(y ~ s(x1) + s(x2), method=\"REML\")`. Print `summary()`.\n4. Plot the smooth effects using `plot(mod_gam, shade=TRUE)`. Interpret the edf values.\n5. Generate a heatmap prediction surface for the GAM.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-05 lesson-02\n```\n\n## Reflection\n\nA GAM with `s(x1)` returns edf = 1.02 for the smooth. What does this tell you about the relationship between `x1` and the response? Would you simplify the model?\n","_course/lessons/module-05/lesson-03/lesson.md":"# Lesson 13: Penalised Regression and Decision Trees\n\n## Goal\n\nApply Ridge and LASSO regularisation with `glmnet` to handle high-dimensional data, and fit and visualise a regression tree with `rpart`.\n\n## Concept\n\n### When OLS overfits\n\nOLS finds the exact minimum of the training loss. When $p$ (predictors) is large relative to $n$ (observations), OLS can fit the training data perfectly but generalise poorly to new data. **Penalised regression** adds a regularisation term:\n\n$\\hat{\\boldsymbol{\\beta}}_\\lambda = \\arg\\min\\Bigl[\\sum(y_i - \\hat{y}_i)^2 + \\lambda \\cdot \\text{Penalty}(\\boldsymbol{\\beta})\\Bigr]$\n\n| Method | Penalty | Effect |\n|--------|---------|--------|\n| **Ridge** (`alpha = 0`) | $\\lambda\\sum\\beta_j^2$ | Shrinks all coefficients toward zero; keeps all variables |\n| **LASSO** (`alpha = 1`) | $\\lambda\\sum|\\beta_j|$ | Sets some coefficients **exactly to zero** — automatic variable selection |\n| **Elastic net** (`0 < alpha < 1`) | Mix of both | Compromise |\n\nLarger $\\lambda$ → more shrinkage → simpler model. Use cross-validation to choose $\\lambda$.\n\n```r\nlibrary(glmnet)\ncv_lasso <- glmnet::cv.glmnet(X, y, alpha = 1, nfolds = 10)\nbest_lambda <- cv_lasso$lambda.min\ncoef(cv_lasso, s = \"lambda.min\")\n```\n\n### Decision Trees with `rpart`\n\nDecision trees recursively split the predictor space into rectangular regions, predicting the **mean response** within each leaf.\n\n```r\nlibrary(rpart); library(rpart.plot)\ntree_mod <- rpart(y ~ x1 + x2, data = sim4,\n                  control = rpart.control(maxdepth = 4, cp = 0.01))\nrpart.plot(tree_mod, type = 4, extra = 101)\n```\n\nKey parameters:\n- `maxdepth`: maximum tree depth (more depth = more complex)\n- `cp`: complexity parameter — prune any split that does not improve $R^2$ by at least `cp`\n\nThe prediction surface of a tree is **piecewise constant** — visible as hard rectangular edges in a heatmap.\n\n### Model comparison summary\n\n| Model | Key strength | Key weakness |\n|-------|-------------|-------------|\n| Ridge | Handles correlated predictors | All variables stay; no selection |\n| LASSO | Automatic variable selection | Unstable when predictors are correlated |\n| Decision tree | Interpretable; handles non-linear interactions | High variance; bad extrapolation |\n\n## Example\n\n```r\nset.seed(2024); p <- 50; n <- 200\nX <- matrix(rnorm(n*p), n, p)\ny <- 2*X[,1] - 1.5*X[,2] + rnorm(n)   # only 2 true predictors\n\ncv_lasso <- cv.glmnet(X, y, alpha = 1, nfolds = 10)\nplot(cv_lasso)\ncoef(cv_lasso, s = \"lambda.min\")[1:6,]\n# V1 ≈ 2, V2 ≈ -1.5, V3-V6 ≈ 0 → LASSO recovered the true predictors\n```\n\n## Task\n\nOpen `exercise.Rmd` and complete:\n\n1. Simulate the high-dimensional data (p=50, n=200, only V1 and V2 matter). Fit LASSO and Ridge.\n2. Plot `cv_lasso` CV curve. Report `lambda.min`.\n3. Print the first 6 coefficients at `lambda.min`. Did LASSO set noise predictors to zero?\n4. Plot LASSO coefficient paths (`plot(mod_lasso, xvar = \"lambda\")`).\n5. Fit a regression tree on `sim4` (`maxdepth=4`). Visualise with `rpart.plot()`.\n6. Generate a heatmap prediction surface for the tree. Compare it to the OLS heatmap.\n\n## Check\n\n```\nnpm run check -- bdat-608 module-05 lesson-03\n```\n\n## Reflection\n\nLASSO sets some coefficients to exactly zero while Ridge shrinks them toward zero but never to zero. For a dataset where you know that only a few out of many predictors are truly relevant, which method is more appropriate and why?\n","_course/lessons/module-06/lesson-01/lesson.md":"# Lesson 14: Model Building in Practice — Diamonds, Flights, and Growth Models\n\n## Goal\n\nApply the full modelling workflow to three real-data case studies: progressive model building on `diamonds`, the many-models pipeline with `purrr` on `nycflights13`, and non-linear growth fitting with `nls()`.\n\n## Concept\n\nThis extended lesson integrates everything from the course into three connected case studies. Each study practises a different skill:\n\n### Case Study 1 — Diamonds: Progressive Model Building\n\nThe `diamonds` dataset (53,940 rows) from `ggplot2` records diamond prices, carat weights, and quality attributes.\n\n**Step 1:** Identify the need for transformation via EDA.\n```r\nggplot(diamonds, aes(carat, price)) + geom_bin2d(bins=60)\nggplot(diamonds, aes(log(carat), log(price))) + geom_bin2d(bins=60)\n```\nThe raw scale is curved and heteroscedastic; the log-log scale is linear and homoscedastic.\n\n**Step 2:** Fit a log-log model and inspect residuals.\n```r\nmod_d1 <- lm(log(price) ~ log(carat), data = diamonds)\n```\nR² ≈ 0.93, but residuals show systematic patterns by `cut`, `color`, `clarity` — these quality attributes add price premiums that carat alone cannot capture.\n\n**Step 3:** Peel back layers — add quality attributes.\n```r\nmod_d2 <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)\n```\nAIC drops dramatically. The residuals by cut are now nearly pattern-free.\n\n**Key insight:** Large residuals from a simple model signal a missing predictor. Inspecting the characteristics of high-residual observations guides model improvement.\n\n### Case Study 2 — Flights: Many Models with `purrr`\n\n`nycflights13::flights` (336,776 rows) records NYC departures in 2013. We ask: how well do time-of-day and month predict departure delays **per carrier**?\n\n```r\ncarrier_models <- flights |>\n  filter(!is.na(dep_delay)) |>\n  group_by(carrier) |>\n  nest() |>\n  mutate(\n    mod  = map(data, ~ lm(dep_delay ~ hour + month, data = .x)),\n    rsq  = map_dbl(mod, ~ summary(.x)$r.squared),\n    rmse = map_dbl(mod, ~ sqrt(mean(residuals(.x)^2)))\n  )\n```\n\n`broom::tidy()` then extracts coefficients from all models into a single tidy data frame for plotting.\n\n**Key insight:** R² < 0.05 for all carriers — time and month explain very little delay variance. Delays are primarily driven by unpredictable factors (weather, knock-on delays). But: **statistical significance ≠ practical importance** — the hour coefficient can be significant even when R² is near zero.\n\n### Case Study 3 — Non-Linear Growth with `nls()`\n\n`nls()` fits non-linear models by iterative least squares. It requires **sensible starting values** — unlike `lm()`, there is no closed form.\n\n**Logistic growth model:**\n$y = \\frac{K}{1 + e^{-r(t-t_0)}} + \\varepsilon$\n\n- $K$: carrying capacity (asymptote)\n- $r$: growth rate\n- $t_0$: inflection point\n\n```r\nmod_nls <- nls(y ~ K / (1 + exp(-r * (t - t0))),\n               data  = logistic_growth,\n               start = list(K = 100, r = 0.5, t0 = 10))\ncoef(mod_nls)\n```\n\n**Key insight:** Always use domain knowledge or a coarse grid search to choose starting values for `nls()`. Poor starting values cause failure to converge.\n\n## Task\n\nOpen `exercise.Rmd` and complete all three case studies:\n\n1. **Diamonds:** EDA, log-log model, add quality attributes, compare AIC, inspect residuals by cut.\n2. **Flights:** Many-models pipeline by carrier. Extract hour coefficient for each carrier using `broom::tidy()`. Plot with confidence intervals.\n3. **NLS:** Simulate logistic growth data, fit `nls()`, plot the fitted S-curve.\n4. **E6 Extension:** Use `broom::augment()` to find the 5 diamonds with the largest residuals from `mod_d1`. What do they have in common?\n\n## Check\n\n```\nnpm run check -- bdat-608 module-06 lesson-01\n```\n\n## Reflection\n\nAcross the three case studies, what is the common thread linking the modelling cycle? How did inspecting residuals guide each next step?\n"},"quizzes":{"_assessments/quizzes/module-01-lesson-01.json":{"id":"module-01-lesson-01","title":"Quiz: What Is a Statistical Model?","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In the equation y = f(x) + ε, what does ε represent?","options":["The fitted value predicted by the model","Random variation that no model can explain","The slope of the regression line","The difference between two model families"],"correct":1,"explanation":"ε (epsilon) is the noise — irreducible random variation due to measurement error, unobserved factors, and pure chance. f(x) is the signal (fitted value)."},{"id":"q2","type":"multiple-choice","text":"What is the difference between a model family and a fitted model?","options":["A model family is for training data; a fitted model is for test data","A model family defines the equation shape; a fitted model is the specific member closest to the data","A model family always has more parameters than a fitted model","There is no difference — the terms are interchangeable"],"correct":1,"explanation":"The model family (e.g., all straight lines y = a1 + a2·x) defines the shape. The fitted model is the one specific line whose parameters were estimated from the observed data."},{"id":"q3","type":"true-false","text":"In the statistical modelling cycle, you only need to fit a model once and then you are done.","correct":false,"explanation":"Modelling is iterative. After fitting, you inspect residuals; if they show patterns, you revise the model family and refit. The cycle repeats until residuals look like random noise."},{"id":"q4","type":"multiple-choice","text":"What does it mean when a residuals-vs-predictor plot shows a clear curved pattern?","options":["The model fits the data perfectly","The noise ε is normally distributed","The model has captured all the systematic variation","There is remaining structure the model has not captured — the model family is likely misspecified"],"correct":3,"explanation":"A curved pattern in residuals means the model missed a non-linear component. The residuals should look like random scatter if the model family is correctly specified."},{"id":"q5","type":"multiple-choice","text":"George Box's quote 'All models are wrong, but some are useful' implies that:","options":["We should never use statistical models because they are always wrong","A model does not need to be literally true to be practically useful for describing data","Useful models always have zero residuals","The best model is the one with the most parameters"],"correct":1,"explanation":"Box's point is that a model is an approximation — it simplifies reality. The relevant question is not 'Is it true?' but 'Is it useful/adequate for describing the data and making predictions?'"}]},"_assessments/quizzes/module-01-lesson-02.json":{"id":"module-01-lesson-02","title":"Quiz: Setting Up the R Modelling Environment","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"After loading the MASS package, which line should you run immediately to avoid broken dplyr pipelines?","options":["detach('package:MASS')","select <- dplyr::select; filter <- dplyr::filter","library(tidyverse, mask = TRUE)","options(conflicts.policy = 'depends.ok')"],"correct":1,"explanation":"MASS exports select() and filter() which overwrite dplyr's versions. Reassigning select <- dplyr::select and filter <- dplyr::filter restores the tidyverse functions."},{"id":"q2","type":"true-false","text":"The splines package must be installed separately using install.packages('splines') before you can use ns().","correct":false,"explanation":"splines ships with base R — it is always available. You only need to call library(splines) to make ns() accessible; no install.packages() step is needed."},{"id":"q3","type":"multiple-choice","text":"What is the purpose of setting options(na.action = na.warn)?","options":["It causes lm() to stop with an error if any NA values are present","It replaces all NA values with the column mean before fitting","It prints a warning whenever modelling functions silently drop rows with missing values","It removes the NA values from the dataset permanently"],"correct":2,"explanation":"na.warn issues a message when rows are dropped due to NA, making the data loss visible. Without it, rows are silently omitted, which can cause subtle bugs in downstream analysis."},{"id":"q4","type":"multiple-choice","text":"Which modelr dataset has a categorical predictor x?","options":["sim1","sim2","sim3","sim4"],"correct":1,"explanation":"sim2 has a categorical x variable, making it the right dataset for exploring dummy coding and categorical predictors in Module 4."},{"id":"q5","type":"true-false","text":"Putting install.packages() inside a chunk with eval=FALSE ensures the packages are reinstalled every time the document is knitted.","correct":false,"explanation":"eval=FALSE means the chunk is shown in the output but NOT executed when knitting. The packages are not reinstalled — they are only installed when the user manually runs that specific chunk."}]},"_assessments/quizzes/module-02-lesson-01.json":{"id":"module-02-lesson-01","title":"Quiz: Loss Functions — RMSE and MAE","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"Why does RMSE penalise large residuals more than MAE does?","options":["RMSE takes the square root, which amplifies small values","RMSE squares each residual before averaging, so large errors grow quadratically","RMSE divides by n-2 while MAE divides by n","RMSE only counts residuals greater than 1"],"correct":1,"explanation":"Squaring a residual of 10 gives 100; squaring a residual of 1 gives 1. The squared scale amplifies large errors far more than the absolute scale used by MAE."},{"id":"q2","type":"true-false","text":"Minimising RMSE over the parameter space is mathematically equivalent to Ordinary Least Squares (OLS).","correct":true,"explanation":"OLS minimises the sum of squared residuals — which is equivalent to minimising their mean, and hence their root mean. RMSE is the square root of the OLS criterion."},{"id":"q3","type":"multiple-choice","text":"You have a dataset of hospital lengths-of-stay (in days) where 95% of stays are 1–7 days but 5% exceed 30 days. Which loss function is more appropriate for fitting a model to this data?","options":["RMSE, because it is the standard and always preferred","MAE, because the extreme stays would otherwise dominate the RMSE and pull the model toward them","RMSE, because its square root makes it symmetric","Neither — you should use the log loss instead"],"correct":1,"explanation":"The extreme stays (outliers relative to the bulk) would be squared by RMSE and pull the fitted line toward them. MAE's linear penalty treats extreme stays as proportionally, not quadratically, influential."},{"id":"q4","type":"multiple-choice","text":"In R, the expression data$y - model1(mod, data) computes the:","options":["Fitted values","Loss function","Residuals (observed minus predicted)","Parameter estimates"],"correct":2,"explanation":"Residuals = observed y minus predicted y-hat. model1(mod, data) returns predicted values, so the difference is the vector of residuals."},{"id":"q5","type":"true-false","text":"For a given dataset, the candidate parameters that minimise RMSE and the candidate parameters that minimise MAE will always be identical.","correct":false,"explanation":"RMSE and MAE define different optimal parameters because they penalise large residuals differently. They agree when noise is symmetric and light-tailed (near-normal), but diverge when the data contains outliers or heavy-tailed noise."}]},"_assessments/quizzes/module-02-lesson-02.json":{"id":"module-02-lesson-02","title":"Quiz: Search Strategies and Numerical Optimisation","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"Why does grid search become impractical when the number of model parameters is large?","options":["Grid search only works for linear models","The number of grid points grows exponentially with the number of parameters","Grid search cannot compute RMSE for more than two parameters","optim() is always faster than grid search regardless of dimensionality"],"correct":1,"explanation":"With p parameters and n grid points per parameter, you need n^p evaluations. For p=10 and n=10, that is 10 billion evaluations — the curse of dimensionality."},{"id":"q2","type":"multiple-choice","text":"In optim(par = c(0, 0), fn = measure_distance, data = sim1), what does par = c(0, 0) specify?","options":["The known true parameters of the model","The starting values from which the optimiser begins its search","The upper and lower bounds on the parameters","The final optimal parameters"],"correct":1,"explanation":"par gives the starting point for the iterative optimiser. It does not know the true parameters — it searches from this point toward the minimum of the loss function."},{"id":"q3","type":"true-false","text":"For RMSE on a standard linear model, optim() is guaranteed to find the global minimum regardless of starting values.","correct":true,"explanation":"RMSE for a linear model is a convex function — it has a single global minimum with no local minima. So any starting point will converge to the same optimal parameters (though speed may vary)."},{"id":"q4","type":"multiple-choice","text":"In the RMSE landscape plot (a1 vs a2 coloured by RMSE), the low-RMSE region appears as:","options":["A scattered cloud of random points","A circular blob in the centre of the plot","A narrow diagonal valley where both a1 and a2 are near their optimal values","An evenly distributed gradient across the entire parameter space"],"correct":2,"explanation":"The optimal (intercept, slope) pair lies at the bottom of a narrow elongated valley in the RMSE surface. This reflects the fact that many (a1, a2) pairs that deviate in opposite directions can partially compensate each other."},{"id":"q5","type":"multiple-choice","text":"purrr::map2_dbl(a1, a2, sim1_dist) applies sim1_dist to each pair of values in a1 and a2. What would happen if you used map_dbl(a1, sim1_dist) instead?","options":["It would work identically, since map_dbl handles two arguments","It would fail because sim1_dist requires two arguments (a1 and a2)","It would use a2 = 0 for all calculations","It would return the RMSE for the full grid search instead"],"correct":1,"explanation":"map_dbl iterates over a single vector. sim1_dist(a1, a2) needs both arguments, so map2_dbl is required to iterate over both a1 and a2 in parallel."}]},"_assessments/quizzes/module-02-lesson-03.json":{"id":"module-02-lesson-03","title":"Quiz: Closed-Form OLS with lm()","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In the lm() summary output, what does the 'Std. Error' column represent?","options":["The residual standard deviation of the response variable","The standard deviation of the estimated coefficient across repeated samples","The absolute value of the residuals","The standard deviation of the predictor variable x"],"correct":1,"explanation":"The standard error of a coefficient measures how precisely it is estimated — it is the standard deviation of the sampling distribution of that coefficient. Smaller Std. Error = more precise estimate."},{"id":"q2","type":"multiple-choice","text":"An lm() summary shows R-squared = 0.86. What does this mean?","options":["86% of observations lie within one standard deviation of the fitted line","The model makes correct predictions 86% of the time","86% of the variance in y is explained by the predictor(s) in the model","There is an 86% probability that the model is correctly specified"],"correct":2,"explanation":"R-squared is the proportion of variance in the response (y) explained by the model. R² = 0.86 means the predictor(s) account for 86% of the variation in y; the remaining 14% is unexplained (residual)."},{"id":"q3","type":"true-false","text":"lm() uses an iterative algorithm and therefore requires starting values, just like optim().","correct":false,"explanation":"lm() uses QR decomposition — a direct (non-iterative) algorithm that computes the exact solution in one pass. No starting values are needed."},{"id":"q4","type":"multiple-choice","text":"What does confint(sim1_mod) return?","options":["A vector of fitted values for each observation","Confidence intervals for the fitted values at each observed x","Confidence intervals for the model coefficients (intercept and slope)","A hypothesis test for the overall model fit"],"correct":2,"explanation":"confint() computes confidence intervals for each coefficient (by default, 95%). These are the intervals within which the true parameter values are expected to fall with the stated confidence level."},{"id":"q5","type":"multiple-choice","text":"The p-value for the slope in an lm() summary is 0.0001. This tells you that:","options":["There is a 0.01% chance that x causes y","If the true slope were zero, observing a slope this large or larger purely by chance has probability 0.0001","The slope estimate is exactly 0.0001","The model explains 99.99% of the variance in y"],"correct":1,"explanation":"A p-value is the probability of observing a test statistic as extreme as the one computed, assuming the null hypothesis (β=0) is true. Small p-values indicate that the null hypothesis is unlikely given the data."}]},"_assessments/quizzes/module-03-lesson-01.json":{"id":"module-03-lesson-01","title":"Quiz: Predictions and Residuals with modelr","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"What does data_grid(x) do when x is a continuous variable with values 1–10?","options":["Returns only the unique observed values of x from the dataset","Creates a new data frame with a single evenly spaced sequence of x values spanning the observed range","Generates a random sample of x values from a normal distribution","Subsets the original dataset to rows where x is an integer"],"correct":1,"explanation":"data_grid() creates an evenly spaced prediction grid over the range of each specified variable. For integer x = 1:10, it returns one row per unique value."},{"id":"q2","type":"multiple-choice","text":"add_residuals(sim1_mod) computes which quantity for each row?","options":["The predicted value ŷ","The standardised residual (residual / standard error)","The observed y minus the predicted ŷ","The Cook's distance for each observation"],"correct":2,"explanation":"A residual = observed y − predicted ŷ. add_residuals() adds this as a new column (named 'resid' by default) to the original data frame."},{"id":"q3","type":"true-false","text":"If the residuals-vs-predictor plot shows a perfectly random cloud of points centred at zero, you should try adding more predictors to improve the model.","correct":false,"explanation":"Random scatter around zero is the ideal outcome — it means the model has captured all systematic variation. Adding predictors is only warranted if residuals show a pattern (curve, fan shape, or non-zero mean)."},{"id":"q4","type":"multiple-choice","text":"You fit a model and add_residuals() to a dataset. The residuals form a fan shape — small spread at low x, large spread at high x. What assumption is violated?","options":["Linearity of the mean function","Homoscedasticity (constant variance of residuals)","Independence of observations","Normality of the response variable"],"correct":1,"explanation":"A fan shape in residuals indicates heteroscedasticity — the variance of the residuals is not constant across predictor values. OLS assumes constant variance (homoscedasticity)."},{"id":"q5","type":"multiple-choice","text":"add_predictions() works with 'any model that has a predict() method'. What does this mean in practice?","options":["It only works with lm() models","It can be used with glm(), gam(), rpart(), and other model types, not just lm()","It requires the model to be re-fitted before adding predictions","It returns predictions only for the training data, not new observations"],"correct":1,"explanation":"add_predictions() calls predict(model, newdata = ...) internally. Since glm(), gam(), rpart(), and many other R model objects have a predict() method, add_predictions() works with all of them."}]},"_assessments/quizzes/module-03-lesson-02.json":{"id":"module-03-lesson-02","title":"Quiz: Diagnostic Plots and Model Comparison","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In the Scale-Location diagnostic plot, what does a flat red loess line indicate?","options":["The residuals have a mean of zero","The residuals are normally distributed","The variance of residuals is approximately constant across fitted values (homoscedasticity)","There are no influential observations in the dataset"],"correct":2,"explanation":"Scale-Location plots the square root of standardised residuals against fitted values. A flat loess line means the spread of residuals is constant — the homoscedasticity assumption holds."},{"id":"q2","type":"multiple-choice","text":"Cook's Distance measures the influence of each observation on the fitted model. An observation with Cook's D > 1 is typically described as:","options":["A statistical outlier with a large residual","An influential point that substantially changes the fitted coefficients when removed","An observation that violates the normality assumption","A leverage point that lies far from the centre of the predictor space only"],"correct":1,"explanation":"Cook's Distance combines residual size and leverage to measure how much the fitted model would change if that observation were removed. High D (>1 or >4/n) identifies influential points."},{"id":"q3","type":"true-false","text":"AIC (Akaike Information Criterion) rewards models for fitting the data well but penalises them for having more parameters.","correct":true,"explanation":"AIC = -2·log(likelihood) + 2k, where k is the number of parameters. Lower AIC is better. The 2k penalty prevents adding parameters that do not meaningfully improve fit."},{"id":"q4","type":"multiple-choice","text":"gather_predictions(mod_a, mod_b) returns a data frame in what format?","options":["One column per model, one row per observation","One row per model per observation, with a 'model' column and a 'pred' column","A list of two data frames, one for each model","A wide data frame with model names as column headers"],"correct":1,"explanation":"gather_predictions() stacks predictions from all models into a long (tidy) data frame with a 'model' column and a 'pred' column. This makes faceted ggplot2 comparisons straightforward."},{"id":"q5","type":"multiple-choice","text":"A Normal Q-Q plot shows that residuals deviate from the diagonal at both ends (heavy tails). The MOST important consequence is that:","options":["The slope and intercept estimates are biased","R-squared is artificially inflated","Standard errors, t-statistics, and p-values may not be reliable for small samples","The model will fail to make any predictions"],"correct":2,"explanation":"OLS coefficient estimates (slope, intercept) are still unbiased under heavy-tailed noise — only the inference machinery (SEs, t-tests, CIs) relies on normality. For large samples, CLT provides approximate validity anyway."}]},"_assessments/quizzes/module-04-lesson-01.json":{"id":"module-04-lesson-01","title":"Quiz: Formula Notation, Model Matrix, and Categorical Predictors","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"What does model_matrix(data, y ~ x^2 + x) actually produce in R?","options":["Two columns: one for x and one for x squared","Three columns: intercept, x, and x^2","Only one predictor column because ^ is a formula operator that collapses to just x","An error because ^ is not allowed in formulas"],"correct":2,"explanation":"In R formulas, ^ means 'crossing up to this degree', not exponentiation. y ~ x^2 + x is equivalent to y ~ x — it collapses to a single x column. Use I(x^2) for literal squaring."},{"id":"q2","type":"multiple-choice","text":"A factor variable with 5 levels is added to an lm() model. How many columns does it contribute to the model matrix (assuming the default intercept is present)?","options":["1","4","5","6"],"correct":1,"explanation":"With k levels and an intercept, R creates k-1 dummy columns (one level becomes the reference group absorbed into the intercept). For 5 levels: 5-1 = 4 dummy columns."},{"id":"q3","type":"true-false","text":"Under OLS with a categorical predictor, the predicted value for each category is exactly equal to the sample mean of that category in the training data.","correct":true,"explanation":"When x is categorical and there are no other predictors, OLS minimises SSR within each group independently — which is achieved by predicting the group mean. This is the equivalence between OLS and one-way ANOVA."},{"id":"q4","type":"multiple-choice","text":"In the formula y ~ x1 - 1, what is removed?","options":["The predictor x1","The intercept term","The interaction between the intercept and x1","Observations where x1 equals 1"],"correct":1,"explanation":"In R formula syntax, -1 removes the implicit intercept. The resulting model passes through the origin (y-intercept = 0). This is useful when theory requires the line to pass through zero."},{"id":"q5","type":"multiple-choice","text":"The lm() intercept for a model with categorical x is 1.15. A new category 'e' (not in the training data) is added. What would add_predictions() return for group 'e'?","options":["1.15 (the intercept, as if 'e' were the reference group)","NA, because 'e' was not seen during training","An error, because lm() cannot predict for unseen factor levels","0, because the dummy variable for 'e' is missing"],"correct":2,"explanation":"R will return an error (or NA with a warning) when predict() encounters a factor level that was not present in the training data. The model does not know how to encode an unseen level."}]},"_assessments/quizzes/module-04-lesson-02.json":{"id":"module-04-lesson-02","title":"Quiz: Interactions and Transformations","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"The formula y ~ x1 * x2 expands to which set of terms?","options":["x1 and x2 only","x1, x2, and x1:x2 (the interaction term)","x1:x2 only","x1, x2, x1:x2, and an additional x1^2:x2 term"],"correct":1,"explanation":"y ~ x1 * x2 is shorthand for y ~ x1 + x2 + x1:x2 — main effects for x1 and x2 plus their interaction term."},{"id":"q2","type":"true-false","text":"In an additive model y ~ x1 + x2 (with x2 categorical), the slope of x1 is the same for all levels of x2.","correct":true,"explanation":"The additive model allows different intercepts per group (via dummy variables) but forces a single shared slope for x1. Only the interaction model (y ~ x1 * x2) allows slopes to differ by group."},{"id":"q3","type":"multiple-choice","text":"You fit both additive and interaction models. The residual plot for the additive model shows a strong colour gradient (coloured by the grouping variable x2). This indicates:","options":["The model has heteroscedastic errors","The slopes of x1 differ by group — the interaction term is needed","The intercepts are identical across groups","There are influential outliers in the data"],"correct":1,"explanation":"A colour gradient in residuals (where colour encodes group) means the additive model's single shared slope is wrong for some groups. The interaction term would allow different slopes per group."},{"id":"q4","type":"multiple-choice","text":"You want to fit a model with log(y) as the response and x as the predictor. Which formula is correct?","options":["lm(y ~ log(x))","lm(log(y) ~ x)","lm(y ~ I(log(y)) + x)","lm(y ~ x, transform = 'log')"],"correct":1,"explanation":"In R, transformations of the response are written directly in the formula: lm(log(y) ~ x). R evaluates log(y) before fitting. lm(y ~ log(x)) would instead transform the predictor."},{"id":"q5","type":"multiple-choice","text":"Which code correctly creates a quadratic term for x in an lm() formula?","options":["lm(y ~ x^2, data = df)","lm(y ~ poly(x, 2, raw=TRUE), data = df)","lm(y ~ x**2, data = df)","lm(y ~ sq(x), data = df)"],"correct":1,"explanation":"poly(x, 2, raw=TRUE) creates ordinary polynomial terms x and x². Using I(x^2) also works. y ~ x^2 is a formula crossing operator and collapses to y ~ x."}]},"_assessments/quizzes/module-04-lesson-03.json":{"id":"module-04-lesson-03","title":"Quiz: Splines, Cross-Validation, and Missing Values","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"What is the key advantage of natural splines over high-degree polynomial models for non-linear relationships?","options":["Natural splines always have lower training RMSE than polynomials","Natural splines are constrained to be linear in the tails, preventing extreme extrapolation","Natural splines use fewer parameters than polynomials for the same df","Natural splines can only be fitted with glm(), not lm()"],"correct":1,"explanation":"Natural splines impose linearity constraints at the boundary knots. This prevents the wild oscillations and extrapolations that high-degree polynomials exhibit outside the training data range."},{"id":"q2","type":"multiple-choice","text":"In 10-fold cross-validation, the CV-RMSE curve is U-shaped. What does the left (rising) part of the U represent?","options":["Overfitting — the model has too many parameters","Underfitting — too few df means the model cannot capture the pattern (high bias)","Data leakage between the training and test folds","Perfect fit on the training data"],"correct":1,"explanation":"The left/low-df side of the U-curve is high because too few knots means the spline cannot flex enough to follow the pattern — it underfits. Increasing df reduces this bias."},{"id":"q3","type":"true-false","text":"na.exclude and na.omit both drop rows with missing values before fitting, but na.exclude inserts NA placeholders in residuals/predictions at the positions of the dropped rows.","correct":true,"explanation":"Both drop NA rows for fitting. na.exclude then 'pads' the output vectors with NA at the original positions, making it safe to cbind() residuals back onto the original data frame."},{"id":"q4","type":"multiple-choice","text":"Why are pooled standard errors from multiple imputation (MI) typically larger than complete-case standard errors?","options":["MI uses fewer observations than complete-case analysis","MI adds extra parameters to the model","MI propagates uncertainty due to missingness; complete-case analysis ignores that uncertainty","MI always uses a different estimation algorithm than lm()"],"correct":2,"explanation":"Multiple imputation uses Rubin's rules to combine estimates across m imputed datasets. The pooled SE includes both within-imputation variance and between-imputation variance — the latter reflects the extra uncertainty from not knowing the missing values."},{"id":"q5","type":"multiple-choice","text":"The one-SE rule for choosing spline df selects the:","options":["Df value that minimises CV-RMSE, regardless of model complexity","Smallest df whose CV-RMSE is within one standard error of the minimum CV-RMSE","Df that is exactly one greater than the minimum CV-RMSE df","Df value where the CV curve first becomes flat"],"correct":1,"explanation":"The one-SE rule is a parsimony rule: prefer the simplest model (fewest df) that is statistically indistinguishable from the best model. 'Indistinguishable' is defined as within one standard error of the minimum CV-RMSE."}]},"_assessments/quizzes/module-05-lesson-01.json":{"id":"module-05-lesson-01","title":"Quiz: Generalised Linear Models — Logistic and Poisson Regression","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In logistic regression, what does add_predictions(mod, type = 'response') return for each observation?","options":["The log-odds (linear predictor)","The predicted probability P(Y=1)","The binary prediction (0 or 1)","The residual for each observation"],"correct":1,"explanation":"type = 'response' applies the inverse link function (logistic function) to the linear predictor, transforming log-odds into probabilities between 0 and 1."},{"id":"q2","type":"true-false","text":"A Poisson regression coefficient of 0.05 for 'age' means that each additional year of age increases the expected count by 5 units.","correct":false,"explanation":"Poisson coefficients are on the log scale. exp(0.05) ≈ 1.051 — each additional year multiplies the expected count by 1.051, a 5.1% multiplicative increase, not an additive increase of 5 units."},{"id":"q3","type":"multiple-choice","text":"Why can't ordinary linear regression (OLS) be directly used for a binary 0/1 response?","options":["OLS requires the response to be a count variable","OLS can predict values outside [0, 1] which are not valid probabilities","OLS requires all predictors to be categorical","OLS cannot handle large datasets efficiently"],"correct":1,"explanation":"OLS is unconstrained — it can predict negative values or values greater than 1. These are not valid probabilities. Logistic regression constrains predictions to (0,1) via the logistic link function."},{"id":"q4","type":"multiple-choice","text":"In glm(), which family argument fits a logistic regression model for a binary outcome?","options":["family = gaussian()","family = poisson(link = 'log')","family = binomial(link = 'logit')","family = Gamma(link = 'log')"],"correct":2,"explanation":"Logistic regression uses the binomial family with the logit link. The binomial family models proportions/counts of successes; the logit link maps probabilities to the real line."},{"id":"q5","type":"multiple-choice","text":"An exponentiated logistic regression coefficient for 'toptier' is 7.0. Which interpretation is correct?","options":["Top-tier students have a 7-unit higher probability of admission","Top-tier students are 7 times more likely to be admitted in absolute terms","Attending a top-tier school multiplies the odds of admission by 7","Top-tier students have 7% higher admission rates"],"correct":2,"explanation":"Exponentiated logistic coefficients are odds ratios. OR = 7 means the odds of admission for top-tier school students are 7 times the odds for non-top-tier students. This is not a direct statement about probability differences."}]},"_assessments/quizzes/module-05-lesson-02.json":{"id":"module-05-lesson-02","title":"Quiz: Robust Regression and Generalised Additive Models","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In robust regression with Huber's M-estimator, how are large residuals treated compared to OLS?","options":["Large residuals are excluded completely from the loss calculation","Large residuals are squared, just like in OLS","Large residuals are assigned linear (not quadratic) weight, reducing their influence","Large residuals are replaced by their absolute value before squaring"],"correct":2,"explanation":"The Huber loss is quadratic for small residuals (|r| ≤ k) but linear for large residuals (|r| > k). This caps the influence of outliers — they contribute linearly, not quadratically."},{"id":"q2","type":"true-false","text":"In a GAM, edf = 1.0 for a smooth term s(x) means the relationship between x and y is estimated to be perfectly linear.","correct":true,"explanation":"edf = 1 means the smooth degenerates to a straight line — mgcv estimated that no non-linearity is needed. You can replace s(x) with the linear term x without loss of fit."},{"id":"q3","type":"multiple-choice","text":"When would you prefer MASS::rlm() over lm()?","options":["When you need p-values for the coefficients","When the residuals contain a few large outliers that may not represent the bulk of the data","When the response variable is binary","When the model has more than 10 predictors"],"correct":1,"explanation":"rlm() is designed for situations where some observations have unusually large residuals (outliers or contaminated data). By down-weighting large residuals, it produces estimates that reflect the bulk of the data."},{"id":"q4","type":"multiple-choice","text":"In mgcv::gam(), what does te(x1, x2) do differently from s(x1) + s(x2)?","options":["te() fits separate linear models for x1 and x2","te() estimates a 2D interaction surface; s(x1) + s(x2) assumes the effects are additive","te() requires x1 and x2 to be categorical variables","te() forces edf = 1 for both x1 and x2"],"correct":1,"explanation":"s(x1) + s(x2) is an additive model: the effect of x1 on y is the same regardless of x2 (and vice versa). te(x1, x2) fits a tensor-product smooth — a full 2D surface that allows the effect of x1 to depend on x2."},{"id":"q5","type":"multiple-choice","text":"method = 'REML' in gam() is preferred over method = 'ML' because:","options":["REML is faster to compute for large datasets","REML produces less biased estimates of the smoothness parameters, reducing overfitting","REML allows the model to have more knots","REML is the only method that supports te() tensor smooths"],"correct":1,"explanation":"Restricted Maximum Likelihood (REML) treats the smoothness parameters as variance components and estimates them more accurately than ML, which tends to undersmooth (overfit). REML is the recommended default in mgcv."}]},"_assessments/quizzes/module-05-lesson-03.json":{"id":"module-05-lesson-03","title":"Quiz: Penalised Regression and Decision Trees","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"What happens to LASSO coefficients as lambda increases?","options":["They all increase toward their OLS values","They shrink toward zero and some become exactly zero","They become negative regardless of the sign of the true effect","They remain unchanged until lambda exceeds 1"],"correct":1,"explanation":"As lambda increases, the L1 penalty grows stronger, forcing more coefficients to exactly zero. At the largest lambda, all coefficients are zero (the null model)."},{"id":"q2","type":"true-false","text":"Ridge regression (alpha = 0) can set individual coefficients exactly to zero, performing automatic variable selection.","correct":false,"explanation":"Ridge uses an L2 penalty (sum of squared coefficients). This shrinks all coefficients toward zero but never sets any of them exactly to zero. Only LASSO (L1 penalty) produces exact zeros."},{"id":"q3","type":"multiple-choice","text":"In cv.glmnet(), what does lambda.min represent?","options":["The minimum value of lambda in the penalty path","The lambda value that minimises cross-validated prediction error","The lambda value that gives the fewest non-zero coefficients","The value of lambda at which all coefficients become zero"],"correct":1,"explanation":"lambda.min is the value of the regularisation parameter that produces the lowest average cross-validated error across the folds. lambda.1se is a slightly larger (more regularised) lambda still within one SE of the minimum."},{"id":"q4","type":"multiple-choice","text":"What is the key visual characteristic of a decision tree's prediction surface compared to a linear model's?","options":["The tree surface is a smooth gradient; the linear surface is piecewise flat","The tree surface is piecewise constant with rectangular boundaries; the linear surface is a plane","Both surfaces are identical when the tree has maximum depth","The tree surface is always lower (fewer predicted values) than the linear surface"],"correct":1,"explanation":"Decision trees partition the space into rectangular regions and predict the mean response within each region. This creates a step-function (piecewise constant) surface with hard edges, unlike the smooth plane of a linear model."},{"id":"q5","type":"multiple-choice","text":"You have p = 200 predictors and n = 150 observations. Ordinary OLS cannot be fitted because X^T X is not invertible. Which approach is appropriate?","options":["Increase the dataset size before fitting any model","Use Ridge or LASSO regularisation, which can fit models when p > n","Remove predictors until p < n, using expert judgement only","Use a decision tree, which does not require matrix inversion"],"correct":1,"explanation":"Ridge and LASSO regularisation add a penalty that makes the optimisation problem well-posed even when p > n. They effectively shrink or select among the many predictors, producing stable estimates without needing n > p."}]},"_assessments/quizzes/module-06-lesson-01.json":{"id":"module-06-lesson-01","title":"Quiz: Extended Case Studies","passingScore":70,"questions":[{"id":"q1","type":"multiple-choice","text":"In the diamonds log-log model, the slope for log(carat) is approximately 1.68. This means:","options":["A 1-carat increase in weight increases price by $1.68","A 1% increase in carat is associated with approximately a 1.68% increase in price (a power law)","Each carat multiplies the price by 1.68","68% of the variance in price is explained by carat weight"],"correct":1,"explanation":"On a log-log scale, the slope is a power-law exponent. slope = 1.68 means price scales as carat^1.68 — a 1% increase in carat → 1.68% increase in price."},{"id":"q2","type":"multiple-choice","text":"In the flights many-models analysis, R² < 0.05 for all carriers. This means:","options":["The models are statistically insignificant","Time of day and month explain less than 5% of the variance in departure delays","Departure delays do not vary by hour or month","The models were fitted incorrectly"],"correct":1,"explanation":"R² measures the fraction of variance explained. R² = 0.05 means 95% of the variance in delays is unexplained by hour + month — weather, knock-on delays, and other factors dominate."},{"id":"q3","type":"true-false","text":"nls() can always find the optimal parameters regardless of the starting values provided.","correct":false,"explanation":"nls() uses an iterative algorithm that can fail to converge or get stuck if starting values are far from the true parameters. Good starting values from domain knowledge or a coarse grid search are essential."},{"id":"q4","type":"multiple-choice","text":"broom::tidy() applied to an lm() object returns:","options":["A vector of residuals","A single row with model-level statistics (R², AIC, df)","A data frame with one row per coefficient: term, estimate, std.error, statistic, p.value","The fitted values for each observation"],"correct":2,"explanation":"broom::tidy() converts model objects into a tidy data frame with one row per term (coefficient). This makes it easy to compare coefficients across many models using dplyr operations."},{"id":"q5","type":"multiple-choice","text":"In the diamonds case study, diamonds with large POSITIVE residuals from the log-log model tend to have what characteristic?","options":["Very low carat weight (small diamonds)","Poor quality attributes: Fair cut, tinted colour, low clarity","Exceptional quality: Ideal cut, colourless colour, high clarity","They are duplicated observations in the dataset"],"correct":2,"explanation":"A positive residual means actual price >> carat-predicted price. Diamonds that command a premium relative to their weight are those with exceptional quality (Ideal cut, D/E colour, IF/VVS clarity). The simple model underestimates their price because it ignores quality."}]}},"clarificationsIndex":{},"clarifications":{}};
+  var _f = window.fetch;
+  function mock(body, isJson) {
+    return Promise.resolve({
+      ok: true, status: 200,
+      text: function () { return Promise.resolve(isJson ? JSON.stringify(body) : body); },
+      json: function () { return Promise.resolve(isJson ? body : JSON.parse(body)); }
+    });
+  }
+  window.fetch = function (url) {
+    if (url === '_course/course.json')               return mock(D.course, true);
+    if (url === '_course/clarifications/index.json') return mock(D.clarificationsIndex, true);
+    if (D.lessons        && url in D.lessons)        return mock(D.lessons[url],        false);
+    if (D.quizzes        && url in D.quizzes)        return mock(D.quizzes[url],        true);
+    if (D.clarifications && url in D.clarifications) return mock(D.clarifications[url], false);
+    return _f ? _f.apply(this, arguments) : Promise.reject(new Error('Not found: ' + url));
+  };
+})();
+</script>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <h1 id="course-title">Loading...</h1>
+    <div id="progress-bar-wrap">
+      <div id="progress-label">0 of 0 lessons</div>
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div id="body-wrap">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div id="sidebar-header">Lessons</div>
+      <div id="lesson-nav"></div>
+    </nav>
+
+    <!-- Main area -->
+    <main id="main-content">
+
+      <div id="loading" class="screen active">
+        Loading course...
+      </div>
+
+      <div id="error-screen" class="screen">
+        <div class="error-box">
+          <h3 id="error-title">Could not load course</h3>
+          <p id="error-msg"></p>
+        </div>
+      </div>
+
+      <div id="empty-state" class="screen">
+        <span class="badge">Base Repo</span>
+        <h2 style="margin-top:16px">No course loaded yet</h2>
+        <p>This is the Tutor base. A teacher will fill this in before you receive it.</p>
+
+        <div class="steps">
+          <h3>For Teachers — Getting Started</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Fill in <code>_teacher/course-description.md</code> — describe your course</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Fill in <code>_teacher/requirements.md</code> — list learning outcomes and prerequisites</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">Open the terminal in VS Code and type to Claude Code:<br><br>
+              <code>Use the course description and requirements to create a complete self-paced course.</code>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">Review the generated course, then reload this page</div>
+          </div>
+        </div>
+
+        <div class="steps" style="margin-top:12px">
+          <h3>For Students — If You Received This Folder</h3>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Ask your teacher — the course may not be ready yet</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">Make sure you are opening <code>index.html</code> via <strong>Live Server</strong> (right-click → Open with Live Server)</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lesson-view" class="screen">
+        <div id="lesson-header">
+          <div class="lesson-meta" id="lesson-meta"></div>
+          <h2 id="lesson-title"></h2>
+        </div>
+        <div id="lesson-body"></div>
+
+        <div id="quiz-panel" style="display:none">
+          <h3 id="quiz-title">Quiz</h3>
+          <div id="quiz-questions"></div>
+          <div id="quiz-result" style="display:none"></div>
+          <div style="margin-top:16px; display:flex; gap:10px">
+            <button class="btn btn-primary" id="quiz-submit-btn">Submit Quiz</button>
+            <button class="btn btn-secondary" id="quiz-retry-btn" style="display:none">Try Again</button>
+          </div>
+        </div>
+
+        <div id="reflection-section" style="display:none">
+          <label id="reflection-label">Reflection</label>
+          <textarea id="reflection-input" placeholder="Write your answer here..."></textarea>
+        </div>
+
+        <div id="lesson-actions">
+          <button class="btn btn-secondary" id="prev-btn">← Previous</button>
+          <button class="btn btn-success" id="complete-btn">Mark Complete ✓</button>
+          <button class="btn btn-secondary" id="next-btn">Next →</button>
+        </div>
+
+        <div id="clarifications-section" style="display:none">
+          <h3>💬 Clarifications</h3>
+          <div id="clarifications-list"></div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-top:8px">
+            These notes were added when students asked for better explanations. If you have Claude Code, you can ask for more.
+          </p>
+        </div>
+
+        <div id="claude-panel">
+          <h4>Need a better explanation? Ask Claude Code</h4>
+          <p>If you have Claude Code installed, open the terminal in VS Code and paste this prompt. Your question will be answered and saved as a note in this lesson for all students.</p>
+          <textarea id="claude-prompt" readonly></textarea>
+          <div class="copy-hint">Click to copy → paste into the Claude Code terminal → Claude explains and saves the note here.</div>
+        </div>
+      </div>
+
+      <div id="completion-banner">
+        <h2>🎉 Course Complete!</h2>
+        <p id="completion-msg">You have finished all lessons. Well done.</p>
+        <div style="margin-top:20px">
+          <button class="btn btn-secondary" id="submit-btn" style="display:none">Submit Results to Teacher</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ─── State ────────────────────────────────────────────────────────────────
+  let course = null;
+  let progress = {};
+  let currentLesson = null;
+  let currentModule = null;
+  let currentQuizData = null;
+  let allLessons = [];
+  let clarificationsIndex = {};
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  function progressKey() { return 'tutor_progress_' + (course ? course.id || 'default' : 'default'); }
+
+  function loadProgress() {
+    try {
+      const raw = localStorage.getItem(progressKey());
+      return raw ? JSON.parse(raw) : { completedLessons: [], quizScores: {}, reflections: {} };
+    } catch { return { completedLessons: [], quizScores: {}, reflections: {} }; }
+  }
+
+  function saveProgress() {
+    localStorage.setItem(progressKey(), JSON.stringify(progress));
+  }
+
+  function isCompleted(lessonId) {
+    return progress.completedLessons && progress.completedLessons.includes(lessonId);
+  }
+
+  function markComplete(lessonId) {
+    if (!progress.completedLessons) progress.completedLessons = [];
+    if (!progress.completedLessons.includes(lessonId)) {
+      progress.completedLessons.push(lessonId);
+    }
+    saveProgress();
+  }
+
+  function flatLessons(courseData) {
+    const out = [];
+    for (const mod of (courseData.modules || [])) {
+      for (const lesson of (mod.lessons || [])) {
+        out.push({ mod, lesson });
+      }
+    }
+    return out;
+  }
+
+  // ─── Progress bar ─────────────────────────────────────────────────────────
+  function updateProgressBar() {
+    const total = allLessons.length;
+    const done = allLessons.filter(({lesson}) => isCompleted(lesson.id)).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    $('progress-fill').style.width = pct + '%';
+    $('progress-label').textContent = `${done} of ${total} lessons`;
+    if (done === total && total > 0) {
+      $('completion-banner').classList.add('visible');
+    }
+  }
+
+  // ─── Sidebar ──────────────────────────────────────────────────────────────
+  function buildSidebar() {
+    const nav = $('lesson-nav');
+    nav.innerHTML = '';
+    for (const mod of (course.modules || [])) {
+      const mt = document.createElement('div');
+      mt.className = 'module-title';
+      mt.textContent = mod.title;
+      nav.appendChild(mt);
+      for (const lesson of (mod.lessons || [])) {
+        const item = document.createElement('div');
+        item.className = 'lesson-item' + (isCompleted(lesson.id) ? ' completed' : '');
+        item.dataset.lessonId = lesson.id;
+        item.dataset.modId = mod.id;
+        item.innerHTML = `<div class="lesson-dot"></div><span>${lesson.title}</span>`;
+        item.addEventListener('click', () => openLesson(mod, lesson));
+        nav.appendChild(item);
+      }
+    }
+  }
+
+  function highlightSidebar(modId, lessonId) {
+    document.querySelectorAll('.lesson-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.lessonId === lessonId && el.dataset.modId === modId);
+    });
+  }
+
+  // ─── Lesson loading ────────────────────────────────────────────────────────
+  async function openLesson(mod, lesson) {
+    currentModule = mod;
+    currentLesson = lesson;
+    show('lesson-view');
+    highlightSidebar(mod.id, lesson.id);
+
+    $('lesson-meta').textContent = mod.title;
+    $('lesson-title').textContent = lesson.title;
+    $('lesson-body').innerHTML = '<em style="color:#6b7280">Loading...</em>';
+    $('quiz-panel').style.display = 'none';
+    $('reflection-section').style.display = 'none';
+
+    // Load lesson markdown
+    if (lesson.files && lesson.files.lesson) {
+      try {
+        const res = await fetch(lesson.files.lesson);
+        if (!res.ok) throw new Error('Could not load ' + lesson.files.lesson);
+        const md = await res.text();
+        $('lesson-body').innerHTML = marked.parse(md);
+      } catch (err) {
+        $('lesson-body').innerHTML = `<p style="color:#dc2626">Could not load lesson: ${err.message}</p>`;
+      }
+    } else {
+      $('lesson-body').innerHTML = '<p>No lesson file found for this lesson.</p>';
+    }
+
+    // Load quiz if present
+    if (lesson.quiz) {
+      await loadQuiz(lesson.quiz);
+    }
+
+    // Load clarifications for this lesson
+    await loadClarifications(mod.id, lesson.id);
+
+    // Reflection question placeholder
+    if (lesson.reflectionQuestion) {
+      $('reflection-section').style.display = 'block';
+      $('reflection-label').textContent = '💬 Reflection: ' + lesson.reflectionQuestion;
+      const saved = progress.reflections && progress.reflections[lesson.id];
+      $('reflection-input').value = saved || '';
+    }
+
+    // Update nav buttons
+    const idx = allLessons.findIndex(x => x.lesson.id === lesson.id);
+    $('prev-btn').disabled = idx <= 0;
+    $('next-btn').disabled = idx >= allLessons.length - 1;
+
+    // Update complete button
+    const done = isCompleted(lesson.id);
+    $('complete-btn').textContent = done ? '✓ Completed' : 'Mark Complete ✓';
+    $('complete-btn').className = 'btn ' + (done ? 'btn-secondary' : 'btn-success');
+
+    // Update Claude prompt
+    updateClaudePrompt(mod, lesson);
+
+    // Scroll to top
+    $('main-content').scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  function updateClaudePrompt(mod, lesson) {
+    $('claude-prompt').value =
+      `I'm studying "${course.title}" — module "${mod.title}", lesson "${lesson.title}".\n` +
+      `I need help understanding something. [Describe what you don't understand here.]\n\n` +
+      `Please give me a hint or explanation without giving me the full solution.`;
+  }
+
+  // ─── Clarifications ───────────────────────────────────────────────────────
+  async function loadClarificationsIndex() {
+    try {
+      const res = await fetch('_course/clarifications/index.json');
+      if (!res.ok) return;
+      const data = await res.json();
+      // Strip internal _note/_example keys
+      Object.keys(data).forEach(k => { if (!k.startsWith('_')) clarificationsIndex[k] = data[k]; });
+    } catch { /* index may not exist yet */ }
+  }
+
+  async function loadClarifications(moduleId, lessonId) {
+    const key = `${moduleId}-${lessonId}`;
+    const entries = clarificationsIndex[key];
+    const section = $('clarifications-section');
+    const list = $('clarifications-list');
+    list.innerHTML = '';
+
+    if (!entries || entries.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+
+    for (const entry of entries) {
+      let content = '';
+      try {
+        const res = await fetch(entry.file);
+        if (res.ok) content = await res.text();
+      } catch { content = ''; }
+
+      const card = document.createElement('div');
+      card.className = 'clarification-card';
+
+      const header = document.createElement('div');
+      header.className = 'clarification-header';
+      header.innerHTML = `<span>${entry.title}</span><span class="clarification-toggle">▼ show</span>`;
+      card.appendChild(header);
+
+      const body = document.createElement('div');
+      body.className = 'clarification-body';
+      if (content) {
+        body.innerHTML = marked.parse(content);
+        // Remove the H1 title line since we show it in the header
+        const h1 = body.querySelector('h1');
+        if (h1) h1.remove();
+        // Remove the "Added after a student asked" italic line
+        const firstEm = body.querySelector('em');
+        if (firstEm && firstEm.textContent.startsWith('Added after')) {
+          const p = firstEm.closest('p');
+          if (p) { const src = document.createElement('div'); src.className = 'clarification-source'; src.textContent = firstEm.textContent; body.insertBefore(src, body.firstChild); p.remove(); }
+        }
+      } else {
+        body.textContent = 'Could not load clarification file.';
+      }
+      card.appendChild(body);
+
+      header.addEventListener('click', () => {
+        const open = body.classList.toggle('open');
+        header.querySelector('.clarification-toggle').textContent = open ? '▲ hide' : '▼ show';
+      });
+
+      list.appendChild(card);
+    }
+  }
+
+  // ─── Quiz ─────────────────────────────────────────────────────────────────
+  async function loadQuiz(quizPath) {
+    try {
+      const res = await fetch(quizPath);
+      if (!res.ok) return;
+      const quiz = await res.json();
+      currentQuizData = quiz;
+      renderQuiz(quiz);
+    } catch { /* quiz file may not exist yet */ }
+  }
+
+  function renderQuiz(quiz) {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) return;
+    $('quiz-panel').style.display = 'block';
+    $('quiz-title').textContent = quiz.title || 'Quiz';
+    $('quiz-result').style.display = 'none';
+
+    const qContainer = $('quiz-questions');
+    qContainer.innerHTML = '';
+
+    for (const q of quiz.questions) {
+      const block = document.createElement('div');
+      block.className = 'question-block';
+      block.dataset.questionId = q.id;
+      block.dataset.correct = q.type === 'true-false'
+        ? (q.correct === true || q.correct === 'true' ? 'true' : 'false')
+        : String(q.correct);
+
+      const qText = document.createElement('div');
+      qText.className = 'question-text';
+      qText.textContent = q.text || q.question;
+      block.appendChild(qText);
+
+      const opts = document.createElement('div');
+      opts.className = 'options';
+
+      if (q.type === 'true-false') {
+        ['True', 'False'].forEach((label, i) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'option-label';
+          lbl.innerHTML = `<input type="radio" name="q_${q.id}" value="${label.toLowerCase()}"> ${label}`;
+          opts.appendChild(lbl);
+        });
+      } else {
+        (q.options || []).forEach((opt, i) => {
+          const lbl = document.createElement('label');
+          lbl.className = 'option-label';
+          lbl.innerHTML = `<input type="radio" name="q_${q.id}" value="${i}"> ${opt}`;
+          opts.appendChild(lbl);
+        });
+      }
+      block.appendChild(opts);
+
+      const expl = document.createElement('div');
+      expl.className = 'explanation';
+      expl.textContent = q.explanation || '';
+      block.appendChild(expl);
+
+      qContainer.appendChild(block);
+    }
+  }
+
+  $('quiz-submit-btn').addEventListener('click', () => {
+    if (!currentQuizData) return;
+    const questions = document.querySelectorAll('.question-block');
+    let correct = 0;
+    let answered = 0;
+
+    questions.forEach(block => {
+      const qId = block.dataset.questionId;
+      const correctVal = block.dataset.correct;
+      const selected = block.querySelector(`input[name="q_${qId}"]:checked`);
+      if (!selected) return;
+      answered++;
+
+      const isCorrect = String(selected.value) === String(correctVal);
+      if (isCorrect) correct++;
+
+      block.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        if (String(inp.value) === String(correctVal)) lbl.classList.add('correct');
+        else if (inp.checked && !isCorrect) lbl.classList.add('wrong');
+        inp.disabled = true;
+      });
+      block.querySelector('.explanation').classList.add('visible');
+    });
+
+    if (answered < currentQuizData.questions.length) {
+      alert('Please answer all questions before submitting.');
+      return;
+    }
+
+    const pct = Math.round((correct / currentQuizData.questions.length) * 100);
+    const passing = currentQuizData.passingScore || 70;
+    const passed = pct >= passing;
+
+    const result = $('quiz-result');
+    result.style.display = 'block';
+    result.className = 'quiz-result ' + (passed ? 'pass' : 'fail');
+    result.textContent = passed
+      ? `✅ Passed! You scored ${pct}%. Great work.`
+      : `❌ ${pct}% — you need ${passing}% to pass. Review the lesson and try again.`;
+
+    // Save score
+    if (!progress.quizScores) progress.quizScores = {};
+    const key = currentModule.id + '-' + currentLesson.id;
+    if (!progress.quizScores[key] || pct > (progress.quizScores[key].score || 0)) {
+      progress.quizScores[key] = { score: pct, passed, completedAt: new Date().toISOString() };
+      saveProgress();
+    }
+
+    $('quiz-submit-btn').style.display = 'none';
+    $('quiz-retry-btn').style.display = passed ? 'none' : 'inline-block';
+  });
+
+  $('quiz-retry-btn').addEventListener('click', () => {
+    if (currentLesson && currentLesson.quiz) {
+      loadQuiz(currentLesson.quiz);
+    }
+  });
+
+  // ─── Complete button ───────────────────────────────────────────────────────
+  $('complete-btn').addEventListener('click', () => {
+    if (!currentLesson) return;
+
+    // Save reflection
+    if ($('reflection-section').style.display !== 'none') {
+      if (!progress.reflections) progress.reflections = {};
+      progress.reflections[currentLesson.id] = $('reflection-input').value;
+    }
+
+    markComplete(currentLesson.id);
+    $('complete-btn').textContent = '✓ Completed';
+    $('complete-btn').className = 'btn btn-secondary';
+
+    // Update sidebar dot
+    const sideItem = document.querySelector(`.lesson-item[data-mod-id="${currentModule.id}"][data-lesson-id="${currentLesson.id}"]`);
+    if (sideItem) sideItem.classList.add('completed');
+
+    updateProgressBar();
+
+    // Auto-advance
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx < allLessons.length - 1) {
+      setTimeout(() => {
+        const next = allLessons[idx + 1];
+        openLesson(next.mod, next.lesson);
+      }, 600);
+    }
+  });
+
+  // ─── Navigation ───────────────────────────────────────────────────────────
+  $('prev-btn').addEventListener('click', () => {
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx > 0) openLesson(allLessons[idx - 1].mod, allLessons[idx - 1].lesson);
+  });
+
+  $('next-btn').addEventListener('click', () => {
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    if (idx < allLessons.length - 1) openLesson(allLessons[idx + 1].mod, allLessons[idx + 1].lesson);
+  });
+
+  // ─── Claude prompt copy ───────────────────────────────────────────────────
+  $('claude-prompt').addEventListener('click', function () {
+    this.select();
+    document.execCommand('copy');
+    this.style.borderColor = 'var(--success)';
+    setTimeout(() => { this.style.borderColor = ''; }, 1000);
+  });
+
+  // ─── Submit button ────────────────────────────────────────────────────────
+  if ($('submit-btn')) {
+    $('submit-btn').addEventListener('click', () => {
+      alert('To submit, run:\n\n  npm run submit\n\nin the VS Code terminal.');
+    });
+  }
+
+  // ─── Boot ─────────────────────────────────────────────────────────────────
+  async function boot() {
+    try {
+      const res = await fetch('_course/course.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      course = await res.json();
+    } catch (err) {
+      // Likely opened as file:// — show helpful error
+      if (location.protocol === 'file:') {
+        show('error-screen');
+        $('error-title').textContent = 'Please use Live Server';
+        $('error-msg').innerHTML =
+          'Open this file via <strong>Live Server</strong> in VS Code:<br><br>' +
+          'Right-click <code>index.html</code> → <em>Open with Live Server</em><br><br>' +
+          'Or install the Live Server extension if prompted.';
+      } else {
+        show('error-screen');
+        $('error-title').textContent = 'Could not load course';
+        $('error-msg').textContent = 'Failed to load _course/course.json: ' + err.message;
+      }
+      return;
+    }
+
+    document.title = course.title || 'Course';
+    $('course-title').textContent = course.title || 'Course';
+
+    progress = loadProgress();
+    if (!progress.startedAt) {
+      progress.startedAt = new Date().toISOString();
+      saveProgress();
+    }
+
+    allLessons = flatLessons(course);
+    await loadClarificationsIndex();
+
+    if (!course.modules || course.modules.length === 0) {
+      show('empty-state');
+      return;
+    }
+
+    buildSidebar();
+    updateProgressBar();
+
+    // Show submission button if API enabled
+    if (course.apiSubmission && course.apiSubmission.enabled && $('submit-btn')) {
+      $('submit-btn').style.display = 'inline-block';
+    }
+
+    // Open first incomplete lesson or first lesson
+    const firstIncomplete = allLessons.find(({lesson}) => !isCompleted(lesson.id));
+    const start = firstIncomplete || allLessons[0];
+    if (start) {
+      openLesson(start.mod, start.lesson);
+    } else {
+      show('lesson-view');
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

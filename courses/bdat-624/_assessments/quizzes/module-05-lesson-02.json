@@ -1,0 +1,60 @@
+{
+  "id": "module-05-lesson-02",
+  "title": "Quiz: Cox Proportional Hazards Model",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The Cox proportional hazards model is described as 'semi-parametric' because:",
+      "options": [
+        "It uses a parametric form (such as Weibull) for the baseline hazard h₀(t)",
+        "It estimates the regression coefficients β parametrically but leaves the baseline hazard h₀(t) completely unspecified",
+        "It assumes exponential survival times for the baseline group",
+        "It has no parameters — it is fully non-parametric"
+      ],
+      "correct": 1,
+      "explanation": "The Cox model is semi-parametric: the covariate part exp(β′X) is parametric (β is estimated by maximising the partial likelihood), but h₀(t) is left completely unspecified. This is the defining feature of the model. Options (a) and (c) describe fully parametric models; option (d) describes non-parametric estimators like KM."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A Cox model is fitted and the estimated hazard ratio for treatment (0 = control, 1 = treated) is HR = 0.55 with 95% CI (0.38, 0.80). This means:",
+      "options": [
+        "Treated patients die 0.55 days sooner on average than control patients",
+        "Treated patients have a 45% lower hazard of the event at every time point, compared to controls",
+        "55% of treated patients experience the event",
+        "The treatment increases expected survival time by 0.55 years"
+      ],
+      "correct": 1,
+      "explanation": "A hazard ratio of 0.55 means the hazard for treated patients is 0.55 times (i.e., 45% lower than) the hazard for control patients. Under the proportional hazards assumption, this ratio is constant over all time points. Option (a) confuses HR with an absolute time difference. Options (c) and (d) confuse HR with event probability or survival time."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The proportional hazards assumption states that the ratio h(t|X) / h(t|X*) is constant over time for any two subjects with covariate vectors X and X*.",
+      "correct": true,
+      "explanation": "This is the definition of the PH assumption. In the Cox model, h(t|X)/h(t|X*) = exp(β′(X − X*)), which does not depend on t. The baseline hazard h₀(t) cancels in the ratio, so the hazard ratio is a fixed function of the covariate difference only. A violation means the hazard ratio changes over time — for example, one treatment is more effective early on but not later."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Schoenfeld residuals are plotted against time to:",
+      "options": [
+        "Estimate the baseline hazard function h₀(t)",
+        "Check whether the proportional hazards assumption holds for each covariate",
+        "Detect outlying covariate values (leverage points)",
+        "Compare nested Cox models using a likelihood ratio test"
+      ],
+      "correct": 1,
+      "explanation": "Schoenfeld residuals are the difference between the observed covariate value at each event time and the risk-set-weighted average under the model. Under PH, these residuals should show no trend over time. A systematic trend (tested formally by cox.zph() in R) suggests the covariate's effect changes over time, violating PH. Options (a), (c), and (d) describe the Breslow estimator, dfbeta residuals, and likelihood ratio tests respectively."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "In the Cox model, the baseline hazard h₀(t) must be specified as an exponential function in order to estimate the regression coefficients β.",
+      "correct": false,
+      "explanation": "This is the key insight of Cox's partial likelihood. β can be estimated without ever specifying or estimating h₀(t). At each event time, the partial likelihood uses only the ranks of the event times and the covariate values — h₀(t) cancels from the numerator and denominator. This is why the Cox model is called semi-parametric: we get valid estimates of β under any baseline hazard."
+    }
+  ]
+}

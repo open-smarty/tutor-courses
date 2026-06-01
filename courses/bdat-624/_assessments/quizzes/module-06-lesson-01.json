@@ -1,0 +1,60 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Competing Risks and Multi-State Models",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a competing risks setting, the Kaplan-Meier estimator for one cause (treating competing events as censored) will:",
+      "options": [
+        "Underestimate the cumulative incidence of that cause",
+        "Overestimate the cumulative incidence of that cause",
+        "Give an unbiased estimate of the cumulative incidence of that cause",
+        "Equal the Fine-Gray subdistribution estimator for that cause"
+      ],
+      "correct": 1,
+      "explanation": "When competing events are treated as censored, those subjects are removed from the risk set as if they had simply left observation — but they did not escape the cause of interest. Removing them inflates the apparent hazard for the remaining subjects and therefore inflates the apparent cumulative incidence. The correct estimator is the Cumulative Incidence Function (CIF), which accounts for the competing events explicitly. Option (a) is wrong — the bias goes upward, not downward. Options (c) and (d) are wrong because treating competing events as censored violates the non-informative censoring assumption."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The Cumulative Incidence Function F₁(t) for cause 1 in a competing risks model equals:",
+      "options": [
+        "1 − S₁(t), where S₁(t) is the Kaplan-Meier estimator treating cause-2 events as censored",
+        "The integral from 0 to t of h₁(u) · S(u) du, where S(u) is the OVERALL survival function",
+        "h₁(t) · t",
+        "F₁(t) + F₂(t)"
+      ],
+      "correct": 1,
+      "explanation": "The CIF formula is F₁(t) = ∫₀ᵗ h₁(u) · S(u) du, where S(u) is the probability of being event-free from ALL causes up to time u, not just cause 1. The integrand combines the cause-1 hazard rate h₁(u) with the probability S(u) of still being in the risk set at time u. Option (a) is the naive KM estimator, which overestimates the CIF. Option (c) is not a valid probability expression. Option (d) is a nonsensical sum — F₁(t) does not equal the sum of both CIFs."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A multi-state model with transition intensity matrix Q and a continuous-time Markov assumption gives the transition probability matrix P(t) = exp(Qt), directly generalising the discrete-time result P^n from Markov chains.",
+      "correct": true,
+      "explanation": "True. In discrete time, raising the one-step transition matrix P to the n-th power gives n-step transition probabilities. In continuous time, the generator matrix Q plays the role of the one-step transition rate matrix, and the matrix exponential exp(Qt) gives t-time transition probabilities. This is the fundamental bridge between Arc 1 (Markov chains, Modules 2–4) and Arc 2 (survival and multi-state models, Modules 5–6). Both results follow from the Chapman-Kolmogorov equations: in discrete time, P(m+n) = P(m)·P(n); in continuous time, the analogous equation leads to the matrix ODE P'(t) = P(t)Q with solution P(t) = exp(Qt)."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In the Fine-Gray model, the subdistribution hazard ratio exp(γ) for a covariate directly relates to:",
+      "options": [
+        "The cause-specific hazard ratio from a Cox model",
+        "The Cumulative Incidence Function Fₖ(t) for the cause of interest",
+        "The overall survival function S(t)",
+        "The mean recurrence time for that cause"
+      ],
+      "correct": 1,
+      "explanation": "The Fine-Gray model specifies the subdistribution hazard as h̃ₖ(t|X) = h̃ₖ₀(t)·exp(γ′X). Because Fₖ(t) = 1 − exp(−∫₀ᵗ h̃ₖ(u)du), a larger exp(γ) directly implies a larger CIF Fₖ(t) for all t > 0. This direct link to the observable cumulative probability is the key advantage of the Fine-Gray model over cause-specific Cox models when the goal is prediction of event probability. The cause-specific Cox model (option a) models the biological mechanism but does not directly relate to the CIF because the CIF also depends on the competing risks."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The transition intensity q_{ij} in a continuous-time Markov multi-state model is analogous to the one-step transition probability P_{ij} in a discrete-time Markov chain.",
+      "correct": false,
+      "explanation": "False. q_{ij} is a rate (per unit time), not a probability. Rates can exceed 1, while probabilities must lie in [0, 1]. The actual probability of transitioning from state i to state j over a time interval comes from the transition probability matrix P(t) = exp(Qt), not from Q directly. The correct analogy is: Q is analogous to the log of the transition matrix in discrete time — q_{ij} is the infinitesimal rate that drives transitions, just as the off-diagonal entries of P−I are the probabilities per step in discrete time. The diagonal entries of Q are negative (they are minus the total leaving rate), which is another signal that Q contains rates, not probabilities."
+    }
+  ]
+}

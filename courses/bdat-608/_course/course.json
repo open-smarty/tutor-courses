@@ -1,0 +1,256 @@
+{
+  "id": "bdat-608",
+  "title": "BDAT 608: Computational Statistics in Big Data II",
+  "description": "The complete statistical modelling workflow in R: defining model families, fitting with OLS and custom loss functions, visualising predictions and residuals, writing R formulas for interactions and splines, handling missing data, and extending to GLMs, robust regression, GAMs, penalised regression, and decision trees. Anchored by two real-data case studies using diamonds and nycflights13.",
+  "author": "Richard Minkah, PhD and E. Somua-Wiafe, PhD — Department of Statistics & Actuarial Science, University of Ghana, Legon",
+  "version": "1.0.0",
+  "subject": "Computational Statistics / R",
+  "level": "intermediate",
+  "estimatedHours": 8,
+  "prerequisites": ["Basic R and ggplot2", "First statistics course (regression concepts)", "BDAT 607 or equivalent"],
+  "apiSubmission": {
+    "enabled": false,
+    "endpoint": "",
+    "courseId": ""
+  },
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Introduction to Statistical Modelling",
+      "description": "What a statistical model is, the signal/noise decomposition, and the iterative modelling cycle that drives the entire course.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "What Is a Statistical Model?",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-01/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-01/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-01-lesson-01.json",
+          "task": "_assessments/tasks/module-01-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 15
+        },
+        {
+          "id": "lesson-02",
+          "title": "Setting Up the R Modelling Environment",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-01/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-01/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-01/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-01-lesson-02.json",
+          "task": "_assessments/tasks/module-01-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 20
+        }
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Fitting a Simple Linear Model",
+      "description": "From scratch: define loss functions, search the parameter space, and arrive at closed-form OLS — understanding what lm() is actually doing.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Loss Functions — RMSE and MAE",
+          "difficulty": "beginner",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-01.json",
+          "task": "_assessments/tasks/module-02-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 25
+        },
+        {
+          "id": "lesson-02",
+          "title": "Search Strategies and Numerical Optimisation",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-02.json",
+          "task": "_assessments/tasks/module-02-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-03",
+          "title": "Closed-Form OLS with lm()",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-02/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-02/lesson-03/exercise.Rmd",
+            "solution": "_course/lessons/module-02/lesson-03/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-02-lesson-03.json",
+          "task": "_assessments/tasks/module-02-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 25
+        }
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Visualising Models",
+      "description": "Generate prediction grids, overlay fitted lines, plot residuals, and read the four standard diagnostic plots that reveal model failures.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Predictions and Residuals with modelr",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-03/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-03/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-03-lesson-01.json",
+          "task": "_assessments/tasks/module-03-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-02",
+          "title": "Diagnostic Plots and Model Comparison",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-03/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-03/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-03/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-03-lesson-02.json",
+          "task": "_assessments/tasks/module-03-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 25
+        }
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Formulas, Model Families, and Missing Data",
+      "description": "R's formula language in depth: dummy coding, interactions, polynomial terms, natural splines, cross-validation for complexity selection, and principled missing-data handling.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Formula Notation, Model Matrix, and Categorical Predictors",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-01.json",
+          "task": "_assessments/tasks/module-04-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 30
+        },
+        {
+          "id": "lesson-02",
+          "title": "Interactions and Transformations",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-02.json",
+          "task": "_assessments/tasks/module-04-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-03",
+          "title": "Splines, Cross-Validation, and Missing Values",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-04/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-04/lesson-03/exercise.Rmd",
+            "solution": "_course/lessons/module-04/lesson-03/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-04-lesson-03.json",
+          "task": "_assessments/tasks/module-04-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Beyond Linear Models",
+      "description": "When OLS is not enough: GLMs for binary and count responses, robust regression for outlier-contaminated data, GAMs for non-linear effects, and penalised regression and trees for high-dimensional or non-linear settings.",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Generalised Linear Models — Logistic and Poisson Regression",
+          "difficulty": "intermediate",
+          "files": {
+            "lesson": "_course/lessons/module-05/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-05/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-05-lesson-01.json",
+          "task": "_assessments/tasks/module-05-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 35
+        },
+        {
+          "id": "lesson-02",
+          "title": "Robust Regression and Generalised Additive Models",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-05/lesson-02/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-02/exercise.Rmd",
+            "solution": "_course/lessons/module-05/lesson-02/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-05-lesson-02.json",
+          "task": "_assessments/tasks/module-05-lesson-02.md",
+          "required": true,
+          "estimatedMinutes": 40
+        },
+        {
+          "id": "lesson-03",
+          "title": "Penalised Regression and Decision Trees",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-05/lesson-03/lesson.md",
+            "exercise": "_course/lessons/module-05/lesson-03/exercise.Rmd",
+            "solution": "_course/lessons/module-05/lesson-03/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-05-lesson-03.json",
+          "task": "_assessments/tasks/module-05-lesson-03.md",
+          "required": true,
+          "estimatedMinutes": 40
+        }
+      ]
+    },
+    {
+      "id": "module-06",
+      "title": "Extended Case Studies",
+      "description": "Three real-data case studies that integrate the full course: progressive model building on diamonds, many-model pipelines with purrr on nycflights13, and non-linear growth models with nls().",
+      "lessons": [
+        {
+          "id": "lesson-01",
+          "title": "Model Building in Practice — Diamonds, Flights, and Growth Models",
+          "difficulty": "advanced",
+          "files": {
+            "lesson": "_course/lessons/module-06/lesson-01/lesson.md",
+            "exercise": "_course/lessons/module-06/lesson-01/exercise.Rmd",
+            "solution": "_course/lessons/module-06/lesson-01/solution.Rmd"
+          },
+          "quiz": "_assessments/quizzes/module-06-lesson-01.json",
+          "task": "_assessments/tasks/module-06-lesson-01.md",
+          "required": true,
+          "estimatedMinutes": 60
+        }
+      ]
+    }
+  ]
+}

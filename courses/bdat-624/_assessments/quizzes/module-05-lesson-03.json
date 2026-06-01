@@ -1,0 +1,60 @@
+{
+  "id": "module-05-lesson-03",
+  "title": "Quiz: Parametric Survival Models and Accelerated Failure Time",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a Weibull survival model with shape parameter k = 2, the hazard h(t):",
+      "options": [
+        "Is constant over time",
+        "Decreases over time",
+        "Increases over time",
+        "Follows a log-normal pattern, first increasing then decreasing"
+      ],
+      "correct": 2,
+      "explanation": "For the Weibull distribution, h(t) = kλ(λt)^{k−1}. When k > 1, the factor (λt)^{k−1} grows as t increases, so h(t) is strictly increasing. When k = 1 (exponential), h(t) = λ (constant). When k < 1, h(t) is decreasing. Option (d) describes the log-normal hazard, which is unimodal."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In an AFT model, a time ratio of φ = 1.8 for a treatment covariate (0 = control, 1 = treated) means:",
+      "options": [
+        "Treated patients have a hazard 1.8 times that of control patients",
+        "Treated patients survive 1.8 times as long as control patients on average",
+        "The treatment reduces the risk of the event by 80%",
+        "On average, 1.8 fewer patients die in the treated group"
+      ],
+      "correct": 1,
+      "explanation": "In the AFT model, the time ratio φ = exp(β) multiplies the expected survival time. φ = 1.8 means treated patients survive 1.8 times as long as control patients. This is a direct statement about time (the outcome scale), not the hazard scale. Option (a) confuses the time ratio with a hazard ratio. Option (c) would correspond to a hazard ratio of 0.20, not a time ratio."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The Weibull model is both a proportional hazards model and an accelerated failure time model — it belongs to the intersection of the two model families.",
+      "correct": true,
+      "explanation": "The Weibull is the only standard survival distribution that is simultaneously a PH model (h(t|X) = h₀(t)·exp(β_PH′X)) and an AFT model (log T = β₀ + β_AFT′X + σε). The two parameterisations are related by β_PH = −k·β_AFT where k is the Weibull shape parameter. The exponential model (Weibull with k=1) is also in both families. All other standard distributions (log-normal, log-logistic) are AFT models but not PH models."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "AIC = −2·logL + 2p. When comparing four parametric survival models (exponential, Weibull, log-normal, log-logistic) fitted to the same dataset, we prefer the model with:",
+      "options": [
+        "The highest AIC",
+        "The lowest AIC",
+        "The AIC closest to zero",
+        "The AIC equal to the number of parameters p"
+      ],
+      "correct": 1,
+      "explanation": "AIC balances model fit (−2·logL, which decreases as fit improves) against complexity (2p, which penalises additional parameters). A lower AIC indicates a better trade-off between fit and parsimony. The AIC scale is arbitrary — there is no meaningful reference value of 0. What matters is the relative difference between models on the same data."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The likelihood ratio test statistic Λ = 2(logL₁ − logL₀) follows an approximate χ² distribution under H₀ when the two models are nested (model 0 is a restricted version of model 1).",
+      "correct": true,
+      "explanation": "This is Wilks' theorem: under H₀ and regularity conditions, the LRT statistic Λ = 2(logL₁ − logL₀) converges in distribution to χ²(df₁ − df₀), where df₁ − df₀ is the difference in the number of estimated parameters. For example, comparing the Weibull (2 parameters: shape and scale) to the exponential (1 parameter: rate only), the LRT has df = 1. The approximation improves with sample size."
+    }
+  ]
+}

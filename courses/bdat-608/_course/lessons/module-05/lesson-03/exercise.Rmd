@@ -1,0 +1,97 @@
+---
+title: "BDAT 608 | Module 5, Lesson 3 — Penalised Regression and Decision Trees"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(glmnet)
+library(rpart)
+library(rpart.plot)
+options(na.action = na.warn)
+data("sim4", package = "modelr")
+```
+
+---
+
+## Task 1 — Simulate Data and Fit Ridge/LASSO
+
+```{r simulate-data}
+set.seed(2024)
+p <- 50; n <- 200
+X <- matrix(rnorm(n * p), n, p)
+y_pen <- 2 * X[, 1] - 1.5 * X[, 2] + rnorm(n)
+
+# TODO: Fit Ridge (alpha=0) and LASSO (alpha=1) models
+mod_ridge <- glmnet(X, y_pen, alpha = 0)
+mod_lasso <- glmnet(X, y_pen, alpha = # TODO)
+```
+
+---
+
+## Task 2 — Cross-Validate LASSO
+
+```{r lasso-cv}
+# TODO: cv.glmnet for LASSO with nfolds=10.
+# Plot the CV curve. Report lambda.min.
+cv_lasso <- cv.glmnet(X, y_pen, alpha = 1, nfolds = 10)
+plot(cv_lasso)
+cat("lambda.min:", # TODO)
+```
+
+---
+
+## Task 3 — Inspect Coefficients
+
+```{r lasso-coefs}
+# TODO: Print the first 6 coefficients at lambda.min.
+# Which predictors are non-zero? Are V3-V6 set to zero?
+```
+
+---
+
+## Task 4 — Coefficient Paths
+
+```{r lasso-paths}
+# TODO: plot(mod_lasso, xvar = "lambda") to show coefficient paths.
+# Add a vertical dashed line at log(lambda.min).
+```
+
+---
+
+## Task 5 — Decision Tree on sim4
+
+```{r tree-fit}
+# TODO: Fit a regression tree on sim4: y ~ x1 + x2
+# maxdepth=4, cp=0.01
+# Visualise with rpart.plot()
+```
+
+---
+
+## Task 6 — Tree Prediction Surface
+
+```{r tree-surface}
+# TODO: Generate a 30x30 grid, add_predictions(tree_mod), plot as heatmap.
+# Compare visually to the linear model surface.
+```
+
+---
+
+## Reflection
+
+<!-- For a sparse signal (only 2 of 50 predictors matter),
+     why is LASSO more appropriate than Ridge?
+     (2–3 sentences) -->

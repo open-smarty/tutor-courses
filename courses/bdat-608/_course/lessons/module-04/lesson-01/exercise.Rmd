@@ -1,0 +1,76 @@
+---
+title: "BDAT 608 | Module 4, Lesson 1 — Formula Notation, Model Matrix, and Categorical Predictors"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+```
+
+---
+
+## Task 1 — model_matrix() Exploration
+
+```{r model-matrix}
+df <- tribble(
+  ~y, ~x1, ~x2,
+  4,   2,   5,
+  5,   1,   6
+)
+
+# TODO: Run model_matrix() for these three formulas and inspect the output:
+# (a) y ~ x1
+# (b) y ~ x1 - 1
+# (c) y ~ x1 + x2
+```
+
+---
+
+## Task 2 — Categorical Predictor on sim2
+
+```{r categorical-model}
+data("sim2", package = "modelr")
+
+# TODO: Fit mod2 <- lm(y ~ x, data = sim2)
+# Print the first 8 rows of the model matrix.
+# Print coef(mod2).
+```
+
+---
+
+## Task 3 — Group Predictions
+
+```{r group-predictions}
+# TODO: Use data_grid(x) and add_predictions(mod2) to get predicted values
+# for each level of x. Print the result.
+```
+
+---
+
+## Task 4 — Plot
+
+```{r cat-plot}
+# TODO: Plot sim2 data as jittered points (grey).
+# Overlay the predicted values from Task 3 as gold diamonds (shape = 18, size = 4).
+# Add a title "sim2: OLS predictions = group means".
+```
+
+---
+
+## Reflection
+
+<!-- The coefficient for xb is 6.15.
+     What does it actually represent? Is it the mean of group b?
+     Write your answer in 2–3 sentences. -->

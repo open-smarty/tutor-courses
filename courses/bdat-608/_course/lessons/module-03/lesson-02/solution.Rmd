@@ -1,0 +1,94 @@
+---
+title: "BDAT 608 | Module 3, Lesson 2 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(ggfortify)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+sim1_mod <- lm(y ~ x, data = sim1)
+```
+
+## Task 1 — Base R Diagnostics
+
+```{r base-diagnostics, fig.width=9, fig.height=7}
+par(mfrow = c(2, 2))
+plot(sim1_mod)
+par(mfrow = c(1, 1))
+```
+
+All four panels look clean for `sim1`: random scatter around zero, points near the Q-Q diagonal, flat Scale-Location line, and small Cook's distances.
+
+## Task 2 — ggfortify Diagnostics
+
+```{r ggplot-diagnostics}
+autoplot(sim1_mod, which = 1:4, colour = "#1B3A6B", smooth.colour = "#C9A84C")
+```
+
+## Task 3 — Fit Quadratic Model
+
+```{r quadratic-model}
+mod_b <- lm(y ~ x + I(x^2), data = sim1)
+summary(mod_b)
+```
+
+## Task 4 — Compare Fitted Lines
+
+```{r compare-fits}
+mod_a <- sim1_mod
+
+grid_multi <- sim1 |>
+  data_grid(x) |>
+  gather_predictions(mod_a, mod_b)
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(colour = "grey40", size = 2) +
+  geom_line(data = grid_multi, aes(y = pred, colour = model), linewidth = 1.2) +
+  scale_colour_manual(values = c("#1B3A6B", "#C9A84C"),
+                      labels = c("Linear", "Quadratic")) +
+  labs(title = "Linear vs Quadratic model on sim1", colour = "Model") +
+  theme_minimal(base_size = 13)
+```
+
+## Task 5 — Compare Residuals
+
+```{r compare-residuals}
+sim1 |>
+  gather_residuals(mod_a, mod_b) |>
+  ggplot(aes(x, resid, colour = model)) +
+  geom_point() +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ model, labeller = label_both) +
+  scale_colour_manual(values = c("#1B3A6B", "#C9A84C")) +
+  labs(title = "Residuals: linear vs quadratic", y = "Residual") +
+  theme_minimal(base_size = 13)
+```
+
+## Task 6 — AIC Comparison
+
+```{r aic}
+AIC(mod_a, mod_b)
+cat("Additive R²:    ", round(summary(mod_a)$r.squared, 4), "\n")
+cat("Quadratic R²:   ", round(summary(mod_b)$r.squared, 4), "\n")
+# The linear model (mod_a) has a lower (better) AIC despite fewer parameters.
+# For sim1, the relationship is genuinely linear — the quadratic term adds complexity
+# without capturing any real additional signal.
+```
+
+## Reflection
+
+Non-normality of residuals does **not** automatically mean the model is wrong. Normality matters primarily for **inference** — t-tests, p-values, and confidence intervals rely on the normality assumption. For large samples, the Central Limit Theorem ensures these are approximately valid even with moderately non-normal residuals. However, normality does not affect the unbiasedness or consistency of the OLS estimates themselves. The more critical assumptions are **linearity of the mean** (checked by Residuals vs Fitted) and **homoscedasticity** (checked by Scale-Location). Heavy tails in residuals typically indicate that standard errors and p-values should be treated with caution, and robust regression (`rlm()`) may be more appropriate.

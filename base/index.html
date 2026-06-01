@@ -421,9 +421,9 @@
     }
   }
 
-  function highlightSidebar(lessonId) {
+  function highlightSidebar(modId, lessonId) {
     document.querySelectorAll('.lesson-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.lessonId === lessonId);
+      el.classList.toggle('active', el.dataset.lessonId === lessonId && el.dataset.modId === modId);
     });
   }
 
@@ -432,7 +432,7 @@
     currentModule = mod;
     currentLesson = lesson;
     show('lesson-view');
-    highlightSidebar(lesson.id);
+    highlightSidebar(mod.id, lesson.id);
 
     $('lesson-meta').textContent = mod.title;
     $('lesson-title').textContent = lesson.title;
@@ -698,7 +698,7 @@
     $('complete-btn').className = 'btn btn-secondary';
 
     // Update sidebar dot
-    const sideItem = document.querySelector(`.lesson-item[data-lesson-id="${currentLesson.id}"]`);
+    const sideItem = document.querySelector(`.lesson-item[data-mod-id="${currentModule.id}"][data-lesson-id="${currentLesson.id}"]`);
     if (sideItem) sideItem.classList.add('completed');
 
     updateProgressBar();

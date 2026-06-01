@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-02",
+  "title": "Quiz: Interactions and Transformations",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The formula y ~ x1 * x2 expands to which set of terms?",
+      "options": [
+        "x1 and x2 only",
+        "x1, x2, and x1:x2 (the interaction term)",
+        "x1:x2 only",
+        "x1, x2, x1:x2, and an additional x1^2:x2 term"
+      ],
+      "correct": 1,
+      "explanation": "y ~ x1 * x2 is shorthand for y ~ x1 + x2 + x1:x2 — main effects for x1 and x2 plus their interaction term."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "In an additive model y ~ x1 + x2 (with x2 categorical), the slope of x1 is the same for all levels of x2.",
+      "correct": true,
+      "explanation": "The additive model allows different intercepts per group (via dummy variables) but forces a single shared slope for x1. Only the interaction model (y ~ x1 * x2) allows slopes to differ by group."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "You fit both additive and interaction models. The residual plot for the additive model shows a strong colour gradient (coloured by the grouping variable x2). This indicates:",
+      "options": [
+        "The model has heteroscedastic errors",
+        "The slopes of x1 differ by group — the interaction term is needed",
+        "The intercepts are identical across groups",
+        "There are influential outliers in the data"
+      ],
+      "correct": 1,
+      "explanation": "A colour gradient in residuals (where colour encodes group) means the additive model's single shared slope is wrong for some groups. The interaction term would allow different slopes per group."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "You want to fit a model with log(y) as the response and x as the predictor. Which formula is correct?",
+      "options": [
+        "lm(y ~ log(x))",
+        "lm(log(y) ~ x)",
+        "lm(y ~ I(log(y)) + x)",
+        "lm(y ~ x, transform = 'log')"
+      ],
+      "correct": 1,
+      "explanation": "In R, transformations of the response are written directly in the formula: lm(log(y) ~ x). R evaluates log(y) before fitting. lm(y ~ log(x)) would instead transform the predictor."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Which code correctly creates a quadratic term for x in an lm() formula?",
+      "options": [
+        "lm(y ~ x^2, data = df)",
+        "lm(y ~ poly(x, 2, raw=TRUE), data = df)",
+        "lm(y ~ x**2, data = df)",
+        "lm(y ~ sq(x), data = df)"
+      ],
+      "correct": 1,
+      "explanation": "poly(x, 2, raw=TRUE) creates ordinary polynomial terms x and x². Using I(x^2) also works. y ~ x^2 is a formula crossing operator and collapses to y ~ x."
+    }
+  ]
+}

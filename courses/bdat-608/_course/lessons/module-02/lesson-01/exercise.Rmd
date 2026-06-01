@@ -1,0 +1,81 @@
+---
+title: "BDAT 608 | Module 2, Lesson 1 — Loss Functions: RMSE and MAE"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+```
+
+---
+
+## Task 1 — Implement Loss Functions
+
+```{r loss-functions}
+# TODO: Implement model1(a, data): returns predicted y = a[1] + a[2]*x
+model1 <- function(a, data) {
+  # your code here
+}
+
+# TODO: Implement measure_distance(mod, data): returns RMSE
+measure_distance <- function(mod, data) {
+  # your code here
+}
+
+# TODO: Implement measure_mae(mod, data): returns MAE
+measure_mae <- function(mod, data) {
+  # your code here
+}
+```
+
+---
+
+## Task 2 — Compare Candidates on sim1
+
+```{r compare-candidates}
+candidates <- list(
+  c1 = c(7, 1.5),
+  c2 = c(5, 2.0),
+  c3 = c(4, 2.0)
+)
+
+# TODO: For each candidate, compute RMSE and MAE on sim1.
+# Store results in a data frame and print it.
+# Which candidate has the lowest RMSE?
+```
+
+---
+
+## Task 3 — Heavy-Tailed Noise
+
+```{r heavy-tailed}
+set.seed(42)
+sim1a <- tibble(
+  x = rep(1:10, each = 3),
+  y = x * 1.5 + 6 + rt(length(x), df = 2)
+)
+
+# TODO: Compute RMSE and MAE for the same three candidates on sim1a.
+# Do RMSE and MAE agree on the best candidate?
+```
+
+---
+
+## Reflection
+
+<!-- In 2–3 sentences: what does it mean that RMSE and MAE can disagree
+     on which candidate is best? What does this say about the link
+     between the loss function and the fitted model? -->

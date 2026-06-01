@@ -1,0 +1,66 @@
+{
+  "id": "module-02-lesson-02",
+  "title": "Quiz: Search Strategies and Numerical Optimisation",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "Why does grid search become impractical when the number of model parameters is large?",
+      "options": [
+        "Grid search only works for linear models",
+        "The number of grid points grows exponentially with the number of parameters",
+        "Grid search cannot compute RMSE for more than two parameters",
+        "optim() is always faster than grid search regardless of dimensionality"
+      ],
+      "correct": 1,
+      "explanation": "With p parameters and n grid points per parameter, you need n^p evaluations. For p=10 and n=10, that is 10 billion evaluations — the curse of dimensionality."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In optim(par = c(0, 0), fn = measure_distance, data = sim1), what does par = c(0, 0) specify?",
+      "options": [
+        "The known true parameters of the model",
+        "The starting values from which the optimiser begins its search",
+        "The upper and lower bounds on the parameters",
+        "The final optimal parameters"
+      ],
+      "correct": 1,
+      "explanation": "par gives the starting point for the iterative optimiser. It does not know the true parameters — it searches from this point toward the minimum of the loss function."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "For RMSE on a standard linear model, optim() is guaranteed to find the global minimum regardless of starting values.",
+      "correct": true,
+      "explanation": "RMSE for a linear model is a convex function — it has a single global minimum with no local minima. So any starting point will converge to the same optimal parameters (though speed may vary)."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In the RMSE landscape plot (a1 vs a2 coloured by RMSE), the low-RMSE region appears as:",
+      "options": [
+        "A scattered cloud of random points",
+        "A circular blob in the centre of the plot",
+        "A narrow diagonal valley where both a1 and a2 are near their optimal values",
+        "An evenly distributed gradient across the entire parameter space"
+      ],
+      "correct": 2,
+      "explanation": "The optimal (intercept, slope) pair lies at the bottom of a narrow elongated valley in the RMSE surface. This reflects the fact that many (a1, a2) pairs that deviate in opposite directions can partially compensate each other."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "purrr::map2_dbl(a1, a2, sim1_dist) applies sim1_dist to each pair of values in a1 and a2. What would happen if you used map_dbl(a1, sim1_dist) instead?",
+      "options": [
+        "It would work identically, since map_dbl handles two arguments",
+        "It would fail because sim1_dist requires two arguments (a1 and a2)",
+        "It would use a2 = 0 for all calculations",
+        "It would return the RMSE for the full grid search instead"
+      ],
+      "correct": 1,
+      "explanation": "map_dbl iterates over a single vector. sim1_dist(a1, a2) needs both arguments, so map2_dbl is required to iterate over both a1 and a2 in parallel."
+    }
+  ]
+}

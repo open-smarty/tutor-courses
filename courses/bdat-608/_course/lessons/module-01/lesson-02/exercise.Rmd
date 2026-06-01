@@ -1,0 +1,84 @@
+---
+title: "BDAT 608 | Module 1, Lesson 2 — Setting Up the R Modelling Environment"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Task 1 — Install Packages (run once only)
+
+```{r install, eval=FALSE}
+# TODO: Uncomment and run this ONCE if packages are not installed.
+# Keep eval=FALSE so it does not re-run every time you knit.
+# install.packages(c(
+#   "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
+#   "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
+#   "glmnet", "broom", "hexbin"
+# ))
+```
+
+---
+
+## Task 2 — Load Libraries
+
+```{r libraries}
+# TODO: Load the following packages:
+# tidyverse, modelr, splines, ggfortify, caret, mice, cvAUC,
+# mgcv, rpart, rpart.plot, nycflights13, MASS, glmnet, broom
+
+# TODO: After loading MASS, restore dplyr's select and filter
+# select <- dplyr::select
+# filter <- dplyr::filter
+```
+
+---
+
+## Task 3 — Global Option
+
+```{r global-option}
+# TODO: Set options(na.action = na.warn)
+```
+
+---
+
+## Task 4 — Package Check
+
+```{r package-check}
+# TODO: Run the package check below (fill in the vector of package names)
+required_packages <- c(
+  # paste the package names here
+)
+package_check <- sapply(required_packages, requireNamespace, quietly = TRUE)
+print(package_check)
+# All entries should be TRUE
+```
+
+---
+
+## Task 5 — Explore sim1
+
+```{r explore-sim1}
+# TODO: Load sim1 and call glimpse()
+```
+
+```{r first-plot}
+# TODO: Create a scatter plot of sim1 with:
+#   - geom_point(size = 3, colour = "#1B3A6B")
+#   - title "sim1: Ready to model"
+#   - theme_minimal()
+```
+
+---
+
+## Reflection
+
+<!-- Why is options(na.action = na.warn) important?
+     Give a concrete example of the mistake it prevents. (2–3 sentences) -->

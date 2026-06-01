@@ -1,0 +1,60 @@
+{
+  "id": "module-04-lesson-03",
+  "title": "Quiz: Birth-Death Process — Linear Growth and Extinction",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a linear birth-death process with λ = 0.5 and μ = 0.3 starting at i = 1, the probability of ultimate extinction is:",
+      "options": [
+        "0 (births always dominate, so extinction is impossible)",
+        "0.5 (the average of λ and μ)",
+        "μ/λ = 0.3/0.5 = 0.6",
+        "1 (extinction is always certain)"
+      ],
+      "correct": 2,
+      "explanation": "When λ > μ (supercritical), the extinction probability starting from i individuals is (μ/λ)^i. With i = 1, this is μ/λ = 0.3/0.5 = 0.6. Even though births dominate on average, a single individual still has a 60% chance of dying out before producing a viable lineage. Extinction is not impossible — only less likely."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The intrinsic growth rate (λ − μ) = 0 means:",
+      "options": [
+        "The population is deterministically stable at its initial value i forever",
+        "The expected population size is constant at i, but the process can still go extinct with probability 1 as t → ∞",
+        "The process is not a Markov chain because there is no net drift",
+        "λ = μ = 0 (no births or deaths occur)"
+      ],
+      "correct": 1,
+      "explanation": "When λ = μ (critical case), E[X(t)] = ie^{0} = i for all t — the mean is constant. However, the extinction probability is still 1: the process will eventually reach 0 with certainty. This is not a contradiction: most realisations go to 0, but the rare ones that survive grow very large, keeping the mean at i. The distribution spreads out (becomes heavy-tailed) as t increases."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In a subcritical birth-death process (λ < μ), the population always goes extinct eventually, with probability 1.",
+      "correct": true,
+      "explanation": "When λ < μ, the death-to-birth ratio ρ = μ/λ > 1, so the extinction probability is ρ^i where ρ > 1. Since ρ^i ≥ 1 and probabilities cannot exceed 1, the extinction probability is exactly 1. Equivalently, E[X(t)] = ie^{(λ−μ)t} → 0 as t → ∞ and the process is absorbed at state 0 with certainty."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Adding a constant immigration rate ε > 0 to a subcritical birth-death process (λ < μ):",
+      "options": [
+        "Has no effect on the extinction probability because immigration is small compared to the death rate",
+        "Makes extinction impossible, since state 0 is no longer absorbing — immigrants restart the population whenever it would otherwise die out",
+        "Reduces the per-individual death rate from μ to μ − ε",
+        "Changes the birth rate to λ + ε only for states n ≥ 1"
+      ],
+      "correct": 1,
+      "explanation": "With immigration (ε > 0), the total event rate from state 0 is ε > 0, so state 0 is no longer absorbing. Whenever the population hits 0, immigrants arrive at rate ε and restart the process. Therefore the process is irreducible and extinction probability drops to 0. Even an arbitrarily small immigration rate is sufficient to prevent extinction, which has important biological implications (e.g., re-seeding of cleared infections)."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "For X(0) = i = 10 and λ = 0.5, μ = 0.3, the extinction probability is (0.6)^{10} ≈ 0.006.",
+      "correct": true,
+      "explanation": "The extinction probability formula for the supercritical linear birth-death process is (μ/λ)^i = (0.3/0.5)^{10} = (0.6)^{10}. Computing: 0.6^2 = 0.36, 0.6^4 ≈ 0.130, 0.6^8 ≈ 0.0168, 0.6^{10} = 0.6^8 × 0.6^2 ≈ 0.0168 × 0.36 ≈ 0.006. Starting with 10 infected cells rather than 1 reduces the extinction probability from 60% to about 0.6%, showing how strongly initial population size protects against stochastic extinction."
+    }
+  ]
+}

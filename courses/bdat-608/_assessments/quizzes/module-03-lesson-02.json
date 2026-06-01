@@ -1,0 +1,66 @@
+{
+  "id": "module-03-lesson-02",
+  "title": "Quiz: Diagnostic Plots and Model Comparison",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the Scale-Location diagnostic plot, what does a flat red loess line indicate?",
+      "options": [
+        "The residuals have a mean of zero",
+        "The residuals are normally distributed",
+        "The variance of residuals is approximately constant across fitted values (homoscedasticity)",
+        "There are no influential observations in the dataset"
+      ],
+      "correct": 2,
+      "explanation": "Scale-Location plots the square root of standardised residuals against fitted values. A flat loess line means the spread of residuals is constant — the homoscedasticity assumption holds."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Cook's Distance measures the influence of each observation on the fitted model. An observation with Cook's D > 1 is typically described as:",
+      "options": [
+        "A statistical outlier with a large residual",
+        "An influential point that substantially changes the fitted coefficients when removed",
+        "An observation that violates the normality assumption",
+        "A leverage point that lies far from the centre of the predictor space only"
+      ],
+      "correct": 1,
+      "explanation": "Cook's Distance combines residual size and leverage to measure how much the fitted model would change if that observation were removed. High D (>1 or >4/n) identifies influential points."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "AIC (Akaike Information Criterion) rewards models for fitting the data well but penalises them for having more parameters.",
+      "correct": true,
+      "explanation": "AIC = -2·log(likelihood) + 2k, where k is the number of parameters. Lower AIC is better. The 2k penalty prevents adding parameters that do not meaningfully improve fit."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "gather_predictions(mod_a, mod_b) returns a data frame in what format?",
+      "options": [
+        "One column per model, one row per observation",
+        "One row per model per observation, with a 'model' column and a 'pred' column",
+        "A list of two data frames, one for each model",
+        "A wide data frame with model names as column headers"
+      ],
+      "correct": 1,
+      "explanation": "gather_predictions() stacks predictions from all models into a long (tidy) data frame with a 'model' column and a 'pred' column. This makes faceted ggplot2 comparisons straightforward."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "A Normal Q-Q plot shows that residuals deviate from the diagonal at both ends (heavy tails). The MOST important consequence is that:",
+      "options": [
+        "The slope and intercept estimates are biased",
+        "R-squared is artificially inflated",
+        "Standard errors, t-statistics, and p-values may not be reliable for small samples",
+        "The model will fail to make any predictions"
+      ],
+      "correct": 2,
+      "explanation": "OLS coefficient estimates (slope, intercept) are still unbiased under heavy-tailed noise — only the inference machinery (SEs, t-tests, CIs) relies on normality. For large samples, CLT provides approximate validity anyway."
+    }
+  ]
+}

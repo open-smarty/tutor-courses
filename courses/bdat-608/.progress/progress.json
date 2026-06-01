@@ -1,0 +1,16 @@
+{
+  "taskResults": {
+    "module-01-lesson-01": {
+      "completed": true,
+      "completedAt": "2026-06-01T10:56:25.343Z"
+    },
+    "module-06-lesson-01": {
+      "completed": true,
+      "completedAt": "2026-06-01T10:56:25.488Z"
+    }
+  },
+  "lastActiveAt": "2026-06-01T10:56:25.488Z",
+  "completedLessons": [
+    "lesson-01"
+  ]
+}

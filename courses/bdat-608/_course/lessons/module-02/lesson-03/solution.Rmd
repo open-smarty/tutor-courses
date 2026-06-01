@@ -1,0 +1,68 @@
+---
+title: "BDAT 608 | Module 2, Lesson 3 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+```
+
+## Task 1 — Fit the Model
+
+```{r fit-model}
+sim1_mod <- lm(y ~ x, data = sim1)
+coef(sim1_mod)
+summary(sim1_mod)
+```
+
+## Task 2 — Interpret R²
+
+```{r r-squared}
+r2 <- summary(sim1_mod)$r.squared
+cat("R-squared:", round(r2, 4), "\n")
+# Interpretation: the linear model explains about 86% of the variance in y
+# using x as the sole predictor.
+```
+
+## Task 3 — Compare with optim()
+
+```{r compare-optim}
+model1 <- function(a, data) a[1] + data$x * a[2]
+measure_distance <- function(mod, data) sqrt(mean((data$y - model1(mod, data))^2))
+
+best_optim <- optim(c(0, 0), measure_distance, data = sim1)
+
+comparison <- tibble(
+  method    = c("lm()", "optim()"),
+  intercept = c(coef(sim1_mod)[1], best_optim$par[1]),
+  slope     = c(coef(sim1_mod)[2], best_optim$par[2])
+)
+print(comparison)
+```
+
+The two methods give virtually identical coefficients. Any tiny difference is due to the finite convergence tolerance of the Nelder-Mead algorithm.
+
+## Task 4 — Confidence Interval
+
+```{r confint}
+confint(sim1_mod, level = 0.95)
+```
+
+**Interpretation:** We are 95% confident that the true slope lies between approximately 1.86 and 2.24. Because the entire interval is positive, we can conclude that `x` has a statistically significant positive association with `y`.
+
+## Reflection
+
+`lm()` is preferred because it provides the full statistical inference table: standard errors, t-statistics, p-values, confidence intervals, and R². `optim()` returns only the parameter estimates and the minimum loss value — it tells you *where* the minimum is but not *how reliable* the estimates are. In practice, you need standard errors to test hypotheses about the coefficients and to build confidence intervals. `lm()` computes all of this analytically (via the QR decomposition) in a single call.

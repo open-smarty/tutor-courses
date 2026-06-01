@@ -1,0 +1,52 @@
+---
+title: "BDAT 608 | Module 1, Lesson 1 — What Is a Statistical Model?"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Prerequisites
+
+```{r libraries}
+# TODO: Load the tidyverse and modelr packages
+# library(...)
+# library(...)
+```
+
+---
+
+## Task 1 — Explore sim1
+
+```{r explore-sim1}
+# TODO: Load sim1 from the modelr package using data()
+# data("sim1", package = "modelr")
+
+# TODO: Call glimpse() on sim1 and answer below:
+# How many rows? __
+# How many columns? __
+```
+
+---
+
+## Task 2 — Scatter Plot
+
+```{r scatter-plot}
+# TODO: Create a scatter plot of y versus x from sim1.
+# Use geom_point(size = 3).
+# Add a title: "sim1: My first look"
+# Use theme_minimal().
+```
+
+---
+
+## Reflection
+
+<!-- Answer in 2–3 sentences: why is "zero residuals" not a good modelling goal? -->

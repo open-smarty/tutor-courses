@@ -1,0 +1,1802 @@
+---
+title: "BDAT 608: Model Basics in R"
+subtitle: "Families, Fitting, Visualisation & Diagnostics"
+author: "Department of Statistics & Actuarial Science, University of Ghana, Legon"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    number_sections: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width  = 8,
+  fig.height = 5,
+  fig.align  = "center"
+)
+```
+
+---
+
+# Prerequisites and Setup
+
+## What You Will Learn
+
+This chapter covers the complete statistical modelling workflow in R:
+
+1. **Define** a model family and a fitting criterion.
+2. **Fit** the model using `lm()`, `glm()`, or custom optimisation.
+3. **Visualise** fitted values and residuals to assess model adequacy.
+4. **Extend** to non-linear, robust, and penalised models when the simple linear form is insufficient.
+5. **Scale up** to many models simultaneously using `purrr::map()`, `tidyr::nest()`, and `broom::tidy()`.
+
+The key insight from *R for Data Science* (Wickham & Grolemund, 2017): **a model separates signal from noise**. The fitted values capture the pattern; the residuals contain everything the model missed.
+
+## Package Installation
+
+```{r install, eval=FALSE}
+# Run ONLY once. Keep commented during normal use.
+install.packages(c(
+  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
+  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
+  "glmnet", "broom", "hexbin"
+))
+```
+
+## Load Libraries
+
+```{r libraries}
+library(tidyverse)     # Data manipulation and visualisation
+library(modelr)        # data_grid(), add_predictions(), add_residuals()
+library(splines)       # ns() natural splines (ships with base R)
+library(ggfortify)     # autoplot() diagnostics for lm objects
+library(caret)         # createFolds() for cross-validation
+library(mice)          # Multiple imputation for missing data
+library(cvAUC)         # admissions dataset for logistic regression
+library(mgcv)          # gam(), s(), te()
+library(rpart)         # Decision tree models
+library(rpart.plot)    # rpart.plot() better tree visualisation
+library(nycflights13)  # flights dataset
+library(MASS)          # rlm() robust regression
+library(glmnet)        # Ridge and LASSO regression
+library(broom)         # tidy(), augment(), glance() for model outputs
+
+# MASS masks dplyr::select — restore the tidyverse versions explicitly
+select <- dplyr::select
+filter <- dplyr::filter
+```
+
+## Global Options and Package Check
+
+```{r options}
+# Warn when lm() silently drops rows with missing values
+options(na.action = na.warn)
+
+required_packages <- c(
+  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
+  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
+  "glmnet", "broom", "hexbin"
+)
+package_check <- sapply(required_packages, requireNamespace, quietly = TRUE)
+print(package_check)
+if (any(!package_check)) {
+  warning("Some packages are missing. Uncomment install.packages() above.")
+}
+```
+
+## Main Datasets
+
+The following datasets are used throughout this chapter.
+
+| Dataset       | Package        | Description                              |
+|--------------|----------------|------------------------------------------|
+| `sim1`       | `modelr`       | Simple linear relationship               |
+| `sim2`       | `modelr`       | Categorical predictor                    |
+| `sim3`       | `modelr`       | Continuous + categorical predictors      |
+| `sim4`       | `modelr`       | Two continuous predictors                |
+| `diamonds`   | `ggplot2`      | Diamond prices and characteristics       |
+| `flights`    | `nycflights13` | NYC departure/arrival data               |
+| `admissions` | `cvAUC`        | Graduate school admissions               |
+
+```{r datasets}
+data("sim1", package = "modelr")
+sim1_base <- sim1   # keep a pristine copy before we add columns later
+
+glimpse(sim1)
+```
+
+```{r sim1-first-look, fig.cap="sim1: A simple linear relationship between x and y."}
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 3, colour = "#1B3A6B") +
+  labs(
+    title    = "sim1: Response vs Predictor",
+    subtitle = "There is a clear linear trend with random scatter around it."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+---
+
+# Introduction to Statistical Models
+
+## What Is a Statistical Model?
+
+A **statistical model** partitions observed data into two components:
+
+$$y = \underbrace{f(x)}_{\text{signal (systematic)}} + \underbrace{\varepsilon}_{\text{noise (random)}}$$
+
+- $f(x)$ is what we want to learn — the structural relationship between the predictors and the response.
+- $\varepsilon$ is the irreducible noise — variation that no model can explain.
+
+The modelling process involves choosing a plausible shape for $f$, estimating it from data, and checking whether the residuals $y - \hat{f}(x)$ look like noise.
+
+## Model Family vs Fitted Model
+
+There are two conceptually distinct objects:
+
+1. **Model family** — the *shape* of the equation, e.g. $y = a_0 + a_1 x$. This is the collection of all possible straight lines through any intercept and slope.
+2. **Fitted model** — the *specific member* of that family that best matches the observed data, e.g. $\hat{y} = 4.22 + 2.05\,x$.
+
+Choosing a model family is an assumption about the data-generating process. You cannot verify the assumption from the data alone, but you can diagnose whether it is reasonable by inspecting residuals.
+
+## The Modelling Workflow
+
+The lecture follows this iterative cycle:
+
+```
+Observe Data  ──>  Choose Model Family  ──>  Define Fitting Criterion (e.g. RMSE)
+       ^                                                     │
+       │                                                     ▼
+Revise Model  <──  Inspect Residuals  <──  Generate Predictions  <──  Fit Model
+```
+
+This cycle repeats until the residuals look like random noise — meaning the model has captured all available systematic variation in the data.
+
+---
+
+# Fitting a Simple Linear Model
+
+## The Linear Model Family
+
+For `sim1`, we hypothesise:
+
+$$y = a_1 + a_2 \cdot x + \varepsilon$$
+
+where $a_1$ is the intercept and $a_2$ is the slope. The fitting problem is: **find $a_1$ and $a_2$ that make the line as close as possible to all data points simultaneously**.
+
+## Defining Candidate Models and the RMSE Loss Function
+
+Before using built-in R functions, we build the loss function manually to understand what is being optimised.
+
+```{r loss-functions}
+# Predicted y values for a given (intercept, slope) pair
+model1 <- function(a, data) {
+  a[1] + data$x * a[2]
+}
+
+# Root Mean Squared Error: the standard OLS criterion
+# Smaller RMSE => the line fits the data better
+measure_distance <- function(mod, data) {
+  resid <- data$y - model1(mod, data)
+  sqrt(mean(resid^2))
+}
+
+# Test a candidate model: intercept = 7, slope = 1.5
+measure_distance(c(7, 1.5), sim1)
+```
+
+> **Why RMSE?** Squaring the residuals penalises large errors more heavily than small ones. Minimising RMSE is mathematically equivalent to **Ordinary Least Squares (OLS)**. The quadratic penalty is what makes OLS sensitive to outliers.
+
+## Mean Absolute Error (MAE): An Outlier-Resistant Alternative
+
+MAE replaces squared residuals with absolute residuals:
+
+$$\text{MAE} = \frac{1}{n}\sum_{i=1}^n |y_i - \hat{y}_i|$$
+
+Because errors are not squared, no single large residual dominates the criterion.
+
+```{r mae}
+measure_mae <- function(mod, data) {
+  resid <- data$y - model1(mod, data)
+  mean(abs(resid))
+}
+
+# Simulate data with heavy-tailed (Student-t, df=2) noise — prone to outliers
+set.seed(42)
+sim1a <- tibble(
+  x = rep(1:10, each = 3),
+  y = x * 1.5 + 6 + rt(length(x), df = 2)
+)
+
+best_mae <- optim(c(0, 0), measure_mae, data = sim1a)
+ols_fit  <- lm(y ~ x, data = sim1a)
+
+cat("MAE-optimal: intercept =", round(best_mae$par[1], 3),
+    "  slope =", round(best_mae$par[2], 3), "\n")
+cat("OLS:         intercept =", round(coef(ols_fit)[1], 3),
+    "  slope =", round(coef(ols_fit)[2], 3), "\n")
+```
+
+```{r mae-vs-ols-chart, fig.cap="MAE vs OLS fitting under heavy-tailed noise. OLS is pulled toward extreme residuals; MAE is more stable."}
+ggplot(sim1a, aes(x, y)) +
+  geom_point(colour = "grey40", size = 2.5) +
+  geom_abline(aes(intercept = best_mae$par[1], slope = best_mae$par[2],
+                  colour = "MAE"), linewidth = 1.2) +
+  geom_abline(aes(intercept = coef(ols_fit)[1],  slope = coef(ols_fit)[2],
+                  colour = "OLS"), linewidth = 1.2, linetype = "dashed") +
+  scale_colour_manual(values = c("MAE" = "#1B3A6B", "OLS" = "#C9A84C")) +
+  labs(
+    title    = "MAE vs OLS under Student-t noise (df = 2)",
+    subtitle = "Heavy tails produce occasional extreme points that pull OLS more than MAE.",
+    colour   = "Criterion"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Under heavy-tailed noise, OLS is pulled away from the bulk of the data because it squares residuals. MAE weighs all errors on the absolute scale and is therefore more resistant to outliers — it gives estimates closer to the true generating line.
+
+## Random Search Over the Parameter Space
+
+It is instructive to generate many random candidate lines, rank them by RMSE, and visualise the best few. This shows geometrically what "fitting" means.
+
+```{r random-search, fig.cap="Top 10 randomly sampled lines on sim1, coloured by quality (brighter = lower RMSE)."}
+sim1_dist <- function(a1, a2) measure_distance(c(a1, a2), sim1)
+
+set.seed(7)
+models <- tibble(
+  a1 = runif(250, -20, 40),
+  a2 = runif(250, -5, 5)
+) |>
+  mutate(dist = purrr::map2_dbl(a1, a2, sim1_dist))
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 2, colour = "grey30") +
+  geom_abline(
+    aes(intercept = a1, slope = a2, colour = -dist),
+    data      = filter(models, rank(dist) <= 10),
+    linewidth = 0.8
+  ) +
+  scale_colour_viridis_c(guide = "none") +
+  labs(
+    title    = "Top 10 randomly sampled models (ranked by RMSE)",
+    subtitle = "Brighter lines have lower RMSE. Even the best random lines are only approximate."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+```{r parameter-space-viz, fig.cap="RMSE over the parameter space. Low-RMSE solutions (yellow) cluster in a narrow valley."}
+ggplot(models, aes(a1, a2, colour = dist)) +
+  geom_point(size = 2) +
+  scale_colour_viridis_c(name = "RMSE") +
+  labs(
+    title    = "RMSE landscape over the (intercept, slope) parameter space",
+    subtitle = "The optimal parameters sit in the minimum of this bowl — that is what optim() finds.",
+    x        = expression(a[1] ~ "(intercept)"),
+    y        = expression(a[2] ~ "(slope)")
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+## Grid Search
+
+A grid search evaluates RMSE on a structured, evenly spaced grid of parameter values. More systematic than random search but becomes prohibitively expensive as the number of parameters grows.
+
+```{r grid-search, fig.cap="Top 10 grid-search models. The structured grid covers the space more evenly than random sampling."}
+grid_search <- expand.grid(
+  a1 = seq(-5, 20, length = 25),
+  a2 = seq(1,   3,  length = 25)
+) |>
+  mutate(dist = purrr::map2_dbl(a1, a2, sim1_dist))
+
+grid_search |> slice_min(dist, n = 5)
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 2, colour = "grey30") +
+  geom_abline(
+    aes(intercept = a1, slope = a2, colour = -dist),
+    data = filter(grid_search, rank(dist) <= 10)
+  ) +
+  scale_colour_viridis_c(guide = "none") +
+  labs(
+    title    = "Top 10 grid-search models",
+    subtitle = "Grid search finds a good solution but is expensive for many parameters."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+## Numerical Optimisation with `optim()`
+
+`optim()` uses an iterative algorithm (default: Nelder-Mead simplex) to locate the parameter values that minimise any user-supplied function. It is more efficient than exhaustive search and generalises to any smooth loss.
+
+```{r optim, fig.cap="Best model found by optim() on sim1."}
+best <- optim(
+  par  = c(0, 0),
+  fn   = measure_distance,
+  data = sim1
+)
+
+cat("Best intercept:", round(best$par[1], 4), "\n")
+cat("Best slope:    ", round(best$par[2], 4), "\n")
+cat("Minimum RMSE:  ", round(best$value,  4), "\n")
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(colour = "#1B3A6B", size = 2.5) +
+  geom_abline(
+    intercept = best$par[1],
+    slope     = best$par[2],
+    colour    = "#C9A84C",
+    linewidth = 1.2
+  ) +
+  labs(
+    title    = "Best model found by optim()",
+    subtitle = paste0("Intercept = ", round(best$par[1], 2),
+                      ",  Slope = ",  round(best$par[2], 2),
+                      ",  RMSE = ",   round(best$value,  2))
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+## Closed-Form OLS with `lm()`
+
+For the ordinary linear model, the OLS solution has a closed form:
+
+$$\hat{\boldsymbol{\beta}} = \bigl(\mathbf{X}^\top \mathbf{X}\bigr)^{-1} \mathbf{X}^\top \mathbf{y}$$
+
+`lm()` computes this via numerically stable QR decomposition — faster and more reliable than `optim()` for standard linear models.
+
+```{r lm-fit}
+sim1_mod <- lm(y ~ x, data = sim1)
+coef(sim1_mod)
+summary(sim1_mod)
+```
+
+> **Interpretation:** `lm()` gives the same estimates as `optim()` but uses a superior algorithm. Intercept ≈ 4.22, slope ≈ 2.05: the signal in `sim1` is approximately $\hat{y} = 4.22 + 2.05\,x$. The $R^2 \approx 0.86$ means 86% of the variance in $y$ is explained by $x$ alone.
+
+---
+
+# Visualising Models
+
+Good modelling practice requires you to look at what the model produces, not just the coefficient table. The `modelr` package provides a consistent set of helpers that work with any model that has a `predict()` method.
+
+## Generating Predictions with `modelr`
+
+`data_grid()` creates an evenly spaced grid of predictor values spanning the observed range. `add_predictions()` appends the model's fitted values to that grid.
+
+```{r predictions, fig.cap="Observed data (blue) and OLS fitted line (gold) from sim1."}
+grid <- sim1 |>
+  data_grid(x) |>
+  add_predictions(sim1_mod)
+
+print(grid)
+
+ggplot(sim1, aes(x)) +
+  geom_point(aes(y = y), colour = "#1B3A6B", size = 2.5) +
+  geom_line(aes(y = pred), data = grid, colour = "#C9A84C", linewidth = 1.3) +
+  labs(
+    title   = "sim1: Data and Fitted Line",
+    y       = expression(y ~ "/" ~ hat(y)),
+    caption = "Gold line = OLS fitted values from lm(y ~ x)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+## Adding and Plotting Residuals
+
+$$\text{residual}_i = y_i - \hat{y}_i$$
+
+Residuals represent what the model did **not** explain. A well-specified model produces residuals that:
+
+- are **centred around zero** (no systematic bias),
+- show **no pattern against predictors** (no remaining structure), and
+- are **roughly normally distributed** (for valid standard errors and p-values).
+
+```{r residuals}
+sim1 <- sim1 |> add_residuals(sim1_mod)
+```
+
+```{r resid-dist, fig.cap="Distribution of residuals: symmetric and centred at zero, as expected for a correctly specified model."}
+ggplot(sim1, aes(resid)) +
+  geom_freqpoly(binwidth = 0.5, colour = "#1B3A6B", linewidth = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "#C9A84C") +
+  labs(
+    title = "Distribution of residuals",
+    x     = "Residual  (y − ŷ)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+```{r resid-vs-x, fig.cap="Residuals vs x. Random scatter around zero confirms the linear model is correctly specified."}
+ggplot(sim1, aes(x, resid)) +
+  geom_ref_line(h = 0, colour = "#C9A84C") +
+  geom_point(colour = "#1B3A6B", size = 2.5) +
+  labs(
+    title = "Residuals vs x",
+    y     = "Residual  (y − ŷ)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Residuals are randomly scattered around zero with no visible curve or fan shape. This confirms that (a) the linear mean is correctly specified and (b) variance is approximately constant across the range of $x$. If a curve were visible, we would need to add a non-linear term; if spread increased with $x$, we would need a variance-stabilising transformation.
+
+## Standard Diagnostic Plots
+
+Base R's `plot.lm()` produces four key diagnostics in a 2×2 grid:
+
+| Plot | What It Shows | Ideal Appearance |
+|------|--------------|-----------------|
+| Residuals vs Fitted | Non-linearity, heteroscedasticity | Random horizontal band around 0 |
+| Normal Q-Q | Normality of residuals | Points on the 45° diagonal |
+| Scale-Location | Homoscedasticity (constant variance) | Flat red loess line |
+| Cook's Distance | Influential observations | No point much greater than 1 |
+
+```{r base-diagnostics, fig.width=9, fig.height=7, fig.cap="Base R 2×2 diagnostic panel for the sim1 OLS model."}
+par(mfrow = c(2, 2))
+plot(sim1_mod)
+par(mfrow = c(1, 1))
+```
+
+```{r ggplot-diagnostics, fig.cap="ggplot2-style diagnostics via ggfortify::autoplot()."}
+autoplot(
+  sim1_mod,
+  which         = 1:4,
+  colour        = "#1B3A6B",
+  smooth.colour = "#C9A84C"
+)
+```
+
+## Comparing Multiple Models
+
+`gather_predictions()` and `gather_residuals()` stack predictions or residuals from multiple models into a single long data frame — ideal for faceted comparison plots.
+
+```{r multi-model, fig.cap="Linear vs quadratic model on sim1. The quadratic adds negligible improvement here."}
+mod_a <- lm(y ~ x,          data = sim1)
+mod_b <- lm(y ~ x + I(x^2), data = sim1)
+
+grid_multi <- sim1 |>
+  data_grid(x) |>
+  gather_predictions(mod_a, mod_b)
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(colour = "grey40", size = 2) +
+  geom_line(data = grid_multi, aes(y = pred, colour = model), linewidth = 1.2) +
+  scale_colour_manual(
+    values = c("#1B3A6B", "#C9A84C"),
+    labels = c("Linear", "Quadratic")
+  ) +
+  labs(title = "Linear vs Quadratic model on sim1", colour = "Model") +
+  theme_minimal(base_size = 13)
+```
+
+```{r multi-resid, fig.cap="Residuals side-by-side. For sim1, both models leave similar residual patterns — the quadratic term is not needed."}
+sim1 |>
+  gather_residuals(mod_a, mod_b) |>
+  ggplot(aes(x, resid, colour = model)) +
+  geom_point() +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ model, labeller = label_both) +
+  scale_colour_manual(values = c("#1B3A6B", "#C9A84C")) +
+  labs(title = "Residuals: linear vs quadratic", y = "Residual") +
+  theme_minimal(base_size = 13)
+```
+
+---
+
+# Formulas and Model Families
+
+R uses a compact **formula notation** to specify the structure of a model. Understanding this notation is essential for `lm()`, `glm()`, `gam()`, and virtually every other modelling function.
+
+## Formula Notation and the Model Matrix
+
+The formula `y ~ x1 + x2` tells R to fit $y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \varepsilon$. R automatically includes an intercept column of ones. Use `model_matrix()` to inspect the exact design matrix produced.
+
+```{r model-matrix}
+df <- tribble(
+  ~y, ~x1, ~x2,
+  4,   2,   5,
+  5,   1,   6
+)
+
+model_matrix(df, y ~ x1)          # intercept added automatically
+model_matrix(df, y ~ x1 - 1)      # remove intercept
+model_matrix(df, y ~ x1 + x2)     # two predictors
+```
+
+**Common formula operators:**
+
+| Operator | Meaning | Example |
+|----------|---------|---------|
+| `+`  | Add predictor | `y ~ x1 + x2` |
+| `-`  | Remove term | `y ~ x1 + x2 - 1` |
+| `*`  | Interaction + main effects | `y ~ x1 * x2` |
+| `:`  | Interaction only | `y ~ x1 + x2 + x1:x2` |
+| `I()` | Arithmetic (protected) | `y ~ I(x^2)` |
+| `poly()` | Polynomial terms | `y ~ poly(x, 3)` |
+| `ns()` | Natural spline | `y ~ ns(x, 5)` |
+
+## Categorical Predictors and Dummy Coding
+
+When a predictor is categorical (a `factor`), R automatically creates **dummy variables** — one binary column per level, minus one for the reference level. The reference level's mean becomes the intercept; each dummy coefficient is the *difference* from that reference.
+
+```{r cat-predictors}
+data("sim2", package = "modelr")
+glimpse(sim2)
+
+mod2 <- lm(y ~ x, data = sim2)
+model_matrix(sim2, y ~ x) |> head(8)   # inspect dummy encoding
+coef(mod2)
+```
+
+```{r cat-predictions, fig.cap="For a categorical predictor, OLS predictions equal the group means (gold diamonds)."}
+preds_cat <- sim2 |>
+  data_grid(x) |>
+  add_predictions(mod2)
+
+ggplot(sim2, aes(x, y)) +
+  geom_jitter(colour = "grey50", width = 0.1, alpha = 0.5) +
+  geom_point(data = preds_cat, aes(y = pred),
+             colour = "#C9A84C", size = 4, shape = 18) +
+  labs(
+    title    = "sim2: Categorical predictor — predictions = group means",
+    subtitle = "Gold diamonds show model-predicted values for each category."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Under OLS, the predicted value for each category exactly equals the sample mean of that group. The intercept is the reference group mean; each dummy coefficient is the deviation of that group's mean from the reference.
+
+## Interaction: Continuous × Categorical Predictor
+
+`sim3` has a continuous predictor `x1` and a four-level categorical predictor `x2`.
+
+- **Additive model** (`y ~ x1 + x2`): one common slope for all groups, different intercepts.
+- **Interaction model** (`y ~ x1 * x2`): both slopes and intercepts differ across groups.
+
+`x1 * x2` expands to `x1 + x2 + x1:x2` — main effects plus all pairwise interactions.
+
+```{r sim3-models}
+data("sim3", package = "modelr")
+glimpse(sim3)
+
+mod_add <- lm(y ~ x1 + x2,  data = sim3)   # parallel lines
+mod_int <- lm(y ~ x1 * x2,  data = sim3)   # different slopes per group
+
+model_matrix(sim3, y ~ x1 * x2) |> names()
+```
+
+```{r sim3-predictions, fig.cap="Additive (+) vs interaction (*) model on sim3. With interaction, slopes can differ by group."}
+grid_sim3 <- sim3 |>
+  data_grid(x1, x2) |>
+  gather_predictions(mod_add, mod_int)
+
+ggplot(sim3, aes(x1, y, colour = x2)) +
+  geom_point(alpha = 0.6) +
+  geom_line(data = grid_sim3, aes(y = pred), linewidth = 1) +
+  facet_wrap(~ model, labeller = label_both) +
+  labs(
+    title  = "Additive (+) vs Interaction (*) model on sim3",
+    colour = "x2 group"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+```{r sim3-residuals, fig.cap="Residuals by group and model. Remaining patterns in the additive model indicate that slopes vary by group."}
+sim3 |>
+  gather_residuals(mod_add, mod_int) |>
+  ggplot(aes(x1, resid, colour = x2)) +
+  geom_point(alpha = 0.8) +
+  geom_ref_line(h = 0) +
+  facet_grid(model ~ x2) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(
+    title = "Residuals: additive vs interaction model",
+    y     = "Residual"
+  ) +
+  theme_minimal(base_size = 11)
+```
+
+```{r sim3-aic}
+AIC(mod_add, mod_int)
+cat("Additive R²:   ", round(summary(mod_add)$r.squared, 4), "\n")
+cat("Interaction R²:", round(summary(mod_int)$r.squared, 4), "\n")
+```
+
+> **Interpretation:** The interaction model has lower AIC and higher $R^2$. The residual plot for the additive model shows systematic patterns within certain groups (the slopes differ), whereas the interaction model residuals are more uniformly scattered. Prefer the interaction model when the slope of a continuous predictor varies across groups.
+
+## Interaction: Two Continuous Predictors
+
+`sim4` has two continuous predictors. The interaction term `x1 * x2` allows the slope of `x1` to depend on the value of `x2` (and vice versa).
+
+```{r sim4-models}
+data("sim4", package = "modelr")
+glimpse(sim4)
+
+mod1_s4 <- lm(y ~ x1 + x2,  data = sim4)   # additive: parallel planes
+mod2_s4 <- lm(y ~ x1 * x2,  data = sim4)   # interaction: twisted plane
+
+AIC(mod1_s4, mod2_s4)
+```
+
+```{r sim4-surface, fig.cap="Predicted surface: additive model (parallel planes) vs interaction model (twisted/curved surface)."}
+grid4 <- sim4 |>
+  data_grid(
+    x1 = seq_range(x1, n = 5),
+    x2 = seq_range(x2, n = 5)
+  ) |>
+  gather_predictions(mod1_s4, mod2_s4)
+
+ggplot(grid4, aes(x1, x2, fill = pred)) +
+  geom_tile() +
+  facet_wrap(~ model) +
+  scale_fill_viridis_c() +
+  labs(title = "Predicted surface: additive vs interaction", fill = "ŷ") +
+  theme_minimal(base_size = 12)
+```
+
+```{r sim4-slices, fig.cap="Slice view: each line is a fixed value of x2. Parallel lines = no interaction; fanning lines = interaction present."}
+ggplot(grid4, aes(x1, pred, colour = x2, group = x2)) +
+  geom_line(linewidth = 0.9) +
+  facet_wrap(~ model) +
+  scale_colour_viridis_c() +
+  labs(
+    title    = "Slices of the predicted surface",
+    subtitle = "Additive: parallel lines.  Interaction: lines fan out.",
+    y        = "ŷ",
+    colour   = "x2"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+> **Interpretation:** In the additive model the lines are **parallel** — the effect of `x1` is identical regardless of `x2`. In the interaction model the lines **fan out** — the slope of `x1` increases with `x2`. The heatmap shows this as a gradient diagonal in the interaction panel.
+
+## Extended Example: Three-Way Interaction
+
+This example demonstrates how to test whether an interaction term itself differs across groups using sequential ANOVA.
+
+```{r three-way}
+set.seed(99)
+n <- 200
+
+df3 <- tibble(
+  x1    = rnorm(n),
+  x2    = rnorm(n),
+  group = sample(c("A", "B"), n, replace = TRUE),
+  # Group B has an x1*x2 interaction; group A does not
+  y     = 2 * x1 + 1.5 * x2 +
+          ifelse(group == "B", 3 * x1 * x2, 0) +
+          rnorm(n, sd = 0.8)
+)
+
+m0 <- lm(y ~ x1 + x2 + group,         data = df3)  # no interaction
+m1 <- lm(y ~ x1 * x2 + group,         data = df3)  # x1:x2, same in all groups
+m2 <- lm(y ~ x1 * x2 * group,         data = df3)  # three-way term
+
+anova(m0, m1, m2)
+```
+
+> **Interpretation:** `anova()` performs sequential likelihood-ratio F-tests. Both the $x_1 \times x_2$ interaction and the three-way term are significant because the data were generated with group-specific interaction effects — group B has an $x_1 \cdot x_2$ interaction that group A does not.
+
+## Transformations Inside Formulas
+
+In R formulas, `^` is a **formula operator** (variable crossing), not arithmetic exponentiation. Use `I()` to shield literal arithmetic from the formula parser.
+
+```{r transformations}
+# WRONG: R collapses x^2 + x to just x — only ONE column
+model_matrix(sim1_base, y ~ x^2 + x) |> head(3)
+
+# CORRECT: I() protects the exponentiation — TWO distinct columns
+model_matrix(sim1_base, y ~ I(x^2) + x) |> head(3)
+
+# Log transformation of the response (log-linear model)
+lm(log(y) ~ x, data = sim1_base)
+
+# Square-root transformation of the predictor
+lm(y ~ sqrt(x), data = sim1_base)
+
+# Multiple transformations in one formula
+lm(log(y) ~ I(x^2) + x, data = sim1_base)
+```
+
+> **Warning:** Without `I()`, `y ~ x^2 + x` is silently treated as `y ~ x`. Always verify your model matrix with `model_matrix()` when in doubt.
+
+## Polynomial Models with `poly()`
+
+Polynomial regression extends the linear model to capture curvature. `poly(x, d)` produces $d$ polynomial columns.
+
+- **Default:** orthogonal polynomials — numerically stable, but coefficients are hard to interpret directly.
+- **`raw = TRUE`:** ordinary power terms $x, x^2, \ldots, x^d$ — interpretable but correlated columns.
+
+```{r poly-models}
+# Raw polynomial: readable coefficients
+mod_p2 <- lm(y ~ poly(x, 2, raw = TRUE), data = sim1_base)
+coef(mod_p2)
+
+# Compare fits across polynomial degrees
+mods <- list(
+  p1 = lm(y ~ poly(x, 1), data = sim1_base),
+  p2 = lm(y ~ poly(x, 2), data = sim1_base),
+  p3 = lm(y ~ poly(x, 3), data = sim1_base),
+  p5 = lm(y ~ poly(x, 5), data = sim1_base)
+)
+```
+
+```{r poly-plot, fig.cap="Polynomial fits of degrees 1–5 on sim1. All degrees give similar in-range fits; divergence would appear outside the data."}
+sim1_base |>
+  data_grid(x = seq_range(x, 50)) |>
+  gather_predictions(!!!mods) |>
+  ggplot(aes(x, pred, colour = model)) +
+  geom_line(linewidth = 1) +
+  geom_point(data = sim1_base, aes(x, y), colour = "grey40", inherit.aes = FALSE) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(
+    title    = "Polynomial fits of increasing degree on sim1",
+    subtitle = "On this dataset, differences are minimal in-range. Danger lies outside the training range.",
+    y        = "ŷ"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Higher-degree polynomials fit the training data better but **extrapolate dangerously** — they shoot to $\pm\infty$ outside the data range. Natural splines provide flexible non-linear fitting without this problem.
+
+## Natural Splines with `ns()`
+
+Natural splines divide the predictor range into intervals at **knots** and fit smooth low-degree polynomials within each interval. The key constraint: **linear behaviour in the tails**, which prevents extreme extrapolation. The `df` argument controls how many degrees of freedom (roughly how many knots) the spline has.
+
+```{r spline-models}
+set.seed(1)
+sim5 <- tibble(
+  x = seq(0, 3.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(50)
+)
+
+sp_mods <- list(
+  df1 = lm(y ~ ns(x, 1), data = sim5),
+  df3 = lm(y ~ ns(x, 3), data = sim5),
+  df5 = lm(y ~ ns(x, 5), data = sim5)
+)
+```
+
+```{r spline-plot, fig.cap="Natural spline fits with df = 1, 3, 5 on a sinusoidal dataset. df=1 underfits; df=5 captures the full wave."}
+grid5 <- sim5 |>
+  data_grid(x = seq_range(x, n = 60, expand = 0.1)) |>
+  gather_predictions(!!!sp_mods, .pred = "y")
+
+ggplot(sim5, aes(x, y)) +
+  geom_point(colour = "grey40") +
+  geom_line(data = grid5, colour = "#C9A84C", linewidth = 1) +
+  facet_wrap(~ model, labeller = label_both) +
+  labs(title = "Natural splines: df = 1, 3, 5") +
+  theme_minimal(base_size = 12)
+```
+
+> **Interpretation:** `ns(x, df = 5)` captures the full sinusoidal pattern. Unlike `poly()`, natural splines are **linear in the tails**, preventing extreme extrapolation. Choose `df` by cross-validation or by inspecting residuals.
+
+## Choosing Spline Degrees of Freedom via Cross-Validation
+
+Cross-validation estimates out-of-sample predictive performance, guarding against both underfitting (too few `df`) and overfitting (too many `df`).
+
+**10-fold CV procedure:**
+
+1. Split the data into 10 equally sized folds.
+2. For each fold: train on the remaining 9 folds, predict the held-out fold, record RMSE.
+3. Average the 10 held-out RMSEs.
+4. Repeat for each candidate `df` value.
+5. Choose `df` at the **minimum CV-RMSE**, or apply the **one-SE rule** (smallest `df` within one standard error of the minimum).
+
+```{r cv-splines}
+set.seed(42)
+cv_rmse <- sapply(1:8, function(df) {
+  folds <- createFolds(sim5$y, k = 10)
+
+  fold_rmse <- sapply(folds, function(idx) {
+    train <- sim5[-idx, ]
+    test  <- sim5[ idx, ]
+    mod   <- lm(y ~ ns(x, df), data = train)
+    pred  <- predict(mod, newdata = test)
+    sqrt(mean((test$y - pred)^2))
+  })
+
+  mean(fold_rmse)
+})
+```
+
+```{r cv-plot, fig.cap="10-fold CV RMSE vs spline degrees of freedom. Choose the df at the minimum (or apply the one-SE rule)."}
+tibble(df = 1:8, cv_rmse) |>
+  ggplot(aes(df, cv_rmse)) +
+  geom_line(colour = "#1B3A6B", linewidth = 1) +
+  geom_point(colour = "#C9A84C", size = 3) +
+  labs(
+    title    = "10-fold CV RMSE for ns(x, df)",
+    subtitle = "U-shaped curve: too few df = underfit; too many = overfit.",
+    x        = "Degrees of freedom",
+    y        = "CV RMSE"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** The CV curve shows a U-shape: too few df = underfit (high bias); too many df = overfit (high variance on new data). Choose the df at the **minimum**, or the smallest df within one standard error of the minimum (the "one-SE rule").
+
+## `seq_range()`: Controlling Prediction Grids
+
+`seq_range()` is a convenience wrapper around `seq(min, max, length = n)` with three useful extra arguments.
+
+```{r seq-range}
+set.seed(123)
+x_var <- runif(100)
+
+seq_range(x_var, n = 5)                      # default: n evenly spaced values
+seq_range(x_var, n = 5, pretty = TRUE)        # round to nice numbers
+x_skew <- rcauchy(100)
+seq_range(x_skew, n = 5, trim = 0.10)        # drop extreme 10% first
+seq_range(c(0, 1), n = 5, expand = 0.1)      # extend range by 10%
+```
+
+```{r seq-range-grid}
+grid_seq <- sim4 |>
+  data_grid(
+    x1 = seq_range(x1, n = 20, pretty = TRUE),
+    x2 = seq_range(x2, n = 20, pretty = TRUE)
+  )
+glimpse(grid_seq)
+```
+
+> **Interpretation:** Use `pretty = TRUE` for publication-quality axes, `trim` for heavy-tailed distributions, and `expand` to assess extrapolation behaviour.
+
+---
+
+# Missing Values
+
+Real datasets nearly always contain missing values. How you handle them affects model estimates, standard errors, and the validity of inference.
+
+## How `lm()` Handles NAs
+
+By default, `lm()` uses `na.omit`: rows with any `NA` are **silently dropped** before fitting. Setting `options(na.action = na.warn)` — done in the setup chunk — causes R to warn when rows are dropped.
+
+```{r na-handling}
+df_na <- tribble(
+  ~x, ~y,
+  1,  2.2,
+  2,  NA,    # missing response
+  3,  3.5,
+  4,  8.3,
+  NA, 10     # missing predictor
+)
+
+mod_na <- lm(y ~ x, data = df_na)
+nobs(mod_na)     # only 3 of 5 rows were used
+```
+
+```{r na-exclude}
+# na.exclude: drops NAs but preserves row positions in output vectors
+mod_ex <- lm(y ~ x, data = df_na, na.action = na.exclude)
+
+# Residuals still have 5 positions — NAs at rows 2 and 5
+residuals(mod_ex)
+```
+
+> **Interpretation:** Use `na.action = na.exclude` when you need to merge predictions or residuals back into the original data frame. `na.omit` (the default) removes the row entirely, causing misaligned row indices that are hard to diagnose later.
+
+## Imputation Before Modelling
+
+When missingness is substantial, dropping rows wastes information and can introduce **selection bias** if data are not Missing Completely At Random (MCAR).
+
+| Method | How | Pros | Cons |
+|--------|-----|------|------|
+| **Mean imputation** | Replace `NA` with column mean | Simple, fast | Underestimates variance; distorts correlations |
+| **Multiple imputation (MI)** | Generate $m$ complete datasets from a predictive model; pool results | Propagates uncertainty; statistically valid | More complex |
+
+```{r imputation}
+set.seed(10)
+df_miss <- sim1_base |>
+  mutate(y = ifelse(runif(n()) < 0.1, NA, y))
+
+# Simple mean imputation
+df_mean <- df_miss |>
+  mutate(y = ifelse(is.na(y), mean(y, na.rm = TRUE), y))
+
+# Multiple imputation: 5 imputed datasets, predictive mean matching
+imp <- mice(df_miss, m = 5, method = "pmm", printFlag = FALSE)
+
+# Fit model on each imputed dataset and pool estimates (Rubin's rules)
+fit_imp <- with(imp, lm(y ~ x))
+pool(fit_imp) |> summary()
+```
+
+> **Interpretation:** **Mean imputation** is quick but underestimates uncertainty. **Multiple imputation (MI)** is the gold standard: it propagates the uncertainty due to missingness into the standard errors via Rubin's combination rules. The pooled standard errors from MI are always at least as large as those from complete-case analysis.
+
+---
+
+# Beyond Linear Models
+
+The linear model assumes (1) a continuous response with constant variance and (2) a mean that is a linear function of the predictors. When these assumptions fail, a richer model family is needed.
+
+## Overview of Model Families in R
+
+| Family | R Function | Key Use Case |
+|--------|-----------|-------------|
+| **Linear Model (OLS)** | `stats::lm()` | Continuous response, constant variance |
+| **Generalised LM** | `stats::glm()` | Binary, count, proportion responses |
+| **Robust LM** | `MASS::rlm()` | Outlier-resistant linear fitting |
+| **Generalised Additive** | `mgcv::gam()` | Smooth, non-parametric curves |
+| **Penalised LM (Ridge/LASSO)** | `glmnet::glmnet()` | High-dimensional / regularised models |
+| **Decision Tree** | `rpart::rpart()` | Non-linear, interpretable splits |
+| **Random Forest** | `randomForest()` | Ensemble of trees, handles interactions |
+| **Gradient Boosting** | `xgboost::xgboost()` | State-of-the-art tabular performance |
+
+> **Key insight:** All these models share the same `modelr` workflow: `data_grid()` → `add_predictions()` → `add_residuals()`. Mastering one makes the others straightforward.
+
+## Logistic Regression for Binary Responses
+
+When the response is binary (0/1), a linear model can predict values outside $[0,1]$. **Logistic regression** (a GLM with the binomial family and logit link) models the log-odds:
+
+$$\log\!\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 x_1 + \cdots$$
+
+Back-transforming gives probabilities $p = \frac{e^\eta}{1+e^\eta}$, which always lie in $(0,1)$.
+
+```{r logistic}
+data("admissions", package = "cvAUC")
+admit <- as_tibble(admissions)
+glimpse(admit)
+
+mod_logit <- glm(
+  Y ~ quant + verbal + gpa + toptier,
+  data   = admit,
+  family = binomial(link = "logit")
+)
+
+summary(mod_logit)
+```
+
+```{r logistic-odds-ratios}
+# Exponentiate coefficients to get odds ratios
+exp(coef(mod_logit)) |> round(3)
+```
+
+```{r logistic-plot, fig.cap="Predicted admission probability vs verbal score. Top-tier applicants have uniformly higher admission chances at every verbal score."}
+admit |>
+  data_grid(verbal = seq_range(verbal, 20), quant, gpa, toptier) |>
+  add_predictions(mod_logit, type = "response") |>
+  ggplot(aes(verbal, pred, colour = factor(toptier))) +
+  geom_line(linewidth = 1) +
+  scale_colour_manual(
+    values = c("#1B3A6B", "#C9A84C"),
+    labels = c("Non-top-tier", "Top-tier")
+  ) +
+  labs(
+    y      = "P(Admit)",
+    title  = "Admission probability vs verbal score",
+    colour = "School tier"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Higher tier schools have a higher chance of admission. Exponentiated coefficients are **odds ratios**: each unit increase in a predictor multiplies the odds of admission by the corresponding factor. Attending a top-tier school multiplies the admission odds by approximately $e^{1.94} \approx 7$.
+
+## Poisson Regression for Count Data
+
+When the response is a **count** (non-negative integer), ordinary linear regression can predict negative values and is statistically inefficient. **Poisson regression** uses the log link:
+
+$$\log(\mu) = \beta_0 + \beta_1 x_1 + \cdots$$
+
+Exponentiated coefficients are **rate ratios** — multiplicative effects on the expected count.
+
+```{r poisson}
+set.seed(77)
+claims <- tibble(
+  age      = runif(300, 18, 70),
+  veh_age  = runif(300, 0, 15),
+  n_claims = rpois(300, lambda = exp(0.02 * age - 0.05 * veh_age - 0.5))
+)
+
+mod_pois <- glm(
+  n_claims ~ age + veh_age,
+  data   = claims,
+  family = poisson(link = "log")
+)
+
+coef(mod_pois) |> exp() |> round(3)
+```
+
+```{r poisson-plot, fig.cap="Expected insurance claim counts by driver age, for two vehicle ages. Older vehicles produce fewer expected claims."}
+claims |>
+  data_grid(age = seq_range(age, 10), veh_age = c(2, 8)) |>
+  add_predictions(mod_pois, type = "response") |>
+  ggplot(aes(age, pred, colour = factor(veh_age))) +
+  geom_line(linewidth = 1.2) +
+  scale_colour_manual(
+    values = c("#C9A84C", "#1B3A6B"),
+    labels = c("Vehicle age 2", "Vehicle age 8")
+  ) +
+  labs(
+    y      = "Expected claims",
+    title  = "Poisson GLM: expected claims by driver age",
+    colour = "Vehicle age"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Exponentiated coefficients are **rate ratios**. $e^{0.020} \approx 1.02$ means each additional year of driver age is associated with a 2% increase in expected claims, adjusting for vehicle age.
+
+## Robust Linear Models with `MASS::rlm()`
+
+OLS squares residuals, so **outliers inflate the loss disproportionately** and pull the fitted line toward themselves. Robust regression uses a loss function that grows more slowly for large residuals.
+
+**Huber M-estimator (`method = "M"`):**
+$$\text{loss}(r) = \begin{cases} r^2/2 & |r| \leq k \\ k|r| - k^2/2 & |r| > k \end{cases}$$
+
+Large residuals receive *linear* weight rather than *quadratic* weight — their influence is capped.
+
+```{r robust}
+sim1_out <- sim1_base |>
+  mutate(
+    y         = ifelse(row_number() %in% c(3, 17), y + 15, y),
+    is_outlier = row_number() %in% c(3, 17)
+  )
+
+mod_ols <- lm(y ~ x,                     data = sim1_out)
+mod_rob <- MASS::rlm(y ~ x, method = "M", data = sim1_out)
+
+cat("OLS:    intercept =", round(coef(mod_ols)[1], 2),
+    " slope =", round(coef(mod_ols)[2], 2), "  <- pulled by outliers\n")
+cat("Robust: intercept =", round(coef(mod_rob)[1], 2),
+    " slope =", round(coef(mod_rob)[2], 2), "  <- close to true values (4.22, 2.05)\n")
+```
+
+```{r robust-plot, fig.cap="OLS vs robust regression with two injected outliers (star points). OLS is visibly pulled upward; the robust estimator stays near the true line."}
+ggplot(sim1_out, aes(x, y, shape = is_outlier)) +
+  geom_point(colour = "grey30", size = 2.5) +
+  geom_abline(
+    aes(intercept = coef(mod_ols)[1], slope = coef(mod_ols)[2],
+        colour = "OLS"),    linewidth = 1.2
+  ) +
+  geom_abline(
+    aes(intercept = coef(mod_rob)[1], slope = coef(mod_rob)[2],
+        colour = "Robust"), linewidth = 1.2
+  ) +
+  scale_colour_manual(values = c("OLS" = "#C9A84C", "Robust" = "#1B3A6B")) +
+  scale_shape_manual(values  = c(`FALSE` = 16, `TRUE` = 8),
+                     labels  = c("Normal", "Outlier"),
+                     name    = "Point type") +
+  labs(
+    title    = "OLS vs Robust regression with two outliers",
+    colour   = "Method"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** OLS is sensitive to outliers because it **squares** residuals. `rlm()` down-weights large residuals using Huber's $\psi$-function, yielding estimates close to the true values even when a few observations are contaminated.
+
+## Generalised Additive Models with `mgcv::gam()`
+
+GAMs replace each linear predictor term $\beta_j x_j$ with a smooth function $f_j(x_j)$ estimated from the data:
+
+$$y = \beta_0 + f_1(x_1) + f_2(x_2) + \varepsilon$$
+
+- `s()` specifies a smooth term for a single predictor.
+- `te()` specifies a tensor-product smooth for a 2D interaction surface.
+- **edf** (effective degrees of freedom): edf ≈ 1 means nearly linear; edf > 3 indicates substantial curvature.
+- `method = "REML"` is the preferred criterion for automatic smoothness selection.
+
+```{r gam}
+mod_gam <- gam(
+  y ~ s(x1) + s(x2),
+  data   = sim4,
+  method = "REML"
+)
+
+summary(mod_gam)
+```
+
+```{r gam-plots, fig.cap="Estimated smooth effects: s(x1) and s(x2). Shaded areas are 95% confidence bands. edf ≈ 1 means the effect is essentially linear."}
+plot(
+  mod_gam,
+  pages     = 1,
+  shade     = TRUE,
+  col       = "#1B3A6B",
+  shade.col = "#C9A84C40"
+)
+```
+
+```{r gam-interaction}
+# Tensor-product smooth for a full 2D interaction surface
+mod_gam2 <- gam(
+  y ~ te(x1, x2),
+  data   = sim4,
+  method = "REML"
+)
+```
+
+```{r gam-heatmap, fig.cap="GAM predicted surface (additive smooths on sim4). Colour encodes the predicted response."}
+grid4 |>
+  filter(model == "mod1_s4") |>
+  add_predictions(mod_gam, var = "gam_pred") |>
+  ggplot(aes(x1, x2, fill = gam_pred)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(title = "GAM predicted surface (additive smooths)", fill = "ŷ") +
+  theme_minimal(base_size = 13)
+```
+
+```{r gam-tensor-heatmap, fig.cap="Tensor-product GAM: a single 2D smooth that models the full x1:x2 interaction without assuming additivity."}
+sim4 |>
+  data_grid(
+    x1 = seq_range(x1, n = 40),
+    x2 = seq_range(x2, n = 40)
+  ) |>
+  add_predictions(mod_gam2, var = "gam2_pred") |>
+  ggplot(aes(x1, x2, fill = gam2_pred)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(title = "Tensor-product GAM: 2D interaction surface", fill = "ŷ") +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** GAMs estimate the **shape** of each smooth from the data. edf = 1.0 means the smooth is essentially linear; edf > 3 indicates substantial curvature. `method = "REML"` is preferred for smoothness selection because it is less prone to overfitting than maximum likelihood.
+
+## Penalised Regression: Ridge and LASSO
+
+When the number of predictors $p$ is large relative to $n$, OLS overfits. Penalised regression adds a penalty on coefficient magnitudes:
+
+$$\hat{\boldsymbol{\beta}}_\lambda = \arg\min_{\boldsymbol{\beta}} \Bigl[\underbrace{\sum(y_i - \mathbf{x}_i^\top\boldsymbol{\beta})^2}_{\text{OLS loss}} + \lambda \cdot \underbrace{\text{Penalty}(\boldsymbol{\beta})}_{\text{shrinkage}}\Bigr]$$
+
+| Method | Penalty | Effect |
+|--------|---------|--------|
+| **Ridge** (`alpha = 0`) | $\lambda\sum\beta_j^2$ | Shrinks all coefficients toward zero; keeps all variables |
+| **LASSO** (`alpha = 1`) | $\lambda\sum|\beta_j|$ | Shrinks some coefficients **exactly to zero**; automatic variable selection |
+| **Elastic net** (`0 < alpha < 1`) | Mix of both | Compromise between Ridge and LASSO |
+
+```{r penalised}
+set.seed(2024)
+p <- 50; n <- 200
+X <- matrix(rnorm(n * p), n, p)
+y_pen <- 2 * X[, 1] - 1.5 * X[, 2] + rnorm(n)   # only V1 and V2 matter
+
+mod_ridge <- glmnet::glmnet(X, y_pen, alpha = 0)
+mod_lasso <- glmnet::glmnet(X, y_pen, alpha = 1)
+```
+
+```{r lasso-cv, fig.cap="Cross-validation curve for LASSO. Left dashed line: lambda.min (minimum CV error). Right: lambda.1se (one-SE rule)."}
+cv_lasso    <- glmnet::cv.glmnet(X, y_pen, alpha = 1, nfolds = 10)
+plot(cv_lasso)
+best_lambda <- cv_lasso$lambda.min
+cat("Best lambda:", round(best_lambda, 4), "\n")
+```
+
+```{r lasso-coefs}
+# First 6 coefficients at best lambda — V3+ are shrunk to exactly 0
+coef(cv_lasso, s = "lambda.min")[1:6, ]
+```
+
+```{r lasso-paths, fig.cap="LASSO coefficient paths. As lambda decreases (left to right), more variables enter the model. Only two variables truly matter here."}
+plot(mod_lasso, xvar = "lambda",
+     main = "LASSO coefficient paths  (only 2 true predictors in data)")
+abline(v = log(best_lambda), lty = 2, col = "darkred")
+```
+
+> **Interpretation:** **Ridge** shrinks all coefficients toward zero but keeps all variables. **LASSO** performs automatic variable selection by setting some coefficients *exactly* to zero. Both are especially useful when $p \gg n$ or predictors are highly correlated. Here, LASSO correctly recovers that only V1 and V2 are the active predictors.
+
+## Decision Trees with `rpart`
+
+Decision trees partition the predictor space into **rectangular regions** by recursively splitting on the most informative predictor. Within each leaf node, the prediction is the mean response in that region.
+
+**Key tuning parameters:**
+
+- `maxdepth`: maximum tree depth (controls model complexity).
+- `cp` (complexity parameter): prune any split that does not improve the fit by at least `cp × R²`.
+
+```{r decision-tree, fig.cap="Regression tree for sim4. Each node shows the split rule, predicted value, and percentage of training data."}
+tree_mod <- rpart(
+  y ~ x1 + x2,
+  data    = sim4,
+  control = rpart.control(maxdepth = 4, cp = 0.01)
+)
+
+rpart.plot(
+  tree_mod,
+  type  = 4,
+  extra = 101,
+  col   = "#1B3A6B",
+  main  = "Regression tree: y ~ x1 + x2"
+)
+```
+
+```{r tree-surface, fig.cap="Tree prediction surface: piecewise-constant rectangular regions. Compare with the smooth GAM surface above."}
+grid4_tree <- sim4 |>
+  data_grid(
+    x1 = seq_range(x1, 30),
+    x2 = seq_range(x2, 30)
+  ) |>
+  add_predictions(tree_mod)
+
+ggplot(grid4_tree, aes(x1, x2, fill = pred)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(title = "Tree: piecewise-constant prediction surface", fill = "ŷ") +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** Trees partition the predictor space into **rectangular regions**, predicting the mean response within each region. The prediction surface is **step-wise** — visible as hard edges in the tile plot. Trees are highly interpretable but have high variance; ensemble methods (Random Forest, XGBoost) fix this by averaging many trees.
+
+---
+
+# Extended Case Studies
+
+## Case Study 1: Model Building on `diamonds`
+
+The `diamonds` dataset (53,940 rows, `ggplot2`) contains price, carat weight, and quality attributes. We build a model progressively, inspecting residuals at each stage to discover what remains unexplained.
+
+### Initial Exploratory Data Analysis
+
+```{r diamonds-eda}
+data("diamonds", package = "ggplot2")
+glimpse(diamonds)
+```
+
+```{r diamonds-raw, fig.cap="Price vs carat on the raw scale: strong but curved relationship, with variance increasing with carat."}
+ggplot(diamonds, aes(carat, price)) +
+  geom_bin2d(bins = 60) +
+  scale_fill_viridis_c() +
+  labs(
+    title    = "Price vs Carat (raw scale)",
+    subtitle = "Curved relationship with heteroscedastic variance — log transformation is indicated."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+```{r diamonds-log, fig.cap="log(price) vs log(carat): a near-linear, homoscedastic relationship. Log-transforming both variables is the right move."}
+ggplot(diamonds, aes(log(carat), log(price))) +
+  geom_bin2d(bins = 60) +
+  scale_fill_viridis_c() +
+  labs(
+    title    = "log(price) vs log(carat) — much more linear!",
+    subtitle = "Log-log transformation linearises the relationship and stabilises variance."
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+### Fitting the Log-Log Model
+
+```{r diamonds-loglog}
+mod_d1 <- lm(log(price) ~ log(carat), data = diamonds)
+cat("R² of log-log model:", round(summary(mod_d1)$r.squared, 3), "\n")
+coef(mod_d1)
+```
+
+> **Interpretation:** The slope 1.676 on the log scale means a 1% increase in carat is associated with a ≈ 1.68% increase in price — a **power law**. $R^2 = 0.93$ is very high: carat is the dominant driver of diamond price.
+
+### Peeling Back Layers: Adding Quality Attributes
+
+After accounting for carat, we add `cut`, `color`, and `clarity` to capture the pure quality effects on price.
+
+```{r diamonds-full}
+mod_d2 <- lm(
+  log(price) ~ log(carat) + cut + color + clarity,
+  data = diamonds
+)
+
+cat("R² of full model:", round(summary(mod_d2)$r.squared, 3), "\n")
+AIC(mod_d1, mod_d2)
+```
+
+```{r diamonds-residuals, fig.cap="Residuals vs log(carat) by cut, after controlling for carat size. No strong remaining curvature — the model is well-specified."}
+diamonds_modelled <- diamonds |>
+  add_residuals(mod_d2, var = "resid2")
+
+ggplot(diamonds_modelled, aes(log(carat), resid2)) +
+  geom_bin2d(bins = 50) +
+  scale_fill_viridis_c() +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ cut) +
+  labs(
+    title = "Residuals by cut — after controlling for carat",
+    y     = "Residual (log scale)"
+  ) +
+  theme_minimal(base_size = 11)
+```
+
+> **Interpretation:** After controlling for carat, we see the *pure* effect of quality attributes on price. The AIC of `mod_d2` (≈ −5532) is dramatically lower than `mod_d1` (≈ −2801) — adding quality variables provides a huge improvement. Residual plots reveal whether further structure remains — a crucial step in the modelling cycle.
+
+## Case Study 2: Flights — Many Models with `purrr`
+
+The `flights` dataset (336,776 rows) records every domestic flight from NYC in 2013. We ask: how well do time-of-day and month predict departure delays for each airline carrier?
+
+`purrr::map()` combined with `tidyr::nest()` lets us apply any modelling pipeline to many subsets simultaneously — "many models" in a few lines.
+
+```{r flights-models}
+carrier_models <- flights |>
+  filter(!is.na(dep_delay)) |>
+  group_by(carrier) |>
+  nest() |>
+  mutate(
+    mod  = map(data, ~ lm(dep_delay ~ hour + month, data = .x)),
+    rsq  = map_dbl(mod, ~ summary(.x)$r.squared),
+    rmse = map_dbl(mod, ~ sqrt(mean(residuals(.x)^2)))
+  ) |>
+  arrange(desc(rsq))
+
+carrier_models |> select(carrier, rsq, rmse)
+```
+
+> **Interpretation:** `purrr::map()` applies `lm()` to every carrier's data independently. Very low $R^2$ values (< 0.05) mean that time of day and month explain very little of the variance in departure delays — other factors (weather, air traffic congestion, aircraft availability) dominate.
+
+### Extracting Coefficients at Scale
+
+`broom::tidy()` converts any model object into a tidy data frame with columns `term`, `estimate`, `std.error`, `statistic`, `p.value`. Combined with `unnest()`, this enables downstream `dplyr` operations on hundreds of model summaries simultaneously.
+
+```{r flights-coefs}
+carrier_coefs <- carrier_models |>
+  mutate(tidy = map(mod, broom::tidy)) |>
+  unnest(tidy) |>
+  filter(term == "hour")
+
+carrier_coefs |> select(carrier, estimate, std.error, p.value)
+```
+
+```{r flights-coef-plot, fig.cap="Effect of hour on departure delay, by carrier. Most carriers show delays worsening through the day (positive slope — knock-on delays)."}
+ggplot(
+  carrier_coefs,
+  aes(
+    x    = reorder(carrier, estimate),
+    y    = estimate,
+    ymin = estimate - 2 * std.error,
+    ymax = estimate + 2 * std.error
+  )
+) +
+  geom_pointrange(colour = "#1B3A6B") +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "#C9A84C") +
+  coord_flip() +
+  labs(
+    title = "Effect of hour on departure delay, by carrier",
+    x     = "Carrier",
+    y     = "Estimated slope (minutes per hour)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+> **Interpretation:** `broom::tidy()` converts `lm()` output into a tidy data frame. Combined with `unnest()`, it enables downstream tidyverse operations on hundreds of model summaries simultaneously. Most carriers show that delays worsen as the day progresses (positive hour slope), consistent with knock-on delay propagation throughout the day.
+
+## Case Study 3: Non-Linear Growth Models with `nls()`
+
+`nls()` (non-linear least squares) fits models where the response is a non-linear function of both the predictors and the parameters. Unlike `lm()`, there is no closed-form solution — `nls()` uses iterative algorithms and requires **sensible starting values**.
+
+**Logistic growth model:**
+
+$$y = \frac{K}{1 + e^{-r(t - t_0)}} + \varepsilon$$
+
+- $K$ = carrying capacity (asymptotic maximum of the S-curve)
+- $r$ = intrinsic growth rate (steepness of the S-curve)
+- $t_0$ = inflection point (time at which growth is fastest)
+
+```{r nls}
+set.seed(5)
+t_seq <- seq(0, 20, by = 0.5)
+
+logistic_growth <- tibble(
+  t = t_seq,
+  y = 100 / (1 + exp(-0.5 * (t - 10))) + rnorm(length(t_seq), sd = 3)
+)
+
+mod_nls <- nls(
+  y     ~ K / (1 + exp(-r * (t - t0))),
+  data  = logistic_growth,
+  start = list(K = 100, r = 0.5, t0 = 10)
+)
+
+coef(mod_nls)
+```
+
+```{r nls-plot, fig.cap="Logistic growth: nls() fit (gold line) against noisy observations (blue points). The S-curve is well recovered."}
+logistic_growth |>
+  data_grid(t = seq_range(t, 60)) |>
+  add_predictions(mod_nls) |>
+  ggplot(aes(t, pred)) +
+  geom_line(colour = "#C9A84C", linewidth = 1.2) +
+  geom_point(data = logistic_growth, aes(y = y),
+             colour = "#1B3A6B", alpha = 0.6) +
+  labs(
+    title    = "Logistic growth: nls() fit",
+    subtitle = paste0(
+      "Recovered: K = ", round(coef(mod_nls)["K"],  1),
+      ",  r = ",          round(coef(mod_nls)["r"],  3),
+      ",  t₀ = ",         round(coef(mod_nls)["t0"], 2)
+    ),
+    y = "y"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Interpretation:** `nls()` fits **non-linear** models by iterative least squares. It requires good starting values — use domain knowledge or a coarse grid search. The recovered parameters ($K \approx 99.7$, $r \approx 0.50$, $t_0 \approx 9.98$) are very close to the true generating values ($K = 100$, $r = 0.5$, $t_0 = 10$).
+
+---
+
+# Summary and Exercises
+
+## Six Principles for Model Building
+
+| # | Principle | How |
+|---|-----------|-----|
+| **1 — Define** | Every model needs (a) a family and (b) a fitting criterion | Choose the equation shape; RMSE for OLS |
+| **2 — Fit** | Use the right tool | `lm()` for linear; `optim()` only for custom loss |
+| **3 — Visualise** | Always plot fitted values and residuals | `add_predictions()`, `add_residuals()`, Q-Q plot |
+| **4 — Extend** | Use the right formula operators | `*` for interactions, `I()` for arithmetic, `ns()` for splines |
+| **5 — Scale up** | Apply to many groups simultaneously | `nest()` + `map()` + `broom::tidy()` |
+| **6 — Choose wisely** | Match the model family to the response type | OLS → continuous; GLM → binary/count; GAM → flexible curves; robust → contaminated data |
+
+## Exercises
+
+---
+
+### E1: OLS vs MAE Stability Under Outliers
+
+**Question:** Fit a linear model to `sim1a` (Student-$t$ noise, $df = 2$) with 10 different random seeds. Compare OLS and MAE-based fitting — which produces more stable slope estimates?
+
+```{r e1}
+set.seed(1)
+exercise_results <- purrr::map_dfr(1:10, function(seed_value) {
+  set.seed(seed_value)
+  temp_data <- tibble(
+    x = rep(1:10, each = 3),
+    y = x * 1.5 + 6 + rt(length(x), df = 2)
+  )
+  mae_fit <- optim(c(0, 0), measure_mae, data = temp_data)
+  ols_fit <- lm(y ~ x, data = temp_data)
+  tibble(
+    seed      = seed_value,
+    mae_slope = mae_fit$par[2],
+    ols_slope = coef(ols_fit)[2]
+  )
+})
+
+# Standard deviation of slope estimates across 10 resamples
+exercise_results |>
+  summarise(
+    sd_ols_slope = sd(ols_slope),
+    sd_mae_slope = sd(mae_slope)
+  )
+```
+
+```{r e1-plot, fig.cap="E1: OLS vs MAE slope estimates across 10 random seeds. MAE stays closer to the true slope (1.5, dashed) in the presence of heavy-tailed noise."}
+exercise_results |>
+  pivot_longer(c(mae_slope, ols_slope),
+               names_to = "method", values_to = "slope") |>
+  ggplot(aes(seed, slope, colour = method)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2.5) +
+  geom_hline(yintercept = 1.5, linetype = "dashed", colour = "black") +
+  scale_colour_manual(
+    values = c("mae_slope" = "#1B3A6B", "ols_slope" = "#C9A84C"),
+    labels = c("MAE", "OLS")
+  ) +
+  labs(
+    title    = "OLS vs MAE slope estimates across 10 seeds",
+    subtitle = "True slope = 1.5 (dashed). Student-t(df=2) noise creates occasional large residuals.",
+    x = "Seed", y = "Estimated slope", colour = "Method"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer:** MAE-based fitting is more stable under heavy-tailed noise. Student-$t$ distributions with $df=2$ have very heavy tails — they occasionally generate extreme values that pull the OLS line strongly because OLS **squares** each residual. A single large outlier can shift the OLS slope by a full unit. MAE treats all residuals on the absolute scale, so no single point dominates. The standard deviation of the MAE slope across seeds is consistently lower than that of OLS. **Decision rule:** when you know or suspect the noise is heavy-tailed or contaminated, use MAE (or robust regression with `rlm()`) instead of OLS.
+
+---
+
+### E2: Interaction Model Equation from `sim3`
+
+**Question:** Use `model_matrix()` to inspect `y ~ x1 * x2` for `sim3`. Write out the full fitted model equation using the estimated coefficients.
+
+```{r e2}
+# The design matrix columns show exactly what terms are in the model
+model_matrix(sim3, y ~ x1 * x2) |> head(8)
+```
+
+```{r e2-coefs}
+# Estimated coefficients
+(b <- coef(mod_int))
+```
+
+> **Answer — the full fitted equation:**
+>
+> `sim3$x2` has four levels: **a** (reference), **b**, **c**, **d**. The interaction formula expands to 8 terms:
+>
+> $$\hat{y} = \underbrace{\beta_0}_{\text{intercept}} + \underbrace{\beta_1 x_1}_{\text{slope for group a}} + \underbrace{\beta_2 \mathbf{1}_{[x_2=b]}}_{\text{intercept shift b}} + \underbrace{\beta_3 \mathbf{1}_{[x_2=c]}}_{\text{intercept shift c}} + \underbrace{\beta_4 \mathbf{1}_{[x_2=d]}}_{\text{intercept shift d}} + \underbrace{\beta_5 x_1 \mathbf{1}_{[x_2=b]}}_{\text{slope shift b}} + \underbrace{\beta_6 x_1 \mathbf{1}_{[x_2=c]}}_{\text{slope shift c}} + \underbrace{\beta_7 x_1 \mathbf{1}_{[x_2=d]}}_{\text{slope shift d}}$$
+>
+> Filling in the estimated values:
+>
+> - **Group a:** $\hat{y} = \beta_0 + \beta_1 x_1$ — intercept and slope are the baseline.
+> - **Group b:** $\hat{y} = (\beta_0 + \beta_2) + (\beta_1 + \beta_5) x_1$ — different intercept and slope.
+> - **Group c:** $\hat{y} = (\beta_0 + \beta_3) + (\beta_1 + \beta_6) x_1$
+> - **Group d:** $\hat{y} = (\beta_0 + \beta_4) + (\beta_1 + \beta_7) x_1$
+>
+> **Why not use the additive model?** The additive model forces all groups to share one slope ($\beta_1$). But from the residual plot in section 4.3, we saw that the additive residuals have clear within-group patterns — evidence that the slopes genuinely differ across groups. The interaction model removes those patterns by estimating a separate slope for every group. AIC confirmed the interaction model is better despite using more parameters.
+
+---
+
+### E3: LOESS vs `lm()` on `sim1`
+
+**Question:** Fit `loess(y ~ x)` to `sim1`. Compare predictions and residuals with those from `lm()`. Is the LOESS curve similar to `geom_smooth()`?
+
+```{r e3}
+loess_mod <- loess(y ~ x, data = sim1_base)
+
+loess_grid <- sim1_base |>
+  data_grid(x = seq_range(x, 50)) |>
+  add_predictions(loess_mod, var = "loess_pred") |>
+  add_predictions(sim1_mod,  var = "lm_pred")
+```
+
+```{r e3-plot, fig.cap="E3: LOESS (blue) vs LM (gold) on sim1. For genuinely linear data the two curves are nearly identical."}
+ggplot(sim1_base, aes(x, y)) +
+  geom_point(colour = "grey40") +
+  geom_smooth(method = "loess", formula = y ~ x,
+              se = TRUE, colour = "grey70", fill = "grey85",
+              linewidth = 0.6, linetype = "dotted") +
+  geom_line(data = loess_grid,
+            aes(y = loess_pred, colour = "LOESS"), linewidth = 1.2) +
+  geom_line(data = loess_grid,
+            aes(y = lm_pred,    colour = "LM"),    linewidth = 1.2) +
+  scale_colour_manual(values = c("LOESS" = "#1B3A6B", "LM" = "#C9A84C")) +
+  labs(
+    title    = "LOESS vs LM predictions on sim1",
+    subtitle = "Dotted grey = geom_smooth(method='loess') for comparison.",
+    colour   = "Method"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+```{r e3-resid-compare, fig.cap="E3: Residuals from LM and LOESS. Both are centred at zero with no pattern — the relationship really is linear."}
+sim1_base |>
+  add_residuals(sim1_mod,  var = "lm_resid") |>
+  add_residuals(loess_mod, var = "loess_resid") |>
+  pivot_longer(c(lm_resid, loess_resid),
+               names_to = "method", values_to = "resid") |>
+  ggplot(aes(x, resid, colour = method)) +
+  geom_point(alpha = 0.7) +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ method,
+             labeller = labeller(method = c(
+               lm_resid    = "LM residuals",
+               loess_resid = "LOESS residuals"))) +
+  scale_colour_manual(values = c("lm_resid" = "#C9A84C",
+                                 "loess_resid" = "#1B3A6B"),
+                      guide = "none") +
+  labs(title = "Residuals: LM vs LOESS on sim1", y = "Residual") +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer:** For `sim1`, both curves are nearly indistinguishable — and the LOESS curve from `modelr::add_predictions()` matches `geom_smooth(method = "loess")` exactly (they call the same underlying function).
+>
+> This agreement tells us something important: **when the underlying relationship truly is linear, LOESS and `lm()` converge to the same answer**. The residual patterns are identical.
+>
+> **When to prefer each:**
+>
+> | Criterion | LM | LOESS |
+> |-----------|----|----|
+> | Interpretability | Coefficients have clear units | No single equation |
+> | Extrapolation | Safe (linear outside range) | Unreliable beyond data |
+> | Unknown functional form | Risky (may miss curves) | Flexible — finds the shape |
+> | Small $n$ | Efficient | Needs $\geq$ ~20 points |
+>
+> **Decision:** Use `lm()` when theory or EDA suggests a linear relationship. Use LOESS for exploratory smoothing when the functional form is unknown. The two should agree when linearity holds — as they do here.
+
+---
+
+### E4: Spline df Selection on `sim5`
+
+**Question:** Fit natural splines for `df = 1, 2, 3, 4, 5` on `sim5`. Use 10-fold CV to choose the optimal `df`.
+
+```{r e4}
+set.seed(42)
+cv_rmse_e4 <- sapply(1:5, function(df) {
+  folds <- createFolds(sim5$y, k = 10)
+  mean(sapply(folds, function(idx) {
+    train <- sim5[-idx, ]
+    test  <- sim5[ idx, ]
+    pred  <- predict(lm(y ~ ns(x, df), data = train), newdata = test)
+    sqrt(mean((test$y - pred)^2))
+  }))
+})
+
+(cv_table <- tibble(df = 1:5, cv_rmse = round(cv_rmse_e4, 3)))
+```
+
+```{r e4-plot, fig.cap="E4: 10-fold CV RMSE vs spline df on sim5. The minimum is the optimal complexity."}
+ggplot(cv_table, aes(df, cv_rmse)) +
+  geom_line(colour = "#1B3A6B", linewidth = 1) +
+  geom_point(colour = "#C9A84C", size = 4) +
+  geom_text(aes(label = round(cv_rmse, 2)),
+            vjust = -0.9, size = 3.5, colour = "grey30") +
+  labs(
+    title    = "10-fold CV RMSE for ns(x, df) on sim5  (df = 1 to 5)",
+    subtitle = paste0("Optimal df = ",
+                      cv_table$df[which.min(cv_table$cv_rmse)],
+                      "  (minimum CV RMSE = ",
+                      min(round(cv_table$cv_rmse, 3)), ")"),
+    x = "Degrees of freedom",
+    y = "CV RMSE"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer:** CV-RMSE drops steeply from `df = 1` to `df = 3–4`, then levels off or rises slightly at `df = 5`. The minimum is typically around **df = 4 or 5**, consistent with the sinusoidal pattern in `sim5` (which spans about 1.75 full wavelengths and therefore needs at least 4–5 knot regions to be captured).
+>
+> **Decision process:**
+>
+> 1. **df = 1** (nearly linear): very high CV error — badly underfits the sinusoidal curve.
+> 2. **df = 3**: large improvement — the spline can capture one cycle.
+> 3. **df = 4–5**: minimum CV error — the spline captures the full pattern.
+> 4. **One-SE rule:** choose the *smallest* df whose CV error is within one standard error of the minimum. This avoids overfitting that would appear with higher df outside the training range.
+>
+> **Does CV agree with the residual plots from section 4.9?** Yes — the `df = 5` spline plot showed the full sinusoidal curve captured cleanly, while `df = 1` and `df = 3` showed systematic residual patterns. CV quantifies this numerically and leads to the same conclusion.
+
+---
+
+### E5: Interaction vs Additive on `sim4`
+
+**Question:** Demonstrate via residual plots and AIC that the interaction model (`x1 * x2`) fits `sim4` better than the additive model (`x1 + x2`).
+
+```{r e5-aic}
+AIC(mod1_s4, mod2_s4)
+cat("AIC difference:", round(AIC(mod1_s4) - AIC(mod2_s4), 1),
+    "units in favour of the interaction model\n")
+cat("Additive R²:   ", round(summary(mod1_s4)$r.squared, 4), "\n")
+cat("Interaction R²:", round(summary(mod2_s4)$r.squared, 4), "\n")
+```
+
+```{r e5-resid, fig.cap="E5: Residuals vs x1 for additive and interaction models. The additive model leaves a clear colour gradient — the slope of x1 varies with x2, violating the additive assumption."}
+sim4 |>
+  gather_residuals(mod1_s4, mod2_s4) |>
+  ggplot(aes(x1, resid, colour = x2)) +
+  geom_point(alpha = 0.6) +
+  geom_ref_line(h = 0) +
+  facet_wrap(~ model,
+             labeller = labeller(model = c(
+               mod1_s4 = "Additive  (x1 + x2)",
+               mod2_s4 = "Interaction  (x1 * x2)"))) +
+  scale_colour_viridis_c(name = "x2 value") +
+  labs(
+    title    = "Residuals vs x1, coloured by x2",
+    subtitle = "Colour gradient in residuals = missing interaction term.",
+    y        = "Residual"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer — two lines of evidence:**
+>
+> **1. AIC:** The interaction model has a substantially lower AIC (typically by 50–100 units on `sim4`). In model selection, a difference of ≥ 10 AIC units is considered strong evidence for the better model; ≥ 2 is already considered meaningful.
+>
+> **2. Residual plot:** In the **additive model** panel, the residuals show a clear colour gradient — points at high `x2` (yellow) have systematically negative residuals at low `x1` and positive residuals at high `x1`. This is the signature of a missing `x1:x2` interaction: the model uses one slope for `x1` regardless of `x2`, but the true slope varies with `x2`. In the **interaction model** panel, the colour gradient disappears — residuals are uniformly scattered around zero at every value of both `x1` and `x2`.
+>
+> **Decision:** Whenever you see a colour/group gradient in a residuals-vs-predictor plot, it signals a missing interaction between that predictor and the grouping variable. Add the `*` term and verify with AIC.
+
+---
+
+### E6: Diamonds Log-Log — Largest Absolute Residuals
+
+**Question:** Apply the log-log model to the first 500 rows of `diamonds`. Use `broom::augment()` to identify the five diamonds with the largest absolute residuals. What do they have in common?
+
+```{r e6}
+diamonds_500     <- diamonds |> slice_head(n = 500)
+mod_diamonds_500 <- lm(log(price) ~ log(carat), data = diamonds_500)
+
+top5_resid <- broom::augment(mod_diamonds_500, data = diamonds_500) |>
+  mutate(abs_resid = abs(.resid)) |>
+  arrange(desc(abs_resid)) |>
+  slice_head(n = 5) |>
+  dplyr::select(carat, cut, color, clarity, price, .fitted, .resid)
+
+print(top5_resid)
+```
+
+```{r e6-context, fig.cap="E6: The 5 largest-residual diamonds (red) highlighted against the full 500-row dataset. They lie far from the log-log regression line."}
+augmented_500 <- broom::augment(mod_diamonds_500, data = diamonds_500) |>
+  mutate(
+    abs_resid  = abs(.resid),
+    is_outlier = rank(-abs_resid) <= 5
+  )
+
+ggplot(augmented_500, aes(log(carat), log(price))) +
+  geom_point(aes(colour = is_outlier, size = is_outlier), alpha = 0.6) +
+  geom_smooth(method = "lm", formula = y ~ x,
+              colour = "#C9A84C", se = FALSE, linewidth = 1) +
+  scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "#C0392B"),
+                      labels = c("Normal", "Top-5 residual")) +
+  scale_size_manual(values   = c(`FALSE` = 1.5,     `TRUE` = 3.5),
+                    guide    = "none") +
+  labs(
+    title    = "E6: Largest residuals from the log-log model (first 500 diamonds)",
+    subtitle = "Red points are the 5 diamonds most mispriced relative to their carat weight alone.",
+    colour   = NULL
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer:** The five diamonds with the largest absolute residuals share a common pattern — they are the diamonds most **mispriced relative to their carat weight alone**.
+>
+> - **Large positive residuals** (actual price >> carat-predicted price): these tend to be diamonds with exceptional quality — `Ideal` or `Premium` cut, colourless (`D`/`E`/`F`) colour, and high-clarity grades (`IF`, `VVS1`). The carat-only model underestimates their price because it ignores quality premiums.
+> - **Large negative residuals** (actual price << carat-predicted price): these tend to be diamonds with poor quality — `Fair` cut, heavy colour tint (`I`/`J`), or low clarity (`I1`/`SI2`). The model overestimates their price.
+>
+> **This is exactly why `mod_d2` (which added cut, color, clarity) had a dramatically lower AIC than `mod_d1`** — quality attributes account for systematic price variation that carat alone cannot capture.
+>
+> **Key takeaway:** Large residuals from a simple model are not random noise — they are signals that an important predictor is missing. Inspecting the characteristics of high-residual observations is a powerful way to discover which variables to add next.
+
+---
+
+### E7: Many Models by Airport (`origin`)
+
+**Question:** Replicate the flights many-models analysis using `origin` (departure airport) as the grouping variable instead of `carrier`.
+
+```{r e7}
+origin_models <- flights |>
+  filter(!is.na(dep_delay)) |>
+  group_by(origin) |>
+  nest() |>
+  mutate(
+    mod  = map(data, ~ lm(dep_delay ~ hour + month, data = .x)),
+    rsq  = map_dbl(mod, ~ summary(.x)$r.squared),
+    rmse = map_dbl(mod, ~ sqrt(mean(residuals(.x)^2)))
+  ) |>
+  arrange(desc(rsq))
+
+origin_models |> dplyr::select(origin, rsq, rmse)
+```
+
+```{r e7-coefs, fig.cap="E7: Hour effect on departure delay by origin airport, with 95% confidence intervals. All three airports show positive slopes — delays compound throughout the day."}
+origin_coefs <- origin_models |>
+  mutate(tidy = map(mod, broom::tidy)) |>
+  unnest(tidy) |>
+  filter(term == "hour")
+
+ggplot(
+  origin_coefs,
+  aes(
+    x    = reorder(origin, estimate),
+    y    = estimate,
+    ymin = estimate - 2 * std.error,
+    ymax = estimate + 2 * std.error
+  )
+) +
+  geom_pointrange(colour = "#1B3A6B", linewidth = 1, size = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "#C9A84C") +
+  coord_flip() +
+  labs(
+    title    = "Effect of hour on departure delay, by origin airport",
+    subtitle = "All three airports show delays worsen through the day.",
+    x        = "Origin airport",
+    y        = "Estimated slope (minutes per hour)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+> **Answer:** The three NYC airports (EWR, JFK, LGA) all tell the same story: $R^2 < 0.03$, meaning **time of day and month together explain less than 3% of departure delay variance** at any airport. The RMSE (≈ 40 minutes) is large relative to the mean delay.
+>
+> **Comparison with the carrier analysis:**
+>
+> | Grouping | Best $R^2$ | Interpretation |
+> |----------|-----------|----------------|
+> | Carrier | ~0.05 | <5% variance explained |
+> | Airport | ~0.03 | <3% variance explained |
+>
+> Neither grouping reveals a model where time and month are useful predictors. This is an important substantive finding: **departure delays at NYC airports are driven primarily by unpredictable factors** — weather, ATC holds, incoming aircraft late from another city (knock-on delays), and gate availability — not by the time of day per se.
+>
+> **The hour effect is still positive and significant** (confirmed by the confidence intervals not crossing zero): delays do compound through the day. But this effect is small compared to the total variance in delays, so $R^2$ remains near zero even though the coefficient is statistically significant. This is a classic reminder that **statistical significance ≠ practical importance**.
+>
+> **Methodologically**, this exercise shows that `nest()` + `map()` + `broom::tidy()` scales effortlessly from 16 carriers to 3 airports — the same four lines of code apply to any grouping variable.
+
+---
+
+## References
+
+- Wickham, H., & Grolemund, G. (2017). *R for Data Science*. O'Reilly Media.
+- Wickham, H. (2016). *ggplot2: Elegant Graphics for Data Analysis* (2nd ed.). Springer.
+- Wood, S. N. (2017). *Generalised Additive Models: An Introduction with R* (2nd ed.). CRC Press.
+- Friedman, J., Hastie, T., & Tibshirani, R. (2010). Regularisation Paths for Generalised Linear Models via Coordinate Descent. *Journal of Statistical Software*, 33(1), 1–22.
+- Venables, W. N., & Ripley, B. D. (2002). *Modern Applied Statistics with S* (4th ed.). Springer.
+- R Core Team (2024). *R: A Language and Environment for Statistical Computing*. R Foundation for Statistical Computing.

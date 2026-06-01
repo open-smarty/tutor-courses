@@ -1,0 +1,60 @@
+{
+  "id": "module-02-lesson-03",
+  "title": "Quiz: State Classification — Recurrence, Transience, and Ergodicity",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "State j is accessible from state i (written i → j) if:",
+      "options": [
+        "P_{ij} > 0 (the one-step transition probability is positive)",
+        "P_{ij}^{(n)} > 0 for some n > 0 (there exists some number of steps n after which the probability is positive)",
+        "P_{ji}^{(n)} > 0 for some n > 0 (j can reach i in some number of steps)",
+        "States i and j belong to the same equivalence class"
+      ],
+      "correct": 1,
+      "explanation": "Accessibility i → j requires only that there exists SOME n > 0 with P_{ij}^{(n)} > 0 — you can reach j from i in n steps, possibly via intermediate states. Option (a) is the special case n=1, which is stronger than needed. Option (c) reverses the direction (that would be j → i). Option (d) is the definition of communication (i ↔ j), which requires both i → j and j → i."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A Markov chain is irreducible if:",
+      "options": [
+        "It has only one state",
+        "All states communicate with each other — every state can reach every other state",
+        "It has no absorbing states",
+        "The transition matrix has no zero entries"
+      ],
+      "correct": 1,
+      "explanation": "Irreducibility means every pair of states communicates: for any i and j, i → j and j → i. This means there is only one equivalence class. Option (a) is trivially true but not the definition. Option (c) is too strong — a chain can be irreducible while having states that take many steps to reach each other. Option (d) is also too strong; zeros are allowed as long as all states are reachable from each other via multi-step paths."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "A Markov chain that has a stationary distribution always has a limiting distribution (P^n converges as n → ∞).",
+      "correct": false,
+      "explanation": "False. The alternating chain P = [[0,1],[1,0]] has stationary distribution π = (1/2, 1/2), which you can verify satisfies πP = π. However, P^n alternates between the identity matrix and P itself for even and odd n, so it never converges. A limiting distribution requires the chain to be aperiodic in addition to having a stationary distribution."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A state i is called recurrent if:",
+      "options": [
+        "It can be reached from any other state in the chain",
+        "Starting from state i, the process returns to state i with probability 1",
+        "The mean recurrence time μ_i is infinite",
+        "The one-step self-transition probability P_{ii} is positive"
+      ],
+      "correct": 1,
+      "explanation": "Recurrence means f_{ii}^{(*)} = 1: starting from i, the probability of ever returning to i is exactly 1. Option (a) describes accessibility from other states, which is unrelated to recurrence. Option (c) describes null recurrence specifically — which is a subtype of recurrence, not the definition. Option (d) is neither necessary nor sufficient."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "An ergodic Markov chain is one that is irreducible, positive recurrent, and aperiodic — and it is guaranteed to converge to its unique stationary distribution from any starting state.",
+      "correct": true,
+      "explanation": "True. Ergodicity is the combination of irreducibility (all states communicate), positive recurrence (finite mean return times), and aperiodicity (period 1 for all states). The ergodic theorem then guarantees that P_{ij}^{(n)} → π_j > 0 for all i and j as n → ∞, where π is the unique stationary distribution. For finite chains, positive recurrence is automatic when the chain is irreducible."
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+---
+title: "BDAT 608 | Module 5, Lesson 1 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(cvAUC)
+options(na.action = na.warn)
+
+data("admissions", package = "cvAUC")
+admit <- as_tibble(admissions)
+
+set.seed(77)
+claims <- tibble(
+  age     = runif(300, 18, 70),
+  veh_age = runif(300, 0, 15),
+  n_claims = rpois(300, lambda = exp(0.02 * age - 0.05 * veh_age - 0.5))
+)
+```
+
+## Task 1 — Logistic Regression
+
+```{r logistic-fit}
+mod_logit <- glm(Y ~ quant + verbal + gpa + toptier,
+                 data = admit, family = binomial(link = "logit"))
+summary(mod_logit)
+exp(coef(mod_logit)) |> round(3)
+```
+
+## Task 2 — Admission Probability Plot
+
+```{r logistic-plot}
+admit |>
+  data_grid(verbal = seq_range(verbal, 20), quant, gpa, toptier) |>
+  add_predictions(mod_logit, type = "response") |>
+  ggplot(aes(verbal, pred, colour = factor(toptier))) +
+  geom_line(linewidth = 1) +
+  scale_colour_manual(values = c("#1B3A6B", "#C9A84C"),
+                      labels = c("Non-top-tier", "Top-tier")) +
+  labs(y = "P(Admit)", title = "Admission probability vs verbal score",
+       colour = "School tier") +
+  theme_minimal(base_size = 13)
+```
+
+## Task 3 — Poisson Regression
+
+```{r poisson-fit}
+mod_pois <- glm(n_claims ~ age + veh_age,
+                data = claims, family = poisson(link = "log"))
+exp(coef(mod_pois)) |> round(3)
+```
+
+Each unit increase in driver age multiplies expected claims by ~1.02 (+2%), holding vehicle age constant.
+
+## Task 4 — Claims Prediction Plot
+
+```{r poisson-plot}
+claims |>
+  data_grid(age = seq_range(age, 10), veh_age = c(2, 8)) |>
+  add_predictions(mod_pois, type = "response") |>
+  ggplot(aes(age, pred, colour = factor(veh_age))) +
+  geom_line(linewidth = 1.2) +
+  scale_colour_manual(values = c("#C9A84C", "#1B3A6B"),
+                      labels = c("Vehicle age 2", "Vehicle age 8")) +
+  labs(y = "Expected claims", title = "Poisson GLM: expected claims by driver age",
+       colour = "Vehicle age") +
+  theme_minimal(base_size = 13)
+```
+
+## Reflection
+
+The coefficient 0.8 is on the **log-odds scale**, not the probability scale. Probabilities range from 0 to 1, while log-odds range from $-\infty$ to $+\infty$. The correct interpretation is: a one-unit increase in GPA multiplies the **odds** of admission by $e^{0.8} \approx 2.23$ (+123% increase in odds). The actual change in probability depends on the baseline probability — if it is very high or very low, even a large odds ratio produces a small change in probability.

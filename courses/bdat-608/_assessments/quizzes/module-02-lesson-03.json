@@ -1,0 +1,66 @@
+{
+  "id": "module-02-lesson-03",
+  "title": "Quiz: Closed-Form OLS with lm()",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the lm() summary output, what does the 'Std. Error' column represent?",
+      "options": [
+        "The residual standard deviation of the response variable",
+        "The standard deviation of the estimated coefficient across repeated samples",
+        "The absolute value of the residuals",
+        "The standard deviation of the predictor variable x"
+      ],
+      "correct": 1,
+      "explanation": "The standard error of a coefficient measures how precisely it is estimated — it is the standard deviation of the sampling distribution of that coefficient. Smaller Std. Error = more precise estimate."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "An lm() summary shows R-squared = 0.86. What does this mean?",
+      "options": [
+        "86% of observations lie within one standard deviation of the fitted line",
+        "The model makes correct predictions 86% of the time",
+        "86% of the variance in y is explained by the predictor(s) in the model",
+        "There is an 86% probability that the model is correctly specified"
+      ],
+      "correct": 2,
+      "explanation": "R-squared is the proportion of variance in the response (y) explained by the model. R² = 0.86 means the predictor(s) account for 86% of the variation in y; the remaining 14% is unexplained (residual)."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "lm() uses an iterative algorithm and therefore requires starting values, just like optim().",
+      "correct": false,
+      "explanation": "lm() uses QR decomposition — a direct (non-iterative) algorithm that computes the exact solution in one pass. No starting values are needed."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "What does confint(sim1_mod) return?",
+      "options": [
+        "A vector of fitted values for each observation",
+        "Confidence intervals for the fitted values at each observed x",
+        "Confidence intervals for the model coefficients (intercept and slope)",
+        "A hypothesis test for the overall model fit"
+      ],
+      "correct": 2,
+      "explanation": "confint() computes confidence intervals for each coefficient (by default, 95%). These are the intervals within which the true parameter values are expected to fall with the stated confidence level."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "The p-value for the slope in an lm() summary is 0.0001. This tells you that:",
+      "options": [
+        "There is a 0.01% chance that x causes y",
+        "If the true slope were zero, observing a slope this large or larger purely by chance has probability 0.0001",
+        "The slope estimate is exactly 0.0001",
+        "The model explains 99.99% of the variance in y"
+      ],
+      "correct": 1,
+      "explanation": "A p-value is the probability of observing a test statistic as extreme as the one computed, assuming the null hypothesis (β=0) is true. Small p-values indicate that the null hypothesis is unlikely given the data."
+    }
+  ]
+}

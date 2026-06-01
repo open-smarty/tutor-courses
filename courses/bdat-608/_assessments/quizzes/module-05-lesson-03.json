@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-03",
+  "title": "Quiz: Penalised Regression and Decision Trees",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "What happens to LASSO coefficients as lambda increases?",
+      "options": [
+        "They all increase toward their OLS values",
+        "They shrink toward zero and some become exactly zero",
+        "They become negative regardless of the sign of the true effect",
+        "They remain unchanged until lambda exceeds 1"
+      ],
+      "correct": 1,
+      "explanation": "As lambda increases, the L1 penalty grows stronger, forcing more coefficients to exactly zero. At the largest lambda, all coefficients are zero (the null model)."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "Ridge regression (alpha = 0) can set individual coefficients exactly to zero, performing automatic variable selection.",
+      "correct": false,
+      "explanation": "Ridge uses an L2 penalty (sum of squared coefficients). This shrinks all coefficients toward zero but never sets any of them exactly to zero. Only LASSO (L1 penalty) produces exact zeros."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In cv.glmnet(), what does lambda.min represent?",
+      "options": [
+        "The minimum value of lambda in the penalty path",
+        "The lambda value that minimises cross-validated prediction error",
+        "The lambda value that gives the fewest non-zero coefficients",
+        "The value of lambda at which all coefficients become zero"
+      ],
+      "correct": 1,
+      "explanation": "lambda.min is the value of the regularisation parameter that produces the lowest average cross-validated error across the folds. lambda.1se is a slightly larger (more regularised) lambda still within one SE of the minimum."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "What is the key visual characteristic of a decision tree's prediction surface compared to a linear model's?",
+      "options": [
+        "The tree surface is a smooth gradient; the linear surface is piecewise flat",
+        "The tree surface is piecewise constant with rectangular boundaries; the linear surface is a plane",
+        "Both surfaces are identical when the tree has maximum depth",
+        "The tree surface is always lower (fewer predicted values) than the linear surface"
+      ],
+      "correct": 1,
+      "explanation": "Decision trees partition the space into rectangular regions and predict the mean response within each region. This creates a step-function (piecewise constant) surface with hard edges, unlike the smooth plane of a linear model."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "You have p = 200 predictors and n = 150 observations. Ordinary OLS cannot be fitted because X^T X is not invertible. Which approach is appropriate?",
+      "options": [
+        "Increase the dataset size before fitting any model",
+        "Use Ridge or LASSO regularisation, which can fit models when p > n",
+        "Remove predictors until p < n, using expert judgement only",
+        "Use a decision tree, which does not require matrix inversion"
+      ],
+      "correct": 1,
+      "explanation": "Ridge and LASSO regularisation add a penalty that makes the optimisation problem well-posed even when p > n. They effectively shrink or select among the many predictors, producing stable estimates without needing n > p."
+    }
+  ]
+}

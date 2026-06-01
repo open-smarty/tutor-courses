@@ -1,0 +1,60 @@
+{
+  "id": "module-03-lesson-01",
+  "title": "Quiz: Branching Processes — Extinction and Population Growth",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a Galton-Watson branching process, X_n represents:",
+      "options": [
+        "The probability of extinction at generation n",
+        "The number of individuals alive in generation n",
+        "The number of offspring of the n-th individual",
+        "The probability generating function evaluated at n"
+      ],
+      "correct": 1,
+      "explanation": "X_n is defined as the population size — the number of individuals alive at generation n. We always start with X_0 = 1 (one founding individual). It is a random variable, not a probability or a p.g.f. value."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "If the mean offspring m = E(X_1) = 0.7, the probability of ultimate extinction is:",
+      "options": [
+        "0.7",
+        "0.3",
+        "1",
+        "Cannot be determined without knowing σ²"
+      ],
+      "correct": 2,
+      "explanation": "When m ≤ 1 (subcritical or critical), the probability of ultimate extinction is exactly 1 — the population dies out with certainty, regardless of the variance. The variance σ² only affects the speed of decline and the formula for Var(X_n), not the extinction probability."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "If m > 1 in a branching process, the population is guaranteed to survive forever.",
+      "correct": false,
+      "explanation": "False. Even when m > 1 (supercritical regime), there is a positive probability of extinction. Early generations can be unlucky — several founders may produce zero offspring — and drive the process to the absorbing state 0 before it has a chance to grow. The extinction probability q satisfies 0 < q < 1; it is the smallest non-negative fixed point of the p.g.f. f(z) = z."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The probability of ultimate extinction q satisfies:",
+      "options": [
+        "q = m",
+        "q = f(q), where f is the p.g.f. of the offspring distribution",
+        "q = 1/m",
+        "q = f(1)"
+      ],
+      "correct": 1,
+      "explanation": "By conditioning on the size of the first generation, q must equal f(q): each of the r first-generation offspring (with probability P_r) independently starts its own process with extinction probability q, giving q = Σ P_r · q^r = f(q). We then take the smallest non-negative root in [0,1]."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "For the offspring distribution P_0 = 1/2, P_2 = 1/2 (each individual either has 0 or 2 offspring with equal probability), the mean is m = 1, and the population will eventually go extinct with probability 1.",
+      "correct": true,
+      "explanation": "True. The mean offspring is m = 0×(1/2) + 2×(1/2) = 1, which is the critical case. By the extinction theorem, whenever m ≤ 1 the extinction probability q = 1. Although E(X_n) = 1 for all n (the expected size never changes), the variance grows linearly (Var(X_n) = n·σ²), and the process is eventually absorbed at 0 with probability 1."
+    }
+  ]
+}

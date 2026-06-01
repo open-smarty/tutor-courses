@@ -1,0 +1,90 @@
+---
+title: "BDAT 608 | Module 5, Lesson 3 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+library(glmnet)
+library(rpart)
+library(rpart.plot)
+options(na.action = na.warn)
+data("sim4", package = "modelr")
+```
+
+## Task 1 — Simulate Data and Fit Ridge/LASSO
+
+```{r simulate-data}
+set.seed(2024); p <- 50; n <- 200
+X <- matrix(rnorm(n*p), n, p)
+y_pen <- 2 * X[,1] - 1.5 * X[,2] + rnorm(n)
+
+mod_ridge <- glmnet(X, y_pen, alpha = 0)
+mod_lasso <- glmnet(X, y_pen, alpha = 1)
+```
+
+## Task 2 — Cross-Validate LASSO
+
+```{r lasso-cv}
+cv_lasso    <- cv.glmnet(X, y_pen, alpha = 1, nfolds = 10)
+plot(cv_lasso)
+best_lambda <- cv_lasso$lambda.min
+cat("lambda.min:", round(best_lambda, 4), "\n")
+```
+
+## Task 3 — Inspect Coefficients
+
+```{r lasso-coefs}
+coef(cv_lasso, s = "lambda.min")[1:6, ]
+# V1 ≈ 2, V2 ≈ -1.5, V3-V6 = 0
+# LASSO correctly identified V1 and V2 as the active predictors.
+```
+
+## Task 4 — Coefficient Paths
+
+```{r lasso-paths}
+plot(mod_lasso, xvar = "lambda",
+     main = "LASSO coefficient paths  (only 2 true predictors)")
+abline(v = log(best_lambda), lty = 2, col = "darkred")
+```
+
+## Task 5 — Decision Tree on sim4
+
+```{r tree-fit}
+tree_mod <- rpart(y ~ x1 + x2, data = sim4,
+                  control = rpart.control(maxdepth = 4, cp = 0.01))
+rpart.plot(tree_mod, type = 4, extra = 101, col = "#1B3A6B",
+           main = "Regression tree: y ~ x1 + x2")
+```
+
+## Task 6 — Tree Prediction Surface
+
+```{r tree-surface}
+grid4_tree <- sim4 |>
+  data_grid(x1 = seq_range(x1, 30), x2 = seq_range(x2, 30)) |>
+  add_predictions(tree_mod)
+
+ggplot(grid4_tree, aes(x1, x2, fill = pred)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  labs(title = "Tree: piecewise-constant prediction surface", fill = "ŷ") +
+  theme_minimal(base_size = 13)
+```
+
+The tree surface shows hard rectangular boundaries — predictions are constant within each rectangular leaf region, unlike the smooth gradient of the OLS or GAM surfaces.
+
+## Reflection
+
+LASSO is more appropriate for sparse signals because it sets irrelevant coefficients **exactly to zero**, effectively removing those variables from the model. This produces a sparse, interpretable model that keeps only V1 and V2. Ridge shrinks all 50 coefficients but leaves them non-zero, making the model harder to interpret and potentially including noisy predictors that inflate prediction variance. When the true model involves only a few active predictors among many candidates, LASSO's $\ell_1$ penalty induces exactly the right kind of sparsity.

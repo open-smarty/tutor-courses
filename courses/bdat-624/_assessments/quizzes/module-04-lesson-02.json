@@ -1,0 +1,60 @@
+{
+  "id": "module-04-lesson-02",
+  "title": "Quiz: The Pure Death Process",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the simple pure death process, the death rate when the population size is n is:",
+      "options": [
+        "μ (constant, regardless of how many individuals remain)",
+        "nμ (each individual dies independently at rate μ, so n individuals contribute nμ in total)",
+        "μ/n (death rate slows as population grows)",
+        "n²μ (quadratically increasing with population)"
+      ],
+      "correct": 1,
+      "explanation": "The defining assumption of the simple pure death process is μₙ = nμ. Each of the n individuals dies independently at rate μ, so the aggregate death rate when the population is n is nμ. This is exactly analogous to λₙ = nλ in the Yule process, but acting as deaths rather than births."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "X(t) | X(0) = j ~ Binomial(j, e^{−μt}) means:",
+      "options": [
+        "Each of the j initial individuals survives to time t independently, with probability e^{−μt}",
+        "The population grows following the binomial expansion theorem",
+        "Exactly j individuals die at the deterministic time t = 1/μ",
+        "The binomial parameter e^{−μt} increases over time"
+      ],
+      "correct": 0,
+      "explanation": "Because each individual dies at rate μ independently, the lifetime of each individual is Exp(μ) with survival function e^{−μt}. The number of individuals still alive at time t is therefore the count of successes (survivals) in j independent Bernoulli(e^{−μt}) trials — a Binomial(j, e^{−μt}) distribution. Note that e^{−μt} decreases over time (not increases), since more individuals die as time passes."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In a pure death process starting at j = 100 individuals with death rate μ, the mean time to extinction equals ln(j)/μ = ln(100)/μ.",
+      "correct": false,
+      "explanation": "This statement is false. While E[X(t)] = 100·e^{−μt} reaches 1 at t = ln(100)/μ, this is the time at which we expect one survivor on average — not the exact time of extinction. The actual extinction event requires all 100 individuals to die, and its distribution is the maximum of 100 independent Exp(μ) random variables. The expected maximum is (1 + 1/2 + 1/3 + ... + 1/100)/μ ≈ 5.187/μ, which is much larger than ln(100)/μ ≈ 4.605/μ."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "With μ = 0.2 per hour and j = 100 initial bacteria, at what time t is the expected surviving population E[X(t)] = 50?",
+      "options": [
+        "t = 1 hour",
+        "t = ln(2)/0.2 ≈ 3.47 hours",
+        "t = 50 hours",
+        "t = 100/μ = 500 hours"
+      ],
+      "correct": 1,
+      "explanation": "Set je^{−μt} = j/2, which gives e^{−μt} = 1/2, so −μt = −ln 2, and t = ln(2)/μ = 0.693/0.2 ≈ 3.47 hours. This is the biological half-life of the population under constant per-capita mortality."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The pure death process and the pure birth (Yule) process are mirror images: the birth process produces a negative binomial distribution while the death process produces a binomial distribution.",
+      "correct": true,
+      "explanation": "True. In the Yule process (pure birth), X(t) | X(0) = j ~ NegBin(j, e^{−λt}) and the mean grows as je^{λt}. In the pure death process, X(t) | X(0) = j ~ Binomial(j, e^{−μt}) and the mean decays as je^{−μt}. Both stem from independent individual-level exponential events, but birth creates new individuals while death removes them. The mathematical duality is exact: replacing λ with −μ (and adjusting the direction of the parameter space) maps one into the other."
+    }
+  ]
+}

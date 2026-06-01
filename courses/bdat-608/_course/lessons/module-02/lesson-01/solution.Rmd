@@ -1,0 +1,79 @@
+---
+title: "BDAT 608 | Module 2, Lesson 1 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+```
+
+## Task 1 — Implement Loss Functions
+
+```{r loss-functions}
+model1 <- function(a, data) {
+  a[1] + data$x * a[2]
+}
+
+measure_distance <- function(mod, data) {
+  resid <- data$y - model1(mod, data)
+  sqrt(mean(resid^2))
+}
+
+measure_mae <- function(mod, data) {
+  resid <- data$y - model1(mod, data)
+  mean(abs(resid))
+}
+```
+
+## Task 2 — Compare Candidates on sim1
+
+```{r compare-candidates}
+candidates <- list(c1 = c(7, 1.5), c2 = c(5, 2.0), c3 = c(4, 2.0))
+
+results_sim1 <- tibble(
+  candidate = names(candidates),
+  intercept = sapply(candidates, `[`, 1),
+  slope     = sapply(candidates, `[`, 2),
+  RMSE      = sapply(candidates, measure_distance, data = sim1),
+  MAE       = sapply(candidates, measure_mae,      data = sim1)
+)
+print(results_sim1)
+```
+
+**Lowest RMSE on sim1:** candidate `c3` (intercept = 4, slope = 2) has the lowest RMSE and MAE among these three. The true OLS fit is approximately intercept = 4.22, slope = 2.05, so `c3` is closest.
+
+## Task 3 — Heavy-Tailed Noise
+
+```{r heavy-tailed}
+set.seed(42)
+sim1a <- tibble(
+  x = rep(1:10, each = 3),
+  y = x * 1.5 + 6 + rt(length(x), df = 2)
+)
+
+results_sim1a <- tibble(
+  candidate = names(candidates),
+  RMSE      = sapply(candidates, measure_distance, data = sim1a),
+  MAE       = sapply(candidates, measure_mae,      data = sim1a)
+)
+print(results_sim1a)
+```
+
+Under heavy-tailed noise the two criteria may rank candidates differently because Student-$t$(df=2) occasionally produces extreme values that inflate RMSE much more than MAE.
+
+## Reflection
+
+RMSE and MAE measure "closeness" differently: RMSE squares each residual (amplifying large errors), while MAE takes the absolute value (treating all magnitudes linearly). A candidate with one very large residual will have a high RMSE but a moderate MAE. Therefore the "best" candidate depends on the loss — different loss functions define different optimal parameters. The loss function is not a neutral technical choice; it encodes an assumption about what kind of error matters more.

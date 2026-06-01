@@ -1,0 +1,66 @@
+{
+  "id": "module-03-lesson-01",
+  "title": "Quiz: Predictions and Residuals with modelr",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "What does data_grid(x) do when x is a continuous variable with values 1–10?",
+      "options": [
+        "Returns only the unique observed values of x from the dataset",
+        "Creates a new data frame with a single evenly spaced sequence of x values spanning the observed range",
+        "Generates a random sample of x values from a normal distribution",
+        "Subsets the original dataset to rows where x is an integer"
+      ],
+      "correct": 1,
+      "explanation": "data_grid() creates an evenly spaced prediction grid over the range of each specified variable. For integer x = 1:10, it returns one row per unique value."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "add_residuals(sim1_mod) computes which quantity for each row?",
+      "options": [
+        "The predicted value ŷ",
+        "The standardised residual (residual / standard error)",
+        "The observed y minus the predicted ŷ",
+        "The Cook's distance for each observation"
+      ],
+      "correct": 2,
+      "explanation": "A residual = observed y − predicted ŷ. add_residuals() adds this as a new column (named 'resid' by default) to the original data frame."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "If the residuals-vs-predictor plot shows a perfectly random cloud of points centred at zero, you should try adding more predictors to improve the model.",
+      "correct": false,
+      "explanation": "Random scatter around zero is the ideal outcome — it means the model has captured all systematic variation. Adding predictors is only warranted if residuals show a pattern (curve, fan shape, or non-zero mean)."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "You fit a model and add_residuals() to a dataset. The residuals form a fan shape — small spread at low x, large spread at high x. What assumption is violated?",
+      "options": [
+        "Linearity of the mean function",
+        "Homoscedasticity (constant variance of residuals)",
+        "Independence of observations",
+        "Normality of the response variable"
+      ],
+      "correct": 1,
+      "explanation": "A fan shape in residuals indicates heteroscedasticity — the variance of the residuals is not constant across predictor values. OLS assumes constant variance (homoscedasticity)."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "add_predictions() works with 'any model that has a predict() method'. What does this mean in practice?",
+      "options": [
+        "It only works with lm() models",
+        "It can be used with glm(), gam(), rpart(), and other model types, not just lm()",
+        "It requires the model to be re-fitted before adding predictions",
+        "It returns predictions only for the training data, not new observations"
+      ],
+      "correct": 1,
+      "explanation": "add_predictions() calls predict(model, newdata = ...) internally. Since glm(), gam(), rpart(), and many other R model objects have a predict() method, add_predictions() works with all of them."
+    }
+  ]
+}

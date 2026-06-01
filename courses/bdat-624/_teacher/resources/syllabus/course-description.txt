@@ -1,0 +1,6 @@
+BDAT 624
+Biostatistical Processes and Analytics
+Credit Hours - 3
+
+As a specific part of the Big Data Analytics program, this course gives students advanced statistical tools and methods for biological data analysis.
+With an emphasis on the utilization of stochastic processes, survival analysis, and biostatistics in the context of data analytics, the course equips students with the knowledge and abilities needed to take on challenging issues in biology, health, and related subjects. Students will gain the ability to apply these techniques to huge datasets and 42 make relevant inferences and predictions through case studies and practical exercises. This course aims to enhance students' understanding of biostatistical methods in data analytics. Topics to be covered include: Introduction and Applications of Biostatistics in Data Analytics, Survival Analysis in Data Analytics (Parametric and Non-Parametric Survival estimates, Proportional hazard models, Accelerated failure time model, hypothesis testing) Stochastic Processes in Biostatistics (Statistical processes, Linear growth population models, competing risk etc)

@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-02",
+  "title": "Quiz: Robust Regression and Generalised Additive Models",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In robust regression with Huber's M-estimator, how are large residuals treated compared to OLS?",
+      "options": [
+        "Large residuals are excluded completely from the loss calculation",
+        "Large residuals are squared, just like in OLS",
+        "Large residuals are assigned linear (not quadratic) weight, reducing their influence",
+        "Large residuals are replaced by their absolute value before squaring"
+      ],
+      "correct": 2,
+      "explanation": "The Huber loss is quadratic for small residuals (|r| ≤ k) but linear for large residuals (|r| > k). This caps the influence of outliers — they contribute linearly, not quadratically."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "In a GAM, edf = 1.0 for a smooth term s(x) means the relationship between x and y is estimated to be perfectly linear.",
+      "correct": true,
+      "explanation": "edf = 1 means the smooth degenerates to a straight line — mgcv estimated that no non-linearity is needed. You can replace s(x) with the linear term x without loss of fit."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "When would you prefer MASS::rlm() over lm()?",
+      "options": [
+        "When you need p-values for the coefficients",
+        "When the residuals contain a few large outliers that may not represent the bulk of the data",
+        "When the response variable is binary",
+        "When the model has more than 10 predictors"
+      ],
+      "correct": 1,
+      "explanation": "rlm() is designed for situations where some observations have unusually large residuals (outliers or contaminated data). By down-weighting large residuals, it produces estimates that reflect the bulk of the data."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In mgcv::gam(), what does te(x1, x2) do differently from s(x1) + s(x2)?",
+      "options": [
+        "te() fits separate linear models for x1 and x2",
+        "te() estimates a 2D interaction surface; s(x1) + s(x2) assumes the effects are additive",
+        "te() requires x1 and x2 to be categorical variables",
+        "te() forces edf = 1 for both x1 and x2"
+      ],
+      "correct": 1,
+      "explanation": "s(x1) + s(x2) is an additive model: the effect of x1 on y is the same regardless of x2 (and vice versa). te(x1, x2) fits a tensor-product smooth — a full 2D surface that allows the effect of x1 to depend on x2."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "method = 'REML' in gam() is preferred over method = 'ML' because:",
+      "options": [
+        "REML is faster to compute for large datasets",
+        "REML produces less biased estimates of the smoothness parameters, reducing overfitting",
+        "REML allows the model to have more knots",
+        "REML is the only method that supports te() tensor smooths"
+      ],
+      "correct": 1,
+      "explanation": "Restricted Maximum Likelihood (REML) treats the smoothness parameters as variance components and estimates them more accurately than ML, which tends to undersmooth (overfit). REML is the recommended default in mgcv."
+    }
+  ]
+}

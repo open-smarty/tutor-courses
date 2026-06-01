@@ -1,0 +1,60 @@
+{
+  "id": "module-01-lesson-01",
+  "title": "Quiz: What is a Stochastic Process?",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A researcher tracks whether a patient is in remission or relapse every month for two years. What type of stochastic process is this?",
+      "options": [
+        "Continuous time, continuous state",
+        "Discrete time, discrete state",
+        "Continuous time, discrete state",
+        "Discrete time, continuous state"
+      ],
+      "correct": 1,
+      "explanation": "The parameter space is discrete (monthly checkups — T = {0, 1, 2, ...} months) and the state space is discrete (remission vs relapse — S = {Remission, Relapse}). This makes it a Type I discrete-time, discrete-state process."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In the notation {X(t), t ∈ T}, the parameter space T is:",
+      "options": [
+        "The set of all possible states the process can take",
+        "The index set — usually time — over which the process is defined",
+        "The probability distribution of X at each time point",
+        "The transition probability matrix"
+      ],
+      "correct": 1,
+      "explanation": "T is the parameter space (index set). It is the set of values that the index t ranges over — most often representing time. The set of values X(t) can take is the state space S, not T."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "In the notation {X(t), t ∈ T}, the symbol X(t) at a specific time t represents a single fixed number.",
+      "correct": false,
+      "explanation": "X(t) is a random variable, not a fixed number. Before the outcome is observed, X(t) could take any value in the state space S with various probabilities. Only after the process is realised do we observe a specific value x(t) (lowercase). The collection of all realisations is called a sample path."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The number of active COVID-19 cases in a hospital ward, monitored at any point in continuous time, is an example of:",
+      "options": [
+        "Discrete time, continuous state",
+        "Continuous time, continuous state",
+        "Continuous time, discrete state",
+        "Discrete time, discrete state"
+      ],
+      "correct": 2,
+      "explanation": "The number of active cases is always an integer (0, 1, 2, ... — a discrete state space), but it can change at any instant in continuous time when a patient is admitted or discharged. This is a Type II continuous-time, discrete-state process."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "A deterministic model is always sufficient when we want to predict the long-run average behaviour of a biological system.",
+      "correct": false,
+      "explanation": "A deterministic model can capture the mean trajectory, but it completely misses variability and rare but important events. Near critical thresholds — such as when a population is small and close to extinction — stochastic fluctuations dominate. For instance, a bacterial colony with expected size 2 has a substantial probability of dying out even though the deterministic model predicts stable persistence. Randomness is intrinsic, not just noise."
+    }
+  ]
+}

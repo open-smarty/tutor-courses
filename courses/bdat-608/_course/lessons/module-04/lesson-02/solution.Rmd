@@ -1,0 +1,82 @@
+---
+title: "BDAT 608 | Module 4, Lesson 2 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 9, fig.height = 5)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+data("sim3", package = "modelr")
+sim1_base <- sim1
+```
+
+## Task 1 — Fit Models on sim3
+
+```{r fit-sim3}
+mod_add <- lm(y ~ x1 + x2,  data = sim3)
+mod_int <- lm(y ~ x1 * x2,  data = sim3)
+
+grid_sim3 <- sim3 |>
+  data_grid(x1, x2) |>
+  gather_predictions(mod_add, mod_int)
+
+ggplot(sim3, aes(x1, y, colour = x2)) +
+  geom_point(alpha = 0.6) +
+  geom_line(data = grid_sim3, aes(y = pred), linewidth = 1) +
+  facet_wrap(~ model, labeller = label_both) +
+  labs(title = "Additive (+) vs Interaction (*) model on sim3") +
+  theme_minimal(base_size = 12)
+```
+
+## Task 2 — Residual Comparison
+
+```{r residuals-sim3}
+sim3 |>
+  gather_residuals(mod_add, mod_int) |>
+  ggplot(aes(x1, resid, colour = x2)) +
+  geom_point(alpha = 0.8) +
+  geom_ref_line(h = 0) +
+  facet_grid(model ~ x2) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(title = "Residuals: additive vs interaction", y = "Residual") +
+  theme_minimal(base_size = 11)
+# mod_add residuals show systematic within-group patterns (slopes differ by group).
+# mod_int residuals show random scatter — the interaction captures the slope differences.
+```
+
+## Task 3 — AIC Comparison
+
+```{r aic-sim3}
+AIC(mod_add, mod_int)
+cat("Additive R²:   ", round(summary(mod_add)$r.squared, 4), "\n")
+cat("Interaction R²:", round(summary(mod_int)$r.squared, 4), "\n")
+# Interaction model has lower AIC → preferred for sim3.
+```
+
+## Task 4 — I() vs ^ in Formulas
+
+```{r formula-demo}
+# WRONG: y ~ x^2 + x collapses to y ~ x
+model_matrix(sim1_base, y ~ x^2 + x) |> head(3)
+
+# CORRECT: I() protects exponentiation
+model_matrix(sim1_base, y ~ I(x^2) + x) |> head(3)
+# Two distinct columns: (Intercept), I(x^2), x
+```
+
+## Reflection
+
+If the interaction model has higher AIC than the additive model, it means the extra parameters (the `x1:x2` interaction terms) do not improve the fit enough to justify their complexity cost. The data do not show evidence that the slope of `x1` differs meaningfully across groups. This illustrates the **parsimony principle**: prefer the simpler model when the added complexity does not measurably improve predictive performance. AIC quantifies this trade-off by penalising each additional parameter.

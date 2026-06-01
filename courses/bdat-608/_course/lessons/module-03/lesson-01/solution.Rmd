@@ -1,0 +1,74 @@
+---
+title: "BDAT 608 | Module 3, Lesson 1 — SOLUTION"
+author: "Instructor Reference"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r libraries}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+data("sim1", package = "modelr")
+sim1_mod <- lm(y ~ x, data = sim1)
+```
+
+## Task 1 — Prediction Grid
+
+```{r prediction-grid}
+grid <- sim1 |>
+  data_grid(x) |>
+  add_predictions(sim1_mod)
+print(grid)
+```
+
+## Task 2 — Plot Data and Fitted Line
+
+```{r fitted-line-plot}
+ggplot(sim1, aes(x)) +
+  geom_point(aes(y = y), colour = "#1B3A6B", size = 2.5) +
+  geom_line(aes(y = pred), data = grid, colour = "#C9A84C", linewidth = 1.3) +
+  labs(
+    title   = "sim1: Data and Fitted Line",
+    y       = expression(y ~ "/" ~ hat(y)),
+    caption = "Gold line = OLS fitted values"
+  ) +
+  theme_minimal(base_size = 13)
+```
+
+## Task 3 — Residual Distribution
+
+```{r residual-distribution}
+sim1 <- sim1 |> add_residuals(sim1_mod)
+
+ggplot(sim1, aes(resid)) +
+  geom_freqpoly(binwidth = 0.5, colour = "#1B3A6B", linewidth = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "#C9A84C") +
+  labs(title = "Distribution of residuals", x = "Residual (y − ŷ)") +
+  theme_minimal(base_size = 13)
+```
+
+The residuals are approximately symmetric around zero, with no obvious skew — consistent with the normality assumption.
+
+## Task 4 — Residuals vs x
+
+```{r residuals-vs-x}
+ggplot(sim1, aes(x, resid)) +
+  geom_ref_line(h = 0, colour = "#C9A84C") +
+  geom_point(colour = "#1B3A6B", size = 2.5) +
+  labs(title = "Residuals vs x", y = "Residual (y − ŷ)") +
+  theme_minimal(base_size = 13)
+# No visible pattern — random scatter around zero. The linear model is correctly specified.
+```
+
+## Reflection
+
+A curved band in the residuals-vs-x plot (e.g., a U-shape) would indicate that the linear mean is misspecified: the true relationship between x and y is non-linear. The model is systematically over-predicting in the middle of the x range and under-predicting at the extremes (or vice versa). The next step would be to add a non-linear term to the model — for example, a quadratic term `I(x^2)` or a natural spline `ns(x, df=3)` — and recheck the residuals.
