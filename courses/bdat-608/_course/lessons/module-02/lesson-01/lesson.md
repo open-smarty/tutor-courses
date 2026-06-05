@@ -1,86 +1,85 @@
-# Lesson 3: Loss Functions — RMSE and MAE
+# Lesson 1: Loss Functions — RMSE and MAE
 
 ## Goal
 
-Implement Root Mean Squared Error (RMSE) and Mean Absolute Error (MAE) as R functions, evaluate them on candidate models, and explain when each is preferred.
+Define and implement RMSE and MAE as R functions, explain when each is preferred, and use a random search to find approximate model parameters before closed-form methods are introduced.
 
 ## Concept
 
-To "fit" a model means to find the parameter values that bring the model's predictions as close as possible to the observed data. But "close" needs a precise definition — that is what a **loss function** provides.
+Every fitting procedure needs a way to measure how wrong a model is. That measure is called a **loss function**. It takes the model's predictions $\hat{y}_i$ and the observed values $y_i$ and returns a single number — the total cost of being wrong. Lower is better.
 
-### RMSE — Root Mean Squared Error
+**Root Mean Squared Error (RMSE).** We define:
 
-$$\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2}$$
+$$\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}$$
 
-- Residuals are **squared** before averaging, so large errors are penalised much more heavily than small ones.
-- Minimising RMSE is mathematically equivalent to **Ordinary Least Squares (OLS)**.
-- The squaring makes OLS sensitive to outliers: a single extreme point can pull the entire fitted line toward itself.
+Step by step: (1) compute each residual $e_i = y_i - \hat{y}_i$; (2) square each residual $e_i^2$ — this penalises large errors more than small ones and removes the sign; (3) average the squared residuals; (4) take the square root to put the result back in the original units.
 
-### MAE — Mean Absolute Error
+**Why squaring matters.** Squaring has two effects. First, it makes errors positive (so they do not cancel). Second, it penalises large errors disproportionately — an error of 10 contributes 100 to the sum, while an error of 1 contributes only 1. This means RMSE is sensitive to outliers: a single very large residual can dominate the entire loss.
 
-$$\text{MAE} = \frac{1}{n}\sum_{i=1}^n |y_i - \hat{y}_i|$$
+**Mean Absolute Error (MAE).** The alternative is:
 
-- All residuals are weighted by their **absolute** magnitude — no squaring.
-- No single large residual dominates.
-- MAE is more resistant to outliers than RMSE.
+$$\text{MAE} = \frac{1}{n}\sum_{i=1}^{n}|y_i - \hat{y}_i|$$
 
-### When to prefer each
+MAE treats all errors on the same scale — an error of 10 is ten times worse than an error of 1, no more. This makes MAE more **robust** to outliers. The trade-off: MAE is not differentiable at zero, which makes calculus-based optimisation trickier.
 
-| Criterion | Prefer when |
-|-----------|------------|
-| RMSE (OLS) | Noise is approximately normally distributed; outliers are rare |
-| MAE | Noise has heavy tails; outliers are present or expected |
+**Which to use?** RMSE if you believe errors are roughly normally distributed and outliers are genuine data. MAE if you expect contaminated data or outliers that should not dominate the fit.
 
-> The choice of loss function is a modelling decision that affects which line you end up with. It is worth making consciously.
+**Random search.** Before using any smart optimiser, we can understand model fitting by brute force: generate many random parameter pairs $(\beta_0, \beta_1)$, evaluate the RMSE for each, and pick the pair with the smallest RMSE. This is slow but illuminating — it shows that "fitting" is just searching for the point in parameter space that minimises the loss.
 
 ## Example
 
+We work on a 100-row sample of `diamonds`, predicting `price` from `carat`.
+
+**Implement RMSE and MAE as R functions.**
+
 ```r
-library(modelr)
-data("sim1")
-
-# Predicted values for a given (intercept, slope) pair
-model1 <- function(a, data) {
-  a[1] + data$x * a[2]
-}
-
-# RMSE: penalises large errors quadratically
-measure_distance <- function(mod, data) {
-  resid <- data$y - model1(mod, data)
+rmse_fn <- function(b0, b1, data) {
+  pred  <- b0 + b1 * data$carat
+  resid <- data$price - pred
   sqrt(mean(resid^2))
 }
 
-# MAE: penalises all errors on the absolute scale
-measure_mae <- function(mod, data) {
-  resid <- data$y - model1(mod, data)
+mae_fn <- function(b0, b1, data) {
+  pred  <- b0 + b1 * data$carat
+  resid <- data$price - pred
   mean(abs(resid))
 }
-
-measure_distance(c(7, 1.5), sim1)   # RMSE for intercept=7, slope=1.5
-measure_mae(c(7, 1.5), sim1)        # MAE for the same candidate
 ```
 
-Running these reveals that `c(7, 1.5)` is a poor fit. A better line will have a lower loss value. The best line is the one where **no small change in the parameters can reduce the loss further**.
+**Numeric example.** For $\beta_0 = -2000$ and $\beta_1 = 7000$ on a sample of 100 diamonds:
 
-To see why MAE is more robust, simulate data with heavy-tailed noise:
+$$\text{RMSE} = \sqrt{\frac{1}{100}\sum_{i=1}^{100}(\text{price}_i - (-2000 + 7000 \times \text{carat}_i))^2} \approx 1{,}450 \text{ USD}$$
+
+This means the model's average prediction error is about \$1,450 per diamond. By contrast, $\beta_0 = -2{,}256$, $\beta_1 = 7{,}756$ (the OLS solution) gives RMSE $\approx 1{,}330$ — lower, confirming it is a better fit.
+
+**Random search over 250 parameter pairs.**
 
 ```r
-set.seed(42)
-sim1a <- tibble(
-  x = rep(1:10, each = 3),
-  y = x * 1.5 + 6 + rt(length(x), df = 2)   # Student-t(df=2) = very heavy tails
-)
+set.seed(7)
+d100 <- diamonds |> slice_sample(n = 100)
+
+search <- tibble(
+  b0 = runif(250, -5000, 0),
+  b1 = runif(250,  5000, 12000)
+) |>
+  mutate(rmse = map2_dbl(b0, b1, rmse_fn, data = d100))
+
+search |> slice_min(rmse, n = 1)
 ```
 
-Student-$t$ with $df = 2$ occasionally generates extreme values. OLS squares those extremes; MAE does not — so MAE stays closer to the true slope.
+The best random pair will have an RMSE close to, but slightly above, the OLS optimum — demonstrating that random search finds good-but-not-perfect solutions.
+
+**Heatmap of RMSE over parameter space.** Plot `ggplot(search, aes(b0, b1, colour = rmse)) + geom_point()`. The low-RMSE region (dark blue) forms a narrow valley — the true OLS solution sits at the bottom of this bowl.
 
 ## Task
 
-Open `exercise.Rmd` and complete the tasks:
+Open `exercise.Rmd`. Using a 100-row sample of `diamonds`:
 
-1. Implement `model1()`, `measure_distance()`, and `measure_mae()` as shown above.
-2. Evaluate both loss functions for three candidate models: `c(7,1.5)`, `c(5,2)`, and `c(4,2)` on `sim1`. Which candidate has the lowest RMSE?
-3. Create `sim1a` (Student-$t$ noise) and compare RMSE vs MAE for the same three candidates. Do the two criteria agree on the best candidate?
+1. Implement `rmse_fn(b0, b1, data)` and `mae_fn(b0, b1, data)` as R functions.
+2. Evaluate both at $\beta_0 = -2{,}000$, $\beta_1 = 7{,}000$.
+3. Generate 250 random $(\beta_0, \beta_1)$ pairs with `b0` in $[-5000, 0]$ and `b1` in $[5000, 12000]$. Compute RMSE for each.
+4. Report the best $(\beta_0, \beta_1)$ from random search.
+5. Plot a scatter of `b0` vs `b1` coloured by `rmse`. Describe where the low-RMSE region is.
 
 ## Check
 
@@ -90,4 +89,4 @@ npm run check -- bdat-608 module-02 lesson-01
 
 ## Reflection
 
-You have two loss functions for the same dataset — RMSE and MAE — and they give different "best" candidates. What does this tell you about the relationship between the choice of loss function and the choice of model?
+RMSE penalises large errors more than MAE. Does that mean RMSE is always the better loss function? Think of a real-world scenario (not diamonds) where a large prediction error is catastrophic — does that make RMSE more appropriate or less? What does "appropriate" mean here: better for estimation, or better for decision-making?

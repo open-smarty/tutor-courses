@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In the Yule process, the birth rate when the population is n is:",
+      "text": "In the Yule process with individual birth rate λ, if the current population is n, what is the total instantaneous birth rate?",
       "options": [
         "λ (constant, regardless of population size)",
-        "nλ (proportional to the current population size)",
-        "λ/n (decreasing as population grows)",
-        "n²λ (quadratically proportional to population)"
+        "λ/n (rate decreases as population grows)",
+        "nλ (each of n individuals contributes rate λ independently)",
+        "n²λ (pairs of individuals interact to produce offspring)"
       ],
-      "correct": 1,
-      "explanation": "The defining property of the Yule process is λₙ = nλ. Each individual reproduces independently at rate λ, so the total rate when there are n individuals is nλ. This is what distinguishes it from the Poisson process (constant rate λ)."
+      "correct": 2,
+      "explanation": "In the Yule model, λₙ = nλ. Each of the n individuals contributes an independent birth rate λ, so the total rate of the next birth (by any individual) is nλ. This is because the minimum of n independent Exp(λ) random variables is Exp(nλ)."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "The ODE P_j'(t) = −jλP_j(t) arises in the Yule process because:",
-      "options": [
-        "The process has no death events",
-        "Starting at population j, the only possible event is a birth that moves the process to state j+1, so the only way to leave state j is through that single birth event",
-        "j individuals each die at rate λ, reducing the population",
-        "The process is at j and receives j immigrants per unit time"
-      ],
-      "correct": 1,
-      "explanation": "When n = j (the starting state), the term (n−1)λP_{n−1}(t) = (j−1)λP_{j−1}(t) = 0 because P_{j−1}(0) = 0 and the pure birth process cannot descend from j to j−1. So only the outflow term −jλP_j(t) remains, reflecting that a birth occurs at total rate jλ and takes the process out of state j."
+      "type": "true-false",
+      "text": "The Yule process starting from 1 individual has N(t) following a Geometric distribution with parameter p = e^{-λt}.",
+      "correct": true,
+      "explanation": "The solution to the Yule ODE system gives P_n(t) = e^{-λt}(1-e^{-λt})^{n-1} for n=1,2,3,... This is the Geometric(p) PMF with p=e^{-λt} on the support {1,2,3,...}. As t increases, p decreases toward 0, shifting probability mass toward larger population sizes."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "The population size X(t) in a Yule process starting at j = 1 follows a geometric distribution with parameter p = e^{−λt}.",
-      "correct": true,
-      "explanation": "With j = 1, the general formula P_n(t) = C(n−1, 0) e^{−λt}(1−e^{−λt})^{n−1} simplifies to (1−e^{−λt})^{n−1} × e^{−λt}, which is the Geometric(p) PMF with p = e^{−λt}. The negative binomial NegBin(j=1, p) is the geometric distribution."
+      "type": "multiple-choice",
+      "text": "What is the mean population size E[N(t)] in the Yule process starting from 1 individual?",
+      "options": [
+        "λt",
+        "1 + λt",
+        "e^{λt}",
+        "t/λ"
+      ],
+      "correct": 2,
+      "explanation": "E[N(t)] = 1/p(t) = 1/e^{-λt} = e^{λt}. This is exponential growth — the expected population doubles every ln(2)/λ time units. For λ=0.3/hour, the population doubles approximately every 2.31 hours."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "E[X(t) | X(0) = j] = je^{λt} means:",
+      "text": "In the Gillespie (kinetic Monte Carlo) algorithm for the Yule process, when the population is currently n, the waiting time until the next birth is drawn from:",
       "options": [
-        "The population grows linearly at rate jλ",
-        "The population doubles at a constant absolute rate",
-        "The expected population grows exponentially with intrinsic rate λ",
-        "The population size is normally distributed around je^{λt}"
+        "Poisson(nλ)",
+        "Exponential(nλ)",
+        "Geometric(nλ)",
+        "Uniform(0, 1/nλ)"
       ],
-      "correct": 2,
-      "explanation": "je^{λt} is an exponential function of t with rate constant λ. Exponential growth means the per-capita rate of increase is constant at λ, not that the absolute increment is constant (linear) or that the distribution is normal. The doubling time is ln(2)/λ."
+      "correct": 1,
+      "explanation": "When n individuals are present, each gives birth at rate λ independently. The time until the first birth (among n individuals) is the minimum of n i.i.d. Exp(λ) random variables, which has distribution Exp(nλ). So the Gillespie algorithm draws the waiting time from Exp(rate = nλ)."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "In the integrating factor solution for P_n(t) in the Yule ODE, the integrating factor is:",
+      "options": [
+        "e^{-nλt}",
+        "e^{nλt}",
+        "n λ t",
+        "e^{λt}"
+      ],
+      "correct": 1,
+      "explanation": "The ODE is dP_n/dt + nλP_n = RHS. To solve a linear first-order ODE of the form y' + py = q, the integrating factor is e^{∫p dt} = e^{nλt}. Multiplying both sides by e^{nλt} converts the left side into d/dt[e^{nλt}P_n(t)]."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "In the Yule process, increasing λ increases both the mean and the variance of X(t) at any fixed time t > 0.",
+      "text": "Var[N(t)] = e^{λt}(e^{λt} - 1) grows faster than E[N(t)] = e^{λt} for large t, meaning the coefficient of variation (SD/mean) grows over time.",
       "correct": true,
-      "explanation": "E[X(t)] = je^{λt} and Var[X(t)] = je^{λt}(e^{λt}−1). Both are strictly increasing functions of λ for t > 0. A faster birth rate produces a larger expected population and wider spread around that mean."
+      "explanation": "SD = sqrt(e^{λt}(e^{λt}-1)) ≈ e^{λt} for large t. CV = SD/Mean ≈ e^{λt}/e^{λt} = 1 for large t. Actually, CV → 1 (not growing), but the variance e^{2λt} grows much faster than the mean e^{λt}. The Yule process is increasingly variable in absolute terms — the standard deviation is comparable to the mean."
     }
   ]
 }

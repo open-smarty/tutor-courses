@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A claim of $45,000 appears on a Bronze plan that normally caps claims at $10,000. This is an example of which outlier type?",
+      "text": "For a perfectly normal distribution, approximately what percentage of observations fall OUTSIDE the IQR-rule fences (Q1 − 1.5×IQR and Q3 + 1.5×IQR)?",
       "options": [
-        "Global outlier — extreme relative to all claims",
-        "Contextual outlier — extreme only within the Bronze plan context",
-        "Collective outlier — a group that is anomalous together",
-        "Structural missing value"
+        "About 5%",
+        "About 1%",
+        "About 0.7%",
+        "About 0.1%"
       ],
-      "correct": 1,
-      "explanation": "A contextual outlier is extreme only within a specific context. $45,000 may not be unusual for Platinum plan claims, but it is extreme for Bronze, where coverage limits are much lower."
+      "correct": 2,
+      "explanation": "For a normal distribution, the IQR fences correspond to approximately μ ± 2.7σ, which contains about 99.3% of observations. So about 0.7% of genuinely normal data falls outside the fences — a low false-positive rate."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "The IQR rule flags a value as an outlier when it is:",
+      "text": "You want to detect outliers in a right-skewed distribution where the standard deviation is large due to the outliers themselves. Which method is MORE robust?",
       "options": [
-        "More than 2 standard deviations from the mean",
-        "Below Q1 − 1.5 × IQR or above Q3 + 1.5 × IQR",
-        "Below Q1 or above Q3",
-        "More than 3 standard deviations from the mean"
+        "Z-score, because it standardises the data",
+        "IQR rule, because it uses quantiles that are not affected by extreme values",
+        "Z-score, because it uses both the mean and standard deviation",
+        "Neither method works for skewed data"
       ],
       "correct": 1,
-      "explanation": "The IQR rule uses Q1 − 1.5 × IQR as the lower fence and Q3 + 1.5 × IQR as the upper fence. Values beyond these fences are flagged. This is the standard box plot whisker rule."
+      "explanation": "The IQR rule uses Q1 and Q3 (medians of the lower and upper halves), which are resistant to extreme values. The Z-score uses the mean and standard deviation, which are both inflated by the very outliers you are trying to detect — making Z-score less reliable for skewed data."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "For fraud detection, outliers in claim_amount should always be removed to improve model accuracy.",
-      "correct": false,
-      "explanation": "Fraudulent claims ARE the outliers — their unusual values are precisely what makes them detectable. Removing them would destroy the signal you are trying to model. For fraud, outliers should be flagged and retained, not removed."
+      "type": "multiple-choice",
+      "text": "Winsorisation at the 1st/99th percentile replaces extreme values with:",
+      "options": [
+        "The mean of the column",
+        "Zero",
+        "The value at the 1st or 99th percentile (whichever fence is crossed)",
+        "A randomly imputed value from the observed distribution"
+      ],
+      "correct": 2,
+      "explanation": "Winsorisation caps values: anything below p1 is set to p1, anything above p99 is set to p99. Values within the fences are unchanged. This retains all records but limits the leverage of extreme values."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "Winsorisation caps a variable to the [1st, 99th] percentile range. This is preferred over removal when:",
+      "text": "Why do we use log(x + 1) rather than log(x) when transforming claim_amount?",
       "options": [
-        "The extreme values are clear data-entry errors",
-        "The extreme values are genuine but high-leverage, and you want to retain the record",
-        "The variable is categorical",
-        "You want to increase the variance of the variable"
+        "Adding 1 makes the log values positive",
+        "claim_amount can be zero (no claim filed), and log(0) is undefined (-∞)",
+        "The +1 correction removes outliers from the upper tail",
+        "log(x) is only valid for values greater than 100"
       ],
       "correct": 1,
-      "explanation": "Winsorisation retains the record but reduces the influence of extreme values. It is appropriate when the values are genuine (not errors) but would otherwise dominate distance calculations or regression coefficients."
+      "explanation": "When a variable can take the value zero, log(0) = −∞, which breaks arithmetic. Adding 1 shifts all values up by 1 so that the minimum becomes log(1) = 0. For large values, the +1 has negligible effect."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "Deleting all rows that contain an outlier is generally the safest treatment for outliers in a large dataset.",
+      "correct": false,
+      "explanation": "Deleting outliers removes records, reducing sample size and potentially introducing bias — particularly if outliers are informative (e.g., genuinely high claims or fraudulent transactions). Winsorisation or transformation are usually preferred because they retain the records."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Why does log1p() produce a more symmetric distribution for claim_amount?",
+      "text": "In OLS regression, a single outlier can disproportionately influence the fitted coefficients because:",
       "options": [
-        "It removes all zeros from the data",
-        "It compresses large values more than small values, pulling the right tail in",
-        "It normalises the variable to mean 0 and SD 1",
-        "It converts the variable to ranks"
+        "OLS minimises the sum of squared residuals, so large deviations are penalised quadratically",
+        "OLS minimises the sum of absolute residuals, making it sensitive to any deviation",
+        "OLS excludes the median from its calculation",
+        "Outliers always have high leverage regardless of their position on the x-axis"
       ],
-      "correct": 1,
-      "explanation": "The logarithm compresses large values (the long right tail) more than small values. This makes the distribution more symmetric, which benefits algorithms that assume normality or compute Euclidean distances. log1p avoids undefined log(0) for zero-claim records."
+      "correct": 0,
+      "explanation": "OLS minimises the sum of SQUARED residuals. Squaring amplifies large errors: an observation with a residual of 10 contributes 100 to the loss, while one with residual 1 contributes only 1. This quadratic penalty means outliers exert disproportionate influence on the fitted line."
     }
   ]
 }

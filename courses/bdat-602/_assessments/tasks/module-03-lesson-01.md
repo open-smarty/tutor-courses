@@ -1,32 +1,25 @@
-# Task: Rule Mining Sensitivity Analysis
+# Task: Computing Association Rule Metrics and Running Apriori
 
 ## Objective
 
-Explore how support and confidence thresholds affect the number and quality of rules discovered by Apriori.
+Compute support, confidence, and lift by hand from a toy transaction database, verify the anti-monotone property, and run `arules::apriori()` to discover association rules.
 
 ## Instructions
 
-Using the `Groceries` dataset:
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-1. **Baseline** — Run Apriori with `supp = 0.01`, `conf = 0.30`. Record the number of rules.
+2. **Task 1 — Manual computation**: Using the 5-transaction toy database (dental, vision, mental cover flags), compute the following using R arithmetic (not `apriori()`):
+   - `supp({dental})`, `supp({vision})`, `supp({mental})`, `supp({dental, vision})`
+   - `conf(dental → vision)` and `conf(vision → dental)`
+   - `lift(dental → vision)`
+   - In a comment: state whether the association is positive, negative, or independent and why.
 
-2. **Sensitivity grid** — Run Apriori for each combination in this grid and record rule counts:
+3. **Task 2 — Anti-monotone property**: With min\_supp = 0.60, show that `{dental, mental}` is infrequent. Then compute `supp({dental, vision, mental})` and confirm it is also below min\_supp. In a comment, explain why this is guaranteed by the anti-monotone property.
 
-| supp | conf | Rules |
-|------|------|-------|
-| 0.005 | 0.30 | ? |
-| 0.01 | 0.30 | ? |
-| 0.02 | 0.30 | ? |
-| 0.01 | 0.20 | ? |
-| 0.01 | 0.40 | ? |
-| 0.01 | 0.50 | ? |
+4. **Task 3 — apriori()**: Convert `trans_list` to an `arules` transactions object. Run `apriori()` with `supp = 0.40, conf = 0.60, minlen = 2`. Use `inspect(sort(rules, by = "lift"))` to display the rules.
 
-3. **Top rules** — From the baseline run, identify and print the top 5 rules by lift. For each rule, interpret it in one sentence: "When customers buy X, they also tend to buy Y because…"
-
-4. **Visualisation** — Create a scatter plot of the baseline rules with `arulesViz::plot(rules, measure = c("support", "confidence"), shading = "lift")`.
-
-5. **Recommendation** — Based on your sensitivity analysis, which threshold combination would you recommend for a retail analyst wanting a manageable set of high-quality rules (< 200 rules, lift > 2)? Justify your answer.
+5. **Task 4 — Interpretation**: For the top 3 rules by lift, write a one-sentence business interpretation for each. Your interpretation must be in insurance terms (not generic market basket language).
 
 ## Submission
 
-Knit your Rmd to HTML with the sensitivity grid filled in as a markdown table and the scatter plot visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. Business interpretations (Task 4) must be written as R comments inside the code chunk.

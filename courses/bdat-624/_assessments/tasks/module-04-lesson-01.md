@@ -1,60 +1,25 @@
-# Task: The Pure Birth Process — Yule Model
+# Task: Yule Process — Theoretical Distribution and Gillespie Simulation
 
-## Scenario
+## Objective
 
-A tumour is discovered when it contains j = 10 cells. Each cell divides (gives birth to a new cell) at rate λ = 0.3 per day, and no cell death occurs (pure birth). You will use the Yule model to analyse how this tumour evolves.
+Compute the theoretical Geometric PMF of the Yule process at multiple time points, implement a Gillespie algorithm to simulate trajectories, compare simulated population distributions to theory, and track mean/variance over time.
 
----
+## Instructions
 
-## Part (a) — Expected tumour size at day 7
+1. **Theoretical PMF.** For λ=0.3 and t ∈ {1, 2, 5, 10}, compute P_n(t) = e^{-λt}(1-e^{-λt})^{n-1} for n = 1,...,30. Create a faceted bar chart (one panel per t). Verify that the weighted mean Σn·P_n(t) matches e^{λt} for each t.
 
-Use the formula E[X(t) | X(0) = j] = je^{λt}.
+2. **Gillespie simulation.** Implement `simulate_yule(lambda, T_max)`. The function should draw waiting times from Exp(n×λ) when the population is n, increment n, and record (time, population) pairs. Simulate 5 independent trajectories up to T_max=15 hours with `set.seed(123)` and plot as step functions. Overlay the theoretical mean curve E[N(t)] = exp(λt) as a dashed black line.
 
-Show your calculation. What is the expected number of tumour cells at day 7?
+3. **Distribution comparison at t=5.** Simulate 2000 realisations of N(5) with `set.seed(456)`. Plot side-by-side bars comparing the empirical frequency distribution to the theoretical Geometric(p=e^{-0.3×5}) PMF. Limit x-axis to n=1..30.
 
----
-
-## Part (b) — Probability of exactly 15 cells at day 7
-
-The exact distribution is negative binomial: X(7) | X(0) = 10 ~ NegBin(j = 10, p = e^{−λ × 7}).
-
-1. Compute p = e^{−0.3 × 7}. What is p?
-2. Apply the formula:
-
-$$P(X(7) = 15) = \binom{14}{9} p^{10}(1-p)^{5}$$
-
-Show the calculation step by step. You may use R to evaluate the binomial coefficient.
-
----
-
-## Part (c) — Simulation of 500 tumour trajectories
-
-In R, simulate 500 independent Yule process trajectories with j = 10 cells, λ = 0.3, for t = 0 to 10 days. Use the exact next-event algorithm (draw Exp(nλ) waiting times).
-
-Produce the following plot:
-- Grey step-function lines for all 500 trajectories (low alpha).
-- Red line: the empirical mean trajectory.
-- Blue dashed line: the theoretical E[X(t)] = 10e^{0.3t}.
-- Green dotted lines: empirical 2.5th and 97.5th percentiles at each time point (this is the 95% simulation interval).
-
-At day 10, count and report:
-- The fraction of simulated tumours with more than 500 cells.
-- The theoretical expected size at day 10 (j·e^{λ × 10}).
-
----
-
-## Part (d) — Biological reflection
-
-The pure birth process assumes no cell death. For most solid tumours, this is unrealistic.
-
-Answer in 3–5 sentences:
-
-1. What biological phenomenon does the "no death" assumption ignore?
-2. What modification to the Yule model would you introduce to make it more realistic? Write down the modified birth rate and add a death rate term. What type of process does it become?
-3. If you were fitting this model to real tumour growth data from imaging studies, what would you need to estimate from the data?
-
----
+4. **Mean and variance over time.** For t = 0, 1, ..., 10 hours, simulate 1000 trajectories with `set.seed(789)` and compute the empirical mean and variance of N(t). Print a table comparing to theoretical E[N(t)] = e^{λt} and Var[N(t)] = e^{λt}(e^{λt}-1). Plot the simulated and theoretical means on a log-scale y-axis.
 
 ## Submission
 
-Submit your R code (as a `.R` file) and your written answers for parts (a), (b), and (d) in a short document. Make sure your simulation plots are saved or displayed.
+Submit your completed `exercise.R`. Requirements:
+- Theoretical PMF plot (faceted, 4 panels)
+- Gillespie trajectory plot with mean overlay
+- Distribution comparison plot at t=5
+- Mean/variance table printed
+- Log-scale mean plot rendered
+- Pass `npm run check -- bdat-624 module-04 lesson-01`

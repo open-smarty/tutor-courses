@@ -2,154 +2,91 @@
 
 ## Goal
 
-Explain what data mining is, describe the six core mining tasks, characterise Big Data using the 4 Vs, and trace the end-to-end KDD process from raw data to actionable knowledge.
+After this lesson you can name and distinguish all six core mining tasks, explain the 4 Vs of Big Data, trace the five-step KDD process, and run a first exploratory analysis on the course dataset using `skimr`.
 
 ## Concept
 
-### What is Data Mining?
+### What is data mining?
 
-**Data mining** is the computational process of discovering patterns, anomalies, and actionable insights from large datasets using statistical and machine learning techniques.
+Data mining is the computational process of discovering non-obvious, potentially useful patterns in large collections of data. The key word is *non-obvious*: simple counting (e.g., "65% of policyholders are under 45") is not mining; uncovering that policyholders who carry both dental and maternity cover are three times more likely to churn is.
 
-It is *not* just querying a database. A SQL `SELECT` retrieves facts you already know to ask for. Data mining *discovers* structure you did not know was there.
+There are six canonical mining tasks:
 
-The six fundamental tasks:
+1. **Classification** — predict which of several pre-defined categories a record belongs to. Formal definition: learn a function $f: \mathcal{X} \rightarrow \mathcal{Y}$ where $\mathcal{Y}$ is a finite label set. Insurance example: predict whether a policyholder will churn (`churned = 1`) given their demographics and plan details.
 
-| Task | Question answered | Example in this course |
-|------|------------------|----------------------|
-| **Classification** | Which class does this record belong to? | Will this policyholder churn? (`churned`) |
-| **Regression** | What numeric value will this record take? | How much will this claim cost? (`claim_amount`) |
-| **Clustering** | Which records are naturally similar? | Which policyholders share a risk profile? |
-| **Association rules** | Which items co-occur? | Which add-on covers are bought together? |
-| **Anomaly detection** | Which records deviate from the norm? | Is this claim fraudulent? (`fraud_flag`) |
-| **Text mining** | What topics appear in free text? | What are customers complaining about? (`complaint_notes`) |
+2. **Regression** — predict a continuous numeric value. Formal definition: learn $f: \mathcal{X} \rightarrow \mathbb{R}$. Insurance example: predict next year's claim amount given age, BMI, and plan tier.
 
-All six tasks appear in the course dataset.
+3. **Clustering** — group records so that items within a group are more similar to each other than to items in other groups, *without* using pre-defined labels (unsupervised). Insurance example: segment policyholders into behavioural profiles (e.g., "young low-risk", "elderly chronic-condition", "high-utilisation") to tailor marketing.
 
----
+4. **Association rule mining** — find items that co-occur more often than chance predicts. Formal: discover rules $X \Rightarrow Y$ with high support and confidence. Insurance example: discover that policyholders with `dental_cover = 1` also hold `vision_cover = 1` in 72% of cases.
+
+5. **Anomaly detection** — identify records that deviate markedly from the pattern of the majority. Insurance example: flag claims whose amount and timing look statistically improbable (`fraud_flag = 1`).
+
+6. **Text mining** — extract structured information from unstructured natural language. Insurance example: categorise the free-text `complaint_notes` column into billing, claims, and coverage complaints.
 
 ### The 4 Vs of Big Data
 
-A dataset is called "Big Data" when it stresses conventional tools across at least one of four dimensions:
+Big Data is characterised by four dimensions that make traditional tools inadequate:
 
-| V | Definition | In our dataset |
-|---|-----------|---------------|
-| **Volume** | Scale of data | 500,000 records, 40 variables |
-| **Velocity** | Speed of generation | Claims arrive and process continuously |
-| **Variety** | Heterogeneity of types | Numerics, categoricals, dates, free text |
-| **Veracity** | Trustworthiness / quality | Intentional NAs, outliers, entry errors |
+- **Volume**: data too large for a single machine's memory (our simulated dataset: 500,000 rows × 40 variables; real insurer datasets run to billions of claim records).
+- **Velocity**: data arriving faster than batch pipelines can process (streaming telematics data from wearables).
+- **Variety**: structured tables, images, audio, GPS traces, free text — all in one pipeline.
+- **Veracity**: trustworthiness and accuracy of the data (our dataset deliberately injects 5% missing BMI and extreme outliers to mirror real-world quality issues).
 
-A fifth V — **Value** — is the goal: extract business decisions from the noise.
+### The KDD Process (5 steps)
 
----
+KDD stands for *Knowledge Discovery in Databases*. It is the overarching pipeline of which data mining is one step:
 
-### The KDD Process
+1. **Selection** — choose which data sources, tables, and time windows are relevant to your question.
+2. **Preprocessing** — handle missing values, remove duplicates, resolve inconsistencies.
+3. **Transformation** — scale variables, encode categoricals, engineer new features, reduce dimensions.
+4. **Data Mining** — apply a mining algorithm (Apriori, k-means, random forest, LDA, …) to the prepared data.
+5. **Interpretation / Evaluation** — assess whether the patterns found are valid, novel, useful, and understandable.
 
-**Knowledge Discovery in Databases (KDD)** defines the end-to-end pipeline from raw data to deployed knowledge:
+These steps are not strictly linear: you may loop back from step 4 to step 2 after discovering that missing values in a particular column are corrupting your clusters.
 
-```
-Raw Data
-   │
-   ▼
-1. Selection      — identify which data to use
-   │
-   ▼
-2. Preprocessing  — clean, handle missing values, remove noise
-   │
-   ▼
-3. Transformation — encode, scale, reduce dimensions
-   │
-   ▼
-4. Data Mining    — apply the algorithm (cluster, classify, …)
-   │
-   ▼
-5. Interpretation / Evaluation — validate and communicate results
-   │
-   ▼
-Knowledge
-```
+### Reading large files in R
 
-> Data preparation (steps 1–3) consumes roughly **80 % of project time**. Modules 2 onward address each step in depth.
+For files up to ~1 GB, `readr::read_csv()` is fast and returns a tibble. For files beyond that, `data.table::fread()` is typically 5-10× faster and uses less memory by leveraging multiple CPU cores.
 
-The process is **iterative**, not linear. Evaluation findings loop back to earlier phases.
-
----
-
-### First Look at the Course Dataset
-
-The course dataset is generated by `simulate_bdat602()` in `R/simulate_bdat602_data.R`. It simulates a global health insurance portfolio:
-
-- **500,000 rows** and **40 columns**
-- Six variable groups: identifiers, demographics, policy details, medical usage, claims history, customer behaviour
-- Three prediction targets: `claim_amount` (regression), `churned` and `fraud_flag` (classification)
-- Intentional data quality issues for Modules 2 and 3
-
-```r
-source("R/simulate_bdat602_data.R")
-
-health_data  <- simulate_bdat602(n = 500000, seed = 602)
-health_small <- simulate_bdat602(n = 10000,  seed = 602)
-
-dim(health_data)   # 500000 × 40
-names(health_data) # 40 variable names
-```
-
-A quick structural summary with `skimr`:
-
-```r
-library(skimr)
-skim(health_small)
-```
-
-`skimr::skim()` gives type-aware summaries — completion rate, percentiles, inline histograms — in one call. It is always your first step on a new dataset.
-
----
-
-### Spark for Big Data
-
-For 500,000+ rows, R's in-memory operations slow down. `sparklyr` lets you run `dplyr` verbs on a distributed Spark cluster — computation stays inside Spark, only summaries are `collect()`ed back to R.
-
-```r
-# Reference only — requires a running Spark session
-library(sparklyr)
-sc <- spark_connect(master = "local[*]")
-health_tbl <- copy_to(sc, health_data,
-                       name = "health_insurance", overwrite = TRUE)
-health_tbl |> count()  # count inside Spark
-```
-
-> **Key rule:** `filter()`, `mutate()`, `group_by()` translate to Spark SQL and run distributed. Only `collect()` brings results back to R. Never collect 500k raw rows.
+`skimr::skim()` produces a compact summary: n missing, completion rate, mean, sd, percentiles for numeric columns, and frequency tables for character columns — everything `summary()` gives plus more, in a readable format.
 
 ## Example
 
+Below we load a 10-row sample of the insurance data and interpret the `skim()` output.
+
 ```r
-library(dplyr)
+library(tidyverse)
 library(skimr)
 
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+# Source the dataset simulator
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+options(bdat602.source_only = TRUE)  # prevent auto-run
 
-# Plan tier distribution
-health_small |>
-  count(plan_tier) |>
-  mutate(pct = round(100 * n / sum(n), 1)) |>
-  arrange(desc(n))
+# Generate the full dataset
+set.seed(602)
+health_data <- simulate_bdat602(n = 500000)
 
-# Fraud prevalence
-health_small |>
-  summarise(fraud_rate_pct = round(mean(fraud_flag) * 100, 2))
+# Peek at 10 rows
+health_data |> slice_sample(n = 10) |> glimpse()
+
+# Full summary
+skim(health_data)
 ```
 
-About 3 % of records are flagged as fraudulent. A model that always predicts "no fraud" achieves 97 % accuracy but zero usefulness — a preview of the class-imbalance problem addressed in Module 5.
+Key findings from `skim()` output on the full dataset:
+- `bmi` has ~5% missing (50,000 rows). This is not random — the simulator links missingness to point-of-sale collection. We call this **MAR** (more in Module 2).
+- `claim_amount` has a mean near $4,200 but a p75 of ~$6,000 and a maximum exceeding $80,000: severely right-skewed, indicating outliers.
+- `complaint_notes` has ~10% missing — rows where no note was recorded.
+- `churned` has a prevalence of roughly 18%, so the majority class is "not churned" — class imbalance we will address in Module 5.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Source `R/simulate_bdat602_data.R` and generate `health_small` with `n = 10000, seed = 602`. Call `dim()` and `names()`.
-2. Use `skimr::skim()` on `health_small`. Identify and report: how many numeric columns? how many character columns?
-3. Compute the churn rate (`churned`) as a percentage and report it.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks described there:
+1. Load all required packages.
+2. Generate the insurance dataset and read its structure.
+3. Run `skim()` and identify three interesting findings (one numeric, one character, one about missingness).
+4. Write one sentence for each of the six mining tasks describing what you would mine from this dataset.
 
 ## Check
 
@@ -159,4 +96,4 @@ npm run check -- bdat-602 module-01 lesson-01
 
 ## Reflection
 
-The 4 Vs framework describes Big Data. Which V is most challenging for the analysis you would do on this dataset, and why? Consider the trade-offs between Volume (speed) and Veracity (data quality effort).
+`skimr::skim()` shows you completion rates and distributions, but it cannot tell you *why* data is missing. Why does knowing the mechanism behind missingness (MCAR, MAR, or MNAR) matter before you choose an imputation strategy?

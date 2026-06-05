@@ -1,87 +1,79 @@
-# Lesson 5: Closed-Form OLS with lm()
+# Lesson 3: Closed-Form OLS with lm()
 
 ## Goal
 
-Fit a linear model using `lm()`, interpret the `summary()` output, and explain why `lm()` is preferred over `optim()` for standard linear models.
+Derive the OLS estimator from first principles, explain how `lm()` computes it via QR decomposition, and decode every component of the `summary()` output — including $R^2$, the $F$-statistic, $t$-values, and degrees of freedom.
 
 ## Concept
 
-In the previous lessons you used `optim()` to find the parameters that minimise RMSE. For ordinary linear models there is a better way: the **closed-form OLS solution**.
+**The OLS objective.** We want to find the vector $\boldsymbol{\beta} = (\beta_0, \beta_1, \ldots, \beta_p)^\top$ that minimises the **Residual Sum of Squares**:
 
-### The normal equations
+$$\text{RSS}(\boldsymbol{\beta}) = \sum_{i=1}^{n}(y_i - \hat{y}_i)^2 = \|\mathbf{y} - \mathbf{X}\boldsymbol{\beta}\|^2$$
 
-For the linear model $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\varepsilon}$, the parameters that minimise the sum of squared residuals satisfy:
+where $\mathbf{y}$ is the $n \times 1$ response vector and $\mathbf{X}$ is the $n \times (p+1)$ design matrix (first column of all ones for the intercept).
 
-$$\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top \mathbf{y}$$
+**Derivation.** Setting the gradient to zero:
 
-This is called the **normal equations**. For simple regression ($y = a_1 + a_2 x$), this reduces to:
+$$\frac{\partial \text{RSS}}{\partial \boldsymbol{\beta}} = -2\mathbf{X}^\top(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) = \mathbf{0}$$
 
-$$\hat{a}_2 = \frac{\sum(x_i - \bar{x})(y_i - \bar{y})}{\sum(x_i - \bar{x})^2}, \qquad \hat{a}_1 = \bar{y} - \hat{a}_2 \bar{x}$$
+This gives the **normal equations**:
 
-`lm()` computes this via **QR decomposition** — a numerically stable algorithm that avoids explicitly inverting $\mathbf{X}^\top \mathbf{X}$.
+$$\mathbf{X}^\top\mathbf{X}\,\boldsymbol{\hat{\beta}} = \mathbf{X}^\top\mathbf{y}$$
 
-### Key `lm()` output
+Provided $\mathbf{X}^\top\mathbf{X}$ is invertible (no perfect collinearity), the unique solution is:
 
-```r
-sim1_mod <- lm(y ~ x, data = sim1)
-summary(sim1_mod)
-```
+$$\boldsymbol{\hat{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$$
 
-The `summary()` table contains:
+This is the OLS estimator. It is the **Best Linear Unbiased Estimator (BLUE)** when errors are independent, homoscedastic, and have zero mean — the Gauss-Markov theorem.
 
-| Output | What it means |
-|--------|--------------|
-| `Estimate` | The fitted $\hat{\beta}$ values |
-| `Std. Error` | Standard error of each estimate |
-| `t value` | Estimate / Std. Error — how many SEs from zero |
-| `Pr(>|t|)` | p-value: probability of a t this extreme if $\beta = 0$ |
-| `R-squared` | Fraction of variance in $y$ explained by the model |
-| `F-statistic` | Overall model significance |
+**QR decomposition.** `lm()` does not compute $(\mathbf{X}^\top\mathbf{X})^{-1}$ directly — that can be numerically unstable when columns of $\mathbf{X}$ are nearly collinear. Instead, it uses the QR decomposition: $\mathbf{X} = \mathbf{Q}\mathbf{R}$, where $\mathbf{Q}$ is orthogonal ($\mathbf{Q}^\top\mathbf{Q} = \mathbf{I}$) and $\mathbf{R}$ is upper-triangular. This reduces the normal equations to $\mathbf{R}\boldsymbol{\hat{\beta}} = \mathbf{Q}^\top\mathbf{y}$, a triangular system solved by back-substitution — much more stable.
 
-### `coef()` and `nobs()`
+**Decoding `summary(lm_fit)`.** After `lm(y ~ x)`, `summary()` prints:
 
-```r
-coef(sim1_mod)    # named vector: (Intercept), x
-nobs(sim1_mod)    # number of observations used (important if NAs were dropped)
-```
+- **Coefficients table.** `Estimate` = $\hat{\beta}_j$. `Std. Error` = $\hat{\sigma}\sqrt{[(\mathbf{X}^\top\mathbf{X})^{-1}]_{jj}}$. `t value` = Estimate / Std. Error. `Pr(>|t|)` = two-sided $p$-value for $H_0: \beta_j = 0$.
+- **Residual standard error** = $\hat{\sigma} = \sqrt{\text{RSS}/(n-p-1)}$, in the same units as $y$.
+- **$R^2$** = $1 - \text{RSS}/\text{TSS}$ where TSS is the total sum of squares. The fraction of variance in $y$ explained by the model.
+- **Adjusted $R^2$** = $1 - (1-R^2)(n-1)/(n-p-1)$. Penalises for extra parameters; better for comparing models with different numbers of predictors.
+- **$F$-statistic** tests the null that all slope coefficients are simultaneously zero: $F = \frac{(\text{TSS}-\text{RSS})/p}{\text{RSS}/(n-p-1)}$. Under $H_0$, $F \sim F(p, n-p-1)$.
+- **Degrees of freedom**: residual df = $n - p - 1$ (total observations minus parameters estimated).
 
-### Why lm() instead of optim()?
-
-| | `optim()` | `lm()` |
-|--|-----------|--------|
-| Algorithm | Iterative (Nelder-Mead) | Direct (QR decomposition) |
-| Speed | Slower; may not converge | Fast; always exact |
-| Output | Only parameters and loss value | Full inference table (SEs, p-values, R²) |
-| Requires starting values | Yes | No |
-| Use case | Custom loss functions | Standard OLS |
-
-For standard OLS, always use `lm()`.
+**Log-log model.** For the `diamonds` dataset, `log(price) ~ log(carat)` is better than `price ~ carat`. Why? The power law relationship $\text{price} = c \cdot \text{carat}^\gamma$ becomes linear on the log scale: $\log(\text{price}) = \log(c) + \gamma\log(\text{carat})$. The slope $\gamma$ is the price elasticity: a 1% increase in carat is associated with a $\gamma$% increase in price.
 
 ## Example
 
+**Numeric derivation for a 2-observation toy dataset.** Let $\mathbf{y} = (2, 5)^\top$ and $\mathbf{X} = \begin{pmatrix}1 & 1 \\ 1 & 3\end{pmatrix}$ (intercept + $x = 1, 3$).
+
+$$\mathbf{X}^\top\mathbf{X} = \begin{pmatrix}2 & 4 \\ 4 & 10\end{pmatrix}, \quad \mathbf{X}^\top\mathbf{y} = \begin{pmatrix}7 \\ 17\end{pmatrix}$$
+
+$$(\mathbf{X}^\top\mathbf{X})^{-1} = \frac{1}{20-16}\begin{pmatrix}10 & -4 \\ -4 & 2\end{pmatrix} = \begin{pmatrix}2.5 & -1 \\ -1 & 0.5\end{pmatrix}$$
+
+$$\hat{\boldsymbol{\beta}} = \begin{pmatrix}2.5 & -1 \\ -1 & 0.5\end{pmatrix}\begin{pmatrix}7 \\ 17\end{pmatrix} = \begin{pmatrix}0.5 \\ 1.5\end{pmatrix}$$
+
+So $\hat{y} = 0.5 + 1.5x$. Check: for $x=1$, $\hat{y}=2$ ✓; for $x=3$, $\hat{y}=5$ ✓. (With 2 observations and 2 parameters, the line passes exactly through both points — RSS = 0.)
+
+**Fitting the diamonds log-log model:**
+
 ```r
-library(modelr)
-data("sim1")
+mod_linear <- lm(price ~ carat,           data = diamonds)
+mod_loglog <- lm(log(price) ~ log(carat), data = diamonds)
 
-sim1_mod <- lm(y ~ x, data = sim1)
-coef(sim1_mod)
-# (Intercept)         x
-#    4.220822  2.051533
-
-summary(sim1_mod)
-# R-squared: 0.8634 — 86% of variance explained
+cat("Linear R²:", summary(mod_linear)$r.squared |> round(3))
+cat("Log-log R²:", summary(mod_loglog)$r.squared |> round(3))
+# Linear: 0.849   Log-log: 0.933
 ```
 
-The slope ≈ 2.05 means: on average, a one-unit increase in `x` is associated with a 2.05-unit increase in `y`. The intercept ≈ 4.22 is the expected `y` when `x = 0`.
+The log-log model explains 93.3% of variance in log-price vs 84.9% in raw price — a substantial improvement driven by linearising the power-law relationship and stabilising variance.
 
 ## Task
 
-Open `exercise.Rmd` and complete:
+Open `exercise.Rmd`. Fit and interpret two models on the full `diamonds` dataset:
 
-1. Fit `sim1_mod <- lm(y ~ x, data = sim1)`. Extract `coef()` and print `summary()`.
-2. What is the R² value? Interpret it in one sentence.
-3. Compare the `lm()` coefficients with those found by `optim()` in Lesson 4. How close are they?
-4. Compute a 95% confidence interval for the slope using `confint(sim1_mod)`.
+1. Fit `lm(price ~ carat)`. Record intercept, slope, residual SE, $R^2$, $F$-statistic, and its $p$-value.
+2. Interpret the slope in plain English: "a 1-carat increase is associated with a \$\_\_\_ change in price."
+3. Fit `lm(log(price) ~ log(carat))`. Record the slope (price elasticity) and $R^2$.
+4. Interpret the log-log slope: "a 1% increase in carat is associated with a \_\_% change in price."
+5. Compare $R^2$ from both models. Which fits better and why?
+6. From the log-log model summary, identify a coefficient with a small $t$-value (if any) and explain what that means.
 
 ## Check
 
@@ -91,4 +83,4 @@ npm run check -- bdat-608 module-02 lesson-03
 
 ## Reflection
 
-`lm()` and `optim(RMSE)` give the same intercept and slope estimates. If the answers are identical, why would we ever prefer `lm()` over `optim()`? Think about what extra information `lm()` provides that `optim()` does not.
+The OLS estimator $\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$ requires $\mathbf{X}^\top\mathbf{X}$ to be invertible. What happens when two columns of $\mathbf{X}$ are perfectly correlated (perfect multicollinearity)? Why does this make the matrix singular? What is R's response when you include a perfectly collinear column in a `lm()` formula?

@@ -1,63 +1,27 @@
-# Task: Birth-Death Process — Linear Growth and Extinction
+# Task: Birth-Death Process — Extinction Probability and Threshold Behaviour
 
-## Scenario
+## Objective
 
-An HIV infection begins with i = 5 infected cells. Each infected cell produces new virions at rate λ = 2 per day (birth) and is killed by the immune response at rate μ = 1.5 per day (death). You will analyse this infection using the linear birth-death process.
+Simulate linear birth-death processes for three values of ρ = μ/λ (subcritical, critical, supercritical), estimate extinction probabilities empirically, compare to the theoretical formula q* = min(1, ρ), and visualise the threshold behaviour.
 
----
+## Instructions
 
-## Part (a) — Intrinsic growth rate
+1. **Theoretical values.** For each (λ, μ) pair: (2,1), (1,1), (2,3), compute ρ = μ/λ and q* = min(1, ρ). Print a table.
 
-Compute the intrinsic growth rate (λ − μ). Classify the process as supercritical, critical, or subcritical. What does this classification predict about the long-run behaviour of the infection on average?
+2. **Gillespie simulation.** Implement `simulate_bd(lambda, mu, T_max, n0=1)`. At each step: draw waiting time from Exp(n×(λ+μ)); decide birth (probability λ/(λ+μ)) or death (probability μ/(λ+μ)); update n. Run 500 replicates per (λ, μ) pair with `set.seed(2024)` and T_max=20.
 
----
+3. **Extinction probability over time.** For each ρ value, compute the fraction of simulations extinct at each integer time t ∈ {0,...,20}. Plot all three curves on the same graph with dashed reference lines at the theoretical q*. Print the empirical extinction fraction at T=20 and compare to theoretical q*.
 
-## Part (b) — Expected infected cells at day 3
+4. **Trajectory plot.** Simulate 3 trajectories per ρ value and plot as step functions using `facet_wrap`. The ρ=0.5 panel should show growth with occasional extinction; the ρ=1.0 panel should show wandering; the ρ=1.5 panel should show rapid extinction.
 
-Use E[X(t) | X(0) = i] = ie^{(λ−μ)t}.
-
-1. Compute E[X(3) | X(0) = 5].
-2. How does this compare to the initial count? By what factor has the infection grown in expectation?
-
----
-
-## Part (c) — Probability of natural extinction
-
-Use the extinction probability formula:
-$$q_i = (\mu/\lambda)^i \quad \text{if } \lambda > \mu$$
-
-1. Compute the probability that the infection dies out naturally (the immune system eliminates all 5 infected cells before a stable viral population is established).
-2. Interpret this probability: is it large or small? What does it imply for early intervention?
-
----
-
-## Part (d) — Antiretroviral therapy
-
-An antiretroviral drug doubles the immune-mediated death rate to μ = 3 per day (while λ = 2 remains unchanged).
-
-1. Compute ρ = μ/λ under treatment. Is the process now subcritical?
-2. What is the extinction probability under treatment? Justify your answer using the formula.
-3. Explain in one sentence what treatment achieves in probabilistic terms.
-
----
-
-## Part (e) — Simulation comparison (with and without treatment)
-
-In R, simulate 1000 realisations of each scenario (untreated and treated) for t = 0 to 30 days. Use the exact next-event algorithm (as in `exercise.R`).
-
-For each scenario:
-- Plot the fraction of realisations still active (population > 0) over time. This is the empirical **persistence probability** 1 − (extinction fraction).
-- Report the fraction extinct by t = 30.
-- Report the fraction extinct by t = 100.
-
-For the untreated scenario:
-- Compute the theoretical extinction probability (μ/λ)^5.
-- Compare to the simulated fraction extinct at t = 100.
-
-Plot both persistence curves on the same graph and comment on what treatment achieves.
-
----
+5. **Threshold plot.** For n₀ = 1, 3, 5, plot q* = min(1, ρ)^n₀ as a function of ρ ∈ [0, 2] on the same graph. Add a vertical dashed line at ρ=1 (the threshold). Write a sentence describing how increasing the initial number of cases n₀ changes the extinction probability.
 
 ## Submission
 
-Submit your R code (as a `.R` file) and written answers for parts (a)–(d). Include the persistence plot from part (e) with clear axis labels and a legend distinguishing the two scenarios.
+Submit your completed `exercise.R`. Requirements:
+- Extinction probability plot with reference lines
+- Trajectory faceted plot
+- Threshold plot for n₀ = 1, 3, 5
+- Theoretical vs empirical extinction probabilities printed
+- Interpretive comment on ρ=1 (critical case)
+- Pass `npm run check -- bdat-624 module-04 lesson-03`

@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Why does RMSE penalise large residuals more than MAE does?",
+      "text": "RMSE is defined as √(1/n Σ(yᵢ − ŷᵢ)²). Why do we square the residuals before averaging?",
       "options": [
-        "RMSE takes the square root, which amplifies small values",
-        "RMSE squares each residual before averaging, so large errors grow quadratically",
-        "RMSE divides by n-2 while MAE divides by n",
-        "RMSE only counts residuals greater than 1"
+        "To make the result easier to interpret",
+        "To ensure residuals are positive and to penalise large errors more than small ones",
+        "To make RMSE equal to MAE",
+        "To remove the units of measurement"
       ],
       "correct": 1,
-      "explanation": "Squaring a residual of 10 gives 100; squaring a residual of 1 gives 1. The squared scale amplifies large errors far more than the absolute scale used by MAE."
+      "explanation": "Squaring does two things: (1) it makes all residuals non-negative so positive and negative errors do not cancel, and (2) it penalises large errors disproportionately — an error of 10 contributes 100, while an error of 1 contributes only 1. Taking the square root at the end restores the original units."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "Minimising RMSE over the parameter space is mathematically equivalent to Ordinary Least Squares (OLS).",
-      "correct": true,
-      "explanation": "OLS minimises the sum of squared residuals — which is equivalent to minimising their mean, and hence their root mean. RMSE is the square root of the OLS criterion."
+      "text": "For the same model and dataset, MAE is always greater than or equal to RMSE.",
+      "correct": false,
+      "explanation": "It is the other way: RMSE ≥ MAE always. Squaring amplifies large residuals, so the squared average is always at least as large as the absolute average. Equality holds only when all residuals have the same absolute value."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "You have a dataset of hospital lengths-of-stay (in days) where 95% of stays are 1–7 days but 5% exceed 30 days. Which loss function is more appropriate for fitting a model to this data?",
+      "text": "You suspect your dataset contains a few extreme outliers in the response variable. Which loss function should you use for fitting?",
       "options": [
-        "RMSE, because it is the standard and always preferred",
-        "MAE, because the extreme stays would otherwise dominate the RMSE and pull the model toward them",
-        "RMSE, because its square root makes it symmetric",
-        "Neither — you should use the log loss instead"
+        "RMSE, because it is always the correct choice",
+        "MAE, because it treats all errors on the absolute scale and is not dominated by large residuals",
+        "Either — they always give the same fitted model",
+        "Neither — you must remove outliers before fitting"
       ],
       "correct": 1,
-      "explanation": "The extreme stays (outliers relative to the bulk) would be squared by RMSE and pull the fitted line toward them. MAE's linear penalty treats extreme stays as proportionally, not quadratically, influential."
+      "explanation": "MAE is more robust to outliers because it does not square residuals. A single extreme residual can inflate RMSE dramatically, pulling the fitted line toward the outlier. MAE weighs each residual proportionally to its absolute size, so one large error does not dominate."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In R, the expression data$y - model1(mod, data) computes the:",
+      "text": "In a random search over 250 (β₀, β₁) pairs, the best pair found has RMSE = 1,420. You then fit lm(price ~ carat) and get RMSE = 1,330. Why is the OLS result better?",
       "options": [
-        "Fitted values",
-        "Loss function",
-        "Residuals (observed minus predicted)",
-        "Parameter estimates"
+        "Random search uses MAE, not RMSE",
+        "lm() uses a closed-form formula that finds the exact global minimum of RMSE, while random search only approximates it",
+        "lm() always overfits, so its RMSE on training data is artificially low",
+        "The two methods optimise different loss functions"
       ],
-      "correct": 2,
-      "explanation": "Residuals = observed y minus predicted y-hat. model1(mod, data) returns predicted values, so the difference is the vector of residuals."
+      "correct": 1,
+      "explanation": "lm() solves the normal equations analytically and finds the exact minimum of the RSS (equivalently RMSE). Random search is a stochastic approximation — it finds a good solution but is very unlikely to land exactly on the global minimum unless the search is exhaustive."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "On the heatmap of RMSE over the (β₀, β₁) space, the low-RMSE region forms a curved valley rather than a single point. What does this shape imply about the intercept and slope?",
+      "options": [
+        "The model has no solution",
+        "β₀ and β₁ are uncorrelated",
+        "β₀ and β₁ are correlated — many combinations give similar RMSE because a smaller intercept can be compensated by a larger slope",
+        "The loss function is not smooth"
+      ],
+      "correct": 2,
+      "explanation": "The valley shape is the signature of correlated parameters. A shift in β₀ can be partially offset by a shift in β₁ while keeping predictions (and therefore RMSE) roughly constant. This is normal for intercept-slope pairs and is why the normal equations solve the system simultaneously."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "For a given dataset, the candidate parameters that minimise RMSE and the candidate parameters that minimise MAE will always be identical.",
+      "text": "A random search over 250 parameter pairs is guaranteed to find the global minimum of RMSE if the search range is wide enough.",
       "correct": false,
-      "explanation": "RMSE and MAE define different optimal parameters because they penalise large residuals differently. They agree when noise is symmetric and light-tailed (near-normal), but diverge when the data contains outliers or heavy-tailed noise."
+      "explanation": "Random search is a probabilistic approximation. Even with a wide range, random points are unlikely to land exactly on the global minimum. As the number of parameters grows, the chance of randomly landing near the optimum decreases exponentially — this is the curse of dimensionality. Analytical methods (OLS) or gradient-based optimisers (optim) are far more efficient."
     }
   ]
 }

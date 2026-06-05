@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "You are running k-means clustering on age (range 18–85) and income (range $1,000–$500,000) without scaling. What will happen?",
+      "text": "After Z-score standardisation, a variable has a mean of 42,000 and an original value of 70,000 with standard deviation 28,000. What is the standardised value?",
       "options": [
-        "k-means will balance both variables equally",
-        "Income will dominate cluster assignments because it has a much larger range",
-        "Age will dominate because it is an integer",
-        "k-means is unaffected by variable scale"
+        "0.5",
+        "1.0",
+        "1.5",
+        "2.0"
       ],
       "correct": 1,
-      "explanation": "k-means uses Euclidean distance. A difference of 1 year in age is trivial compared to a difference of $10,000 in income. Without scaling, income completely dominates the distance calculation and age has essentially no influence on clustering."
+      "explanation": "Z = (70,000 − 42,000) / 28,000 = 28,000 / 28,000 = 1.0. The value is exactly one standard deviation above the mean."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Which scaling method is most appropriate when a variable has not been winsorised and still contains extreme outliers?",
+      "text": "Min-Max scaling maps all values to [0, 1]. What is its main weakness compared to Z-score standardisation?",
       "options": [
-        "Z-score normalisation",
-        "Min-Max scaling",
-        "Robust scaling (median + IQR)",
-        "No scaling is needed for outlier-containing variables"
+        "It changes the mean of the distribution",
+        "It is sensitive to outliers — one extreme value compresses all other values into a narrow band",
+        "It requires the variable to be normally distributed first",
+        "It cannot be applied to variables with a minimum value of zero"
       ],
-      "correct": 2,
-      "explanation": "Robust scaling uses the median and IQR rather than the mean and SD, making it resistant to outliers. Z-score and Min-Max are both pulled toward extreme values."
+      "correct": 1,
+      "explanation": "Min-Max scaling divides by (max − min). If one outlier makes max very large, all genuine values get compressed into a narrow range near 0. Z-score standardisation is less affected because a single outlier has less relative impact on the standard deviation."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "Why should plan_tier (Bronze < Silver < Gold < Platinum) use ordinal encoding rather than one-hot encoding?",
+      "text": "A categorical variable has 5 levels. How many binary dummy columns should you create to encode it without perfect multicollinearity?",
       "options": [
-        "Because it has more than 2 levels",
-        "Because it is ordered — encoding as integers 1-4 preserves the natural rank",
-        "Because one-hot encoding always causes data leakage",
-        "Because Bronze is the reference category"
+        "5",
+        "4",
+        "3",
+        "Depends on the number of observations"
       ],
       "correct": 1,
-      "explanation": "plan_tier is an ordinal variable with a natural ordering. Encoding as integers 1 (Bronze) to 4 (Platinum) preserves that ordering. One-hot encoding would treat all tiers as unordered, discarding meaningful information."
+      "explanation": "For k categories, you create k − 1 dummy variables. The dropped category becomes the reference level (all zeros). This avoids perfect multicollinearity (the dummy variable trap). For 5 levels: 5 − 1 = 4 columns."
     },
     {
       "id": "q4",
-      "type": "true-false",
-      "text": "In a recipes pipeline, step_normalize() should come before step_impute_median() to avoid computing means on missing-value-containing columns.",
-      "correct": false,
-      "explanation": "step_impute_median() must come BEFORE step_normalize(). Normalization computes means and SDs from the data; if missing values are still present, the statistics will be based on incomplete data. Impute first, then scale."
+      "type": "multiple-choice",
+      "text": "You apply step_normalize() before step_dummy() in a recipe. What problem does this cause?",
+      "options": [
+        "Normalisation fails because character columns are present",
+        "The dummy variables (which will be created later) cannot be normalised",
+        "No problem — step order does not matter in recipes",
+        "It causes the recipe to skip the dummy encoding step"
+      ],
+      "correct": 0,
+      "explanation": "step_normalize() applied to all numeric predictors will fail if nominal (character/factor) columns are still present in the dataset — they cannot be standardised. Always encode (step_dummy) before scaling (step_normalize). The correct order is: impute → dummy → normalise."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "In a recipes pipeline, prep() should be called on the FULL dataset (including the test set) to ensure the scaling statistics are accurate.",
+      "correct": false,
+      "explanation": "prep() must be called on the TRAINING set only. Using the test set in prep() would let test-set statistics influence the scaling parameters — a form of data leakage that makes your evaluation overly optimistic."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "What is data leakage in the context of a preprocessing pipeline?",
+      "text": "You want to encode education (None < Primary < Secondary < Tertiary < Postgraduate) as a predictor. Which encoding is most appropriate?",
       "options": [
-        "When data is accidentally deleted during cleaning",
-        "When information from the test set influences the training-phase parameters (e.g. imputation values)",
-        "When the model is deployed to production without testing",
-        "When a variable has near-zero variance"
+        "One-hot encoding with k − 1 columns",
+        "Ordinal encoding (1, 2, 3, 4, 5) because the categories have a natural order",
+        "Target encoding using the mean outcome per level",
+        "Frequency encoding using the count of each level"
       ],
       "correct": 1,
-      "explanation": "Data leakage occurs when test-set information influences how the training pipeline is built — e.g. computing the median across train+test before imputing. This gives the model illegitimate access to information it would not have in production, inflating measured performance."
+      "explanation": "Education has a clear ordinal structure, so mapping it to integers 1–5 preserves that ordering and uses a single column instead of 4 dummy columns. One-hot encoding would discard the ordering information."
     }
   ]
 }

@@ -1,73 +1,82 @@
 # Lesson 4: Individuals and Moving Range (I-MR) Charts
 
 ## Goal
-Construct an I-MR chart for individual (n=1) observations, compute its control limits using the correct constants, and explain why it is the preferred control chart for Big Data streaming scenarios.
+
+Construct and interpret I-MR charts for processes where measurements are taken one at a time.
 
 ## Concept
 
-The Xbar-R chart requires subgroups of 2 or more measurements taken at the same time. But many real processes produce **one observation at a time**:
+**When to use I-MR**
 
-- A daily server response time measurement
-- A chemical batch that takes a full day to produce (one result per day)
-- IoT sensor readings arriving one per second
-- Daily average error rate from an ETL pipeline
+Xbar-R charts require subgroups — multiple measurements taken under essentially the same conditions. But many real processes produce one measurement at a time with no natural grouping:
+- One batch test result per day (pharmaceutical purity)
+- One API latency measurement per scheduled health check (every 10 minutes)
+- One daily ETL job runtime
+- One monthly customer satisfaction score
 
-For these processes, we use the **Individuals and Moving Range (I-MR) chart**, also called the X-MR chart. It is two charts:
+For these situations, we use the **Individuals (I) chart** to monitor the process level and the **Moving Range (MR) chart** to monitor process variability.
 
-**I-Chart (Individuals chart):** plots each individual measurement. Monitors the process *level* (mean).
+**Moving Range**
 
-**MR-Chart (Moving Range chart):** plots the absolute difference between consecutive measurements: MRᵢ = |xᵢ − xᵢ₋₁|. Monitors the process *variability*.
+The moving range between consecutive observations is defined as:
 
-### Formulas
+MRᵢ = |xᵢ − xᵢ₋₁|   for i = 2, 3, …, n
 
-Let x₁, x₂, …, xₖ be k individual measurements.
+In plain English: the absolute difference between each observation and the one immediately before it. There are n−1 moving ranges for n observations. The average moving range is:
 
-- x̄ = (Σxᵢ) / k  ← centre line of I-Chart
-- MRᵢ = |xᵢ − xᵢ₋₁|  for i = 2, 3, …, k
-- MR̄ = (Σ MRᵢ) / (k − 1)  ← centre line of MR-Chart
+MR̄ = (1/(n−1)) × Σ MRᵢ
 
-**I-Chart limits:**
-- UCLₓ = x̄ + 2.66 × MR̄
-- LCLₓ = x̄ − 2.66 × MR̄
+**Estimating process standard deviation from MR̄**
 
-**MR-Chart limits:**
-- UCL_MR = 3.267 × MR̄
-- LCL_MR = 0
+For two consecutive normal observations, the expected value of their absolute difference is:
 
-The constant 2.66 = E₂ = 3/d₂ where d₂ = 1.128 for n=1. The constant 3.267 = D₄ for n=1.
+E(|x₁ − x₂|) = d₂ × σ
 
-### Why I-MR for Big Data?
+where d₂ = 1.128 for a range of n=2 observations (a constant from control chart theory, tabulated for all subgroup sizes). Rearranging:
 
-When data arrives as a continuous stream (one point per second from an IoT sensor), it is impractical to wait and form subgroups. The I-MR chart processes each new observation as it arrives, making it **ideal for real-time streaming quality control** using tools like Kafka or Spark Streaming.
+σ̂ = MR̄ / d₂ = MR̄ / 1.128
+
+This is how we estimate the short-term process standard deviation from individual data.
+
+**I chart control limits**
+
+- CL = x̄ (mean of all individual observations)
+- UCL = x̄ + 3 × (MR̄ / d₂) = x̄ + 3 × (MR̄ / 1.128) = x̄ + 2.660 × MR̄
+- LCL = x̄ − 2.660 × MR̄
+
+**MR chart control limits**
+
+- CL = MR̄
+- UCL = D₄ × MR̄ = 3.267 × MR̄
+- LCL = 0
+
+Note: D₄ = 3.267 for n=2 (from standard control chart constant tables).
+
+**Important assumption**
+
+The I-MR chart assumes individual measurements are approximately normally distributed. Unlike the Xbar chart (which benefits from the Central Limit Theorem to make the subgroup mean approximately normal even for non-normal data), the I chart plots raw observations directly. If your data is strongly skewed, the false alarm rate may be much higher or lower than 0.27%.
+
+Additionally, I-MR assumes observations are **not autocorrelated** — each observation is independent of the previous one. If measurements are positively autocorrelated (e.g., slowly drifting temperature), the MR̄ will underestimate σ and the limits will be too tight, causing excessive false alarms.
 
 ## Example
 
-Daily server response times (ms) for 8 days (from the course slides):
+API response times measured once per minute. After 30 observations: x̄ = 245ms, MR̄ = 18ms.
 
-| Day | Response Time (xᵢ) | Moving Range (MRᵢ) |
-|-----|---------------------|---------------------|
-| 1   | 245                 | —                   |
-| 2   | 238                 | 7                   |
-| 3   | 252                 | 14                  |
-| 4   | 241                 | 11                  |
-| 5   | 260                 | 19                  |
-| 6   | 255                 | 5                   |
-| 7   | 248                 | 7                   |
-| 8   | 272                 | 24                  |
+**I chart limits:**
+- UCL = 245 + 2.660 × 18 = 245 + 47.9 = **292.9 ms**
+- LCL = 245 − 47.9 = **197.1 ms**
 
-x̄ = 251.375 ms,  MR̄ = 12.43 ms
+**MR chart limits:**
+- UCL = 3.267 × 18 = **58.8 ms**
+- LCL = 0
 
-- I-Chart: UCL = 251.375 + 2.66 × 12.43 = **284.4 ms**,  LCL = **218.3 ms**
-- MR-Chart: UCL = 3.267 × 12.43 = **40.6 ms**,  LCL = 0
+At minute 42, the response time is 310ms. Since 310 > 292.9 = UCL, the I chart signals out of control. Investigation finds the database connection pool was exhausted — a special cause in the "Machine" category.
 
-All 8 days are within control limits — the process is in control.
+Moving range between observation 41 and 42: |310 − 248| = 62ms > 58.8 = UCL_MR. The MR chart also signals — the jump between consecutive observations was unusually large.
 
 ## Task
 
-Open `exercise.py`. You are given 24 hourly server response time readings. Compute the I-MR chart limits, plot both charts, and identify any out-of-control observations.
-
-Run the check when done:
-`npm run check -- bdat-614 module-02 lesson-02`
+In `exercise.py`, generate 30 individual API response time measurements (mean=245ms, sd=18ms). Simulate a process shift at observation 22 by adding 60ms to observations 22 through 30. Compute the I chart and MR chart control limits. Plot both charts side by side. Mark any out-of-control points in red.
 
 ## Check
 
@@ -77,4 +86,4 @@ npm run check -- bdat-614 module-02 lesson-02
 
 ## Reflection
 
-Your I-Chart shows the process in control, but the MR-Chart has one point above its UCL. What does this tell you specifically? Can the process be considered stable? What should you investigate?
+The I-MR chart assumes measurements are not autocorrelated. What happens to the false alarm rate if API response times are positively autocorrelated — for example, because a slow server stays slow for several consecutive minutes? Would the I chart signal too often or too rarely?

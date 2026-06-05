@@ -1,68 +1,26 @@
-# Task: Module 3, Lesson 1 — Branching Processes
+# Task: Branching Process Simulation and Extinction Analysis
 
-## Context
+## Objective
 
-A disease is transmitted such that each infected individual independently infects a Poisson(λ) number of others before recovering. The infected individuals form a Galton-Watson branching process with offspring distribution Poisson(λ).
+Implement and simulate Galton-Watson branching processes for two offspring distributions (Poisson and Geometric, both with mean 1.5), numerically find extinction probabilities by fixed-point iteration, and verify the theory against simulation.
 
-The probability generating function of a Poisson(λ) random variable X is:
+## Instructions
 
-$$f(z) = E(z^X) = e^{\lambda(z - 1)}$$
+1. **Fixed-point iteration.** For both the Poisson(1.5) and Geometric(p=0.4) offspring distributions, implement the PGF functions `G_A(s)` and `G_B(s)`. Use `iterate_extinction()` with 200 iterations to find the extinction probability q*. Print both values and write a comment comparing them — which is larger and why? (Hint: consider the role of offspring variance.)
 
----
+2. **Simulate branching processes.** Use `simulate_branching()` and `set.seed(314)` to simulate 1000 independent trajectories of 50 generations for each offspring distribution. Store results in matrices `traj_pois` and `traj_geom` (1000 rows × 51 columns).
 
-## Questions
+3. **Extinction probability plot.** For each distribution, compute the fraction of simulations extinct at each generation (0 to 50). Plot both curves on the same graph. Add horizontal dashed reference lines at the theoretical q* values with annotation labels. The empirical curves should converge to the theoretical values by generation 50.
 
-### Part (a) — Mean population size
+4. **Mean population size plot.** Compute `colMeans()` of each trajectory matrix. Plot the simulated mean population sizes alongside the theoretical 1.5^n curve on a log-scale y-axis. Confirm that the theoretical line is linear on the log scale (exponential growth = linear on log scale).
 
-What is E(X_n) after n transmission generations, expressed in terms of λ? Show your reasoning, referencing the general result E(X_n) = m^n.
+5. **Final comparison.** Print the empirical extinction probability at generation 50 for both distributions and compare to theoretical q*. Write a sentence interpreting the difference between Poisson and Geometric extinction probabilities in terms of their offspring variances.
 
-### Part (b) — Extinction threshold
+## Submission
 
-For what values of λ is ultimate extinction certain (probability 1)? For what values of λ is there a positive probability of the epidemic persisting indefinitely? Justify your answer using the extinction criterion.
-
-### Part (c) — Extinction probability for λ = 1.5
-
-For λ = 1.5, the extinction probability q satisfies f(q) = q, i.e.:
-
-$$e^{1.5(q - 1)} = q$$
-
-This equation has no closed-form solution, but you can find q numerically in R. Write R code that:
-
-1. Defines the Poisson(1.5) p.g.f. as a function `pgf_poisson <- function(z, lambda) exp(lambda * (z - 1))`.
-2. Iterates q_{k+1} = pgf_poisson(q_k, 1.5) starting from q_0 = 0 until convergence (|q_{k+1} - q_k| < 1e-8).
-3. Reports the converged value of q.
-4. Plots the iterates to show convergence.
-
-### Part (d) — Simulation validation
-
-Simulate 2000 epidemics for 50 generations with λ = 1.5. Each epidemic starts with a single infected individual (X_0 = 1) and uses Poisson(1.5) offspring.
-
-In your R code:
-- Generate all 2000 trajectories.
-- Report the fraction of epidemics that are extinct by generation 50 (X_50 = 0).
-- Compare this empirical fraction to your numerical answer from Part (c).
-- Plot the distribution of X_50 for surviving epidemics on a log scale.
-
----
-
-## Submission checklist
-
-- [ ] Written answers for Parts (a) and (b) (clearly stated, not just R output)
-- [ ] R code for Parts (c) and (d) with comments explaining each step
-- [ ] The numerical extinction probability from Part (c)
-- [ ] The empirical extinction fraction from Part (d) and a comparison to Part (c)
-- [ ] The convergence plot from Part (c)
-- [ ] The X_50 distribution plot from Part (d)
-
----
-
-## Marking notes
-
-| Part | Marks | Key criteria |
-|------|-------|--------------|
-| (a)  | 2     | Correct formula E(X_n) = λ^n, with m = λ stated explicitly |
-| (b)  | 2     | Threshold at λ = 1 correctly identified; m ≤ 1 → q = 1 stated |
-| (c)  | 3     | Correct fixed-point iteration; convergence to q ≈ 0.4170 (Poisson(1.5)) |
-| (d)  | 3     | Correct simulation; empirical fraction close to c(q) from (c); appropriate plot |
-
-**Total: 10 marks**
+Submit your completed `exercise.R`. Requirements:
+- `G_A` and `G_B` defined; theoretical q* printed for both
+- 1000 trajectory simulations with `set.seed(314)`
+- Both plots rendered (extinction probability and mean population size)
+- Interpretive comment on variance and extinction probability
+- Pass `npm run check -- bdat-624 module-03 lesson-01`

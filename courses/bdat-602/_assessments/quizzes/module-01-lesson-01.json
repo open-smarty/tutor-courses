@@ -1,38 +1,25 @@
 {
   "id": "module-01-lesson-01",
-  "title": "Quiz: What Is Data Mining?",
+  "title": "Quiz: What Is Data Mining? The Big Data Landscape and the KDD Process",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Which of the following best distinguishes data mining from a standard database query?",
+      "text": "Which of the six mining tasks is used to group policyholders into behavioural segments WITHOUT using pre-defined labels?",
       "options": [
-        "Data mining requires SQL; queries use Python",
-        "A query retrieves known facts; data mining discovers unknown patterns",
-        "Data mining only works on structured data; queries work on all data",
-        "Queries are faster; data mining is slower"
+        "Classification",
+        "Regression",
+        "Clustering",
+        "Association rule mining"
       ],
-      "correct": 1,
-      "explanation": "A SQL query retrieves facts you already knew to ask for. Data mining discovers structure you did not know was there — patterns, clusters, rules, anomalies."
+      "correct": 2,
+      "explanation": "Clustering is unsupervised — it discovers natural groupings in data without relying on labelled categories. Classification, by contrast, requires pre-defined labels (e.g. churned vs. not churned)."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "In the KDD process, which step consumes roughly 80% of project time?",
-      "options": [
-        "Data Mining (applying the algorithm)",
-        "Interpretation and Evaluation",
-        "Selection, Preprocessing, and Transformation (data preparation)",
-        "Deployment"
-      ],
-      "correct": 2,
-      "explanation": "Steps 1–3 of KDD (Selection, Preprocessing, Transformation) — collectively called data preparation — consume roughly 80% of project time. The actual algorithm application is a relatively small fraction of the effort."
-    },
-    {
-      "id": "q3",
-      "type": "multiple-choice",
-      "text": "Which of the 4 Vs of Big Data refers to the trustworthiness and quality of data?",
+      "text": "Which of the 4 Vs of Big Data refers to the trustworthiness and accuracy of the data?",
       "options": [
         "Volume",
         "Velocity",
@@ -40,27 +27,53 @@
         "Veracity"
       ],
       "correct": 3,
-      "explanation": "Veracity refers to the trustworthiness and quality of data — including noise, missing values, outliers, and entry errors. The course dataset intentionally introduces Veracity challenges."
+      "explanation": "Veracity concerns data quality — whether the data can be trusted. Volume is about size, Velocity about arrival speed, and Variety about different data types."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In the KDD process, which step comes immediately BEFORE the data mining step?",
+      "options": [
+        "Selection",
+        "Preprocessing",
+        "Transformation",
+        "Interpretation"
+      ],
+      "correct": 2,
+      "explanation": "The KDD steps are: Selection → Preprocessing → Transformation → Data Mining → Interpretation. Transformation (feature engineering, scaling, encoding) is the step immediately before applying a mining algorithm."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The fraud_flag target has ~3% positive cases. A classifier that always predicts 'no fraud' achieves:",
+      "text": "You want to predict whether a health insurance claim is fraudulent (yes/no). Which mining task is most appropriate?",
       "options": [
-        "0% accuracy",
-        "3% accuracy",
-        "97% accuracy but 0% recall on fraud",
-        "97% recall on fraud"
+        "Regression, because you are predicting a score",
+        "Classification, because the outcome is a discrete label",
+        "Clustering, because fraud is an anomaly",
+        "Association rule mining, because fraud involves co-occurring events"
       ],
-      "correct": 2,
-      "explanation": "The naïve classifier correctly labels all 97% non-fraud records — achieving 97% accuracy — but it misses every actual fraud (0% recall). This is why accuracy alone is misleading for rare-event classification."
+      "correct": 1,
+      "explanation": "Fraud detection with a yes/no outcome is a binary classification problem. The model learns to map input features to one of two classes. Anomaly detection is an alternative approach, but the question specifies predicting a labelled outcome (fraudulent vs. not), which is classification."
     },
     {
       "id": "q5",
       "type": "true-false",
-      "text": "Clustering is a supervised learning task because it assigns observations to groups.",
+      "text": "The KDD process is strictly linear: once you move from preprocessing to transformation, you never return to earlier steps.",
       "correct": false,
-      "explanation": "Clustering is unsupervised — there are no predefined class labels. The algorithm discovers natural groupings in the data without any labelled training examples."
+      "explanation": "KDD is iterative, not linear. After mining, you may discover that a key variable has systematic errors that require returning to the preprocessing step. Real projects cycle through the steps multiple times."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "text": "skimr::skim() is most useful for which stage of the KDD process?",
+      "options": [
+        "Data Mining — it implements the mining algorithm",
+        "Selection — it identifies which data sources to use",
+        "Preprocessing — it reveals missing values, skewness, and outliers",
+        "Interpretation — it explains why patterns exist"
+      ],
+      "correct": 2,
+      "explanation": "skim() provides summary statistics (mean, sd, percentiles, completion rate) that help you diagnose data quality issues — exactly what you need during the preprocessing stage. It does not perform mining or explain causes."
     }
   ]
 }

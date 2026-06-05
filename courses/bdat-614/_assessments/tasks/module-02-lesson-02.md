@@ -1,26 +1,26 @@
-# Task: Module 2, Lesson 2 — Real-Time I-MR Chart Simulation
+# Task: Build an I-MR Chart for API Response Times
 
 ## Objective
 
-Simulate a real-time streaming I-MR chart that updates as new data arrives.
+Implement an Individuals and Moving Range control chart from scratch, simulate a process shift, and verify that the chart detects the shift.
 
 ## Instructions
 
-1. Generate 50 observations of a process using `numpy.random.normal(mean=200, std=5, size=50)`.
+1. Open `exercise.py` in the `module-02/lesson-02/` directory.
+2. Generate 30 individual observations using `np.random.normal(245, 18, 30)` with `np.random.seed(13)`.
+3. Apply a process shift: add 60ms to observations 22 through 30 (index 21 onwards).
+4. Compute the moving range using `np.abs(np.diff(x))`. Compute MR̄ and x̄.
+5. Calculate all limits using the constants d₂ = 1.128 and D₄ = 3.267. Print all values.
+6. Build the two-panel chart:
+   - Top panel: I chart (individual values vs observation number).
+   - Bottom panel: MR chart (moving range vs observation number, starting at obs 2).
+   - Both panels: UCL (red dashed), CL (green dashed), LCL (red dashed).
+   - Out-of-control points highlighted in red on both panels.
+7. Label axes, add titles, and add a legend.
+8. In a comment at the bottom of your script, note which observation number first triggers an out-of-control signal on the I chart.
 
-2. At observation 35, inject a **special cause**: add 20 to observations 35–40 to simulate a process shift.
+## Submission
 
-3. In a Python file called `task_imr_realtime.py`, implement a function `update_imr(data_so_far)` that:
-   - Recomputes x̄, MR̄, and the control limits using all observations seen so far.
-   - Returns whether the latest observation is in control or out of control.
-
-4. Run the function for each new observation (simulating a real-time stream) and print a message whenever an out-of-control point is detected.
-
-5. At the end, plot the full I-MR chart showing all 50 observations with the final limits.
-
-## Criteria
-
-- Correct I-MR formulas: 35%
-- Special cause correctly injected and detected: 35%
-- Real-time update loop works: 15%
-- Chart is correctly plotted: 15%
+- Completed `exercise.py`.
+- Console output showing x̄, MR̄, and all control limits.
+- The two-panel I-MR chart.

@@ -1,48 +1,78 @@
 ---
-title: "BDAT 602 — Module 1, Lesson 1 Exercise"
-subtitle: "What Is Data Mining? The Big Data Landscape and the KDD Process"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: What Is Data Mining? The Big Data Landscape and the KDD Process"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Generate the course dataset
+## Setup: load packages
 
-Source the data generator and create `health_small` (10,000 rows). Report the dimensions and column names.
+```{r load-packages}
+library(tidyverse)
+library(skimr)
 
-```{r task1}
-# YOUR CODE HERE
-# source("R/simulate_bdat602_data.R")
-# health_small <- simulate_bdat602(...)
-# dim(health_small)
-# names(health_small)
+# Source the dataset simulator (prevents auto-run)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
 ```
 
-## Task 2 — First-pass EDA with skimr
+## Task 1: Generate the dataset
 
-Run `skimr::skim()` on `health_small`. From the output, report how many numeric columns and how many character columns the dataset has.
+Generate the full 500,000-row insurance dataset and inspect its structure.
 
-```{r task2}
-# YOUR CODE HERE
-# library(skimr)
-# skim(health_small)
+```{r task1-generate}
+# TODO: call simulate_bdat602(n = 500000, seed = 602) and assign to health_data
+health_data <- NULL  # replace NULL with your call
+
+# TODO: use glimpse() to inspect the dataset
 ```
 
-**Answer:** The dataset has ___ numeric columns and ___ character columns.
+## Task 2: First look with slice_sample
 
-## Task 3 — Churn rate
+Take a random sample of 10 rows to see what a typical record looks like.
 
-Compute the churn rate as a percentage (proportion of rows where `churned == 1`, multiplied by 100, rounded to 2 decimal places).
+```{r task2-sample}
+# TODO: use slice_sample(n = 10) on health_data and print the result
+```
 
-```{r task3}
-# YOUR CODE HERE
-# library(dplyr)
-# health_small |>
-#   summarise(churn_rate_pct = ...)
+## Task 3: Run skim() and identify three findings
+
+Run `skim()` on the full dataset, then write your three findings as comments below each sub-task.
+
+```{r task3-skim}
+# TODO: call skim(health_data)
+```
+
+```{r task3-findings}
+# Finding 1 (numeric variable):
+# e.g. "The variable ___ has mean ___ and is right-skewed because ___"
+# YOUR ANSWER:
+
+# Finding 2 (character/factor variable):
+# e.g. "The variable ___ has ___ unique values; the most frequent is ___"
+# YOUR ANSWER:
+
+# Finding 3 (missingness):
+# e.g. "The variable ___ has ___% missing values; this could be because ___"
+# YOUR ANSWER:
+```
+
+## Task 4: Map the six mining tasks to this dataset
+
+For each mining task, write one sentence describing what you would mine from the health insurance data. Replace "YOUR SENTENCE" with your answer.
+
+```{r task4-mining-tasks}
+mining_tasks <- tribble(
+  ~task,               ~your_application,
+  "Classification",    "YOUR SENTENCE",
+  "Regression",        "YOUR SENTENCE",
+  "Clustering",        "YOUR SENTENCE",
+  "Association Rules", "YOUR SENTENCE",
+  "Anomaly Detection", "YOUR SENTENCE",
+  "Text Mining",       "YOUR SENTENCE"
+)
+
+print(mining_tasks)
 ```

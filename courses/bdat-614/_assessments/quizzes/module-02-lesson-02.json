@@ -6,55 +6,61 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Given x̄ = 100 ms and MR̄ = 10 ms, what is the UCL for the I-Chart?",
+      "text": "Given x̄ = 200ms, MR̄ = 15ms, and d₂ = 1.128, what is the UCL of the Individuals chart?",
       "options": [
-        "100 + 3 × 10 = 130 ms",
-        "100 + 2.66 × 10 = 126.6 ms",
-        "100 + 3.267 × 10 = 132.67 ms",
-        "100 + 1.128 × 10 = 111.28 ms"
+        "239.89 ms",
+        "245.00 ms",
+        "249.05 ms",
+        "248.94 ms"
       ],
-      "correct": 1,
-      "explanation": "The I-Chart UCL = x̄ + E₂ × MR̄ = 100 + 2.66 × 10 = 126.6 ms. The constant E₂ = 2.66 is derived from d₂ = 1.128 for n=1."
+      "correct": 0,
+      "explanation": "UCL = x̄ + 3 × (MR̄/d₂) = 200 + 3 × (15/1.128) = 200 + 3 × 13.30 = 200 + 39.89 = 239.89 ms."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "What does the Moving Range in an I-MR chart measure?",
+      "text": "Why is the standard deviation estimated as MR̄/d₂ (where d₂ = 1.128) rather than computing the sample standard deviation directly from all observations?",
       "options": [
-        "The mean of consecutive observations",
-        "The absolute difference between consecutive individual observations",
-        "The standard deviation within a subgroup",
-        "The range within a subgroup of 5 measurements"
+        "MR̄/d₂ estimates short-term variation between consecutive observations, excluding the effect of process shifts",
+        "The sample standard deviation is always larger than the true σ for small samples",
+        "d₂ = 1.128 is a correction for skewed data",
+        "MR̄/d₂ is less sensitive to outliers than the sample standard deviation"
       ],
-      "correct": 1,
-      "explanation": "MRᵢ = |xᵢ − xᵢ₋₁|. It captures the short-term, point-to-point variability when subgroups of size n=1 are used."
+      "correct": 0,
+      "explanation": "MR̄/d₂ captures only the short-term, consecutive-observation variation — the natural process noise. If a process shift has occurred, the overall sample standard deviation would be inflated, making the limits too wide to detect the shift."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "The I-MR chart is the best choice when manufacturing one batch per day and only one quality measurement is available per batch.",
-      "correct": true,
-      "explanation": "When it is impossible or impractical to form subgroups (e.g., one batch per day), the I-MR chart is the correct choice — it handles individual observations."
+      "type": "multiple-choice",
+      "text": "An ETL job runs once daily. Runtimes are measured each day. Which control chart should you use?",
+      "options": [
+        "I-MR chart — one measurement per day, no natural subgrouping",
+        "Xbar-R chart — use daily means of hourly sub-runs",
+        "p chart — runtimes are proportions",
+        "c chart — runtimes are counts of events"
+      ],
+      "correct": 0,
+      "explanation": "With one measurement per day and no natural subgrouping, the I-MR chart is correct. Xbar-R requires multiple measurements per subgroup. p and c charts are for attribute (count/proportion) data, not continuous runtimes."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "Why is the I-MR chart particularly valuable in Big Data streaming environments?",
+      "text": "The MR chart signals out of control when:",
       "options": [
-        "It handles very large subgroup sizes efficiently",
-        "It can process one observation at a time, making real-time monitoring possible",
-        "It requires no control chart constants",
-        "It is immune to outliers in the data"
+        "A moving range exceeds UCL_MR = D₄ × MR̄",
+        "The individual observation exceeds UCL_I",
+        "The cumulative sum of observations exceeds a threshold",
+        "More than 2 consecutive moving ranges are above MR̄"
       ],
-      "correct": 1,
-      "explanation": "In streaming systems (Kafka, Spark Streaming), data arrives one point at a time. The I-MR chart evaluates each new observation immediately, enabling real-time out-of-control detection."
+      "correct": 0,
+      "explanation": "The MR chart signals when any single moving range MRᵢ > UCL_MR = D₄ × MR̄ = 3.267 × MR̄. This indicates an unusually large jump between two consecutive observations — evidence of an abrupt process change."
     },
     {
       "id": "q5",
       "type": "true-false",
-      "text": "The LCL for the MR-Chart is always set to zero, even if the formula gives a negative number.",
-      "correct": true,
-      "explanation": "Negative moving ranges are impossible (it is an absolute difference), so the MR-Chart LCL is always 0. D₃ = 0 for n=1, reflecting this."
+      "text": "The I-MR chart is as robust to non-normality as the Xbar-R chart.",
+      "correct": false,
+      "explanation": "The Xbar chart benefits from the Central Limit Theorem — subgroup means are approximately normal even when individual measurements are not. The I chart plots raw individual measurements, so it relies more directly on the normality assumption. Non-normal data can significantly distort the false alarm rate of an I chart."
     }
   ]
 }

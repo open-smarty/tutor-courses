@@ -1,26 +1,21 @@
-# Task: Insurance Cross-Sell Recommendations from Association Rules
+# Task: Mining and Interpreting Association Rules
 
 ## Objective
 
-Mine association rules from the health insurance add-on cover flags and translate the findings into actionable product cross-sell recommendations.
+Prepare insurance add-on data as a transaction object, mine association rules with `apriori()`, visualise them, and deliver actionable business recommendations.
 
 ## Instructions
 
-1. **Prepare** — Generate `health_small` (n = 10000, seed = 602). Create a binary data frame with columns: `dental_cover`, `vision_cover`, `mental_cover`, `maternity_cover`, and a bucketed variable `is_high_tier` (TRUE if `plan_tier %in% c("Gold", "Platinum")`). Convert to `transactions`.
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-2. **Mine** — Run Apriori with `supp = 0.05`, `conf = 0.50`, `minlen = 2`.
+2. **Task 1 — Transactions**: Select `dental_cover`, `vision_cover`, `mental_cover`, and `maternity_cover` from `health_data`. Convert each to logical. Convert the data frame to an `arules` transactions object with `as(df, "transactions")`. Print the `summary()`.
 
-3. **Filter and analyse** — For each of the four add-on covers, find the top rule (by confidence) where that cover appears on the right-hand side. Fill in this table:
+3. **Task 2 — Item frequencies**: Plot relative item frequencies with `itemFrequencyPlot()`. In a comment, state which item is most frequent and which is rarest, and explain how rarity affects the number of rules you expect.
 
-| Target cover | LHS | Confidence | Lift | Recommendation |
-|---|---|---|---|---|
-| dental_cover | ? | ? | ? | "Offer dental to customers who buy…" |
-| vision_cover | ? | ? | ? | ... |
-| mental_cover | ? | ? | ? | ... |
-| maternity_cover | ? | ? | ? | ... |
+4. **Task 3 — Mine rules**: Run `apriori()` with `supp = 0.05, conf = 0.70, minlen = 2`. Print the `summary()` of the rules. Display the top 10 rules by lift with `inspect()`. Then filter for rules where `dental_cover=TRUE` is the consequent and inspect those sorted by lift.
 
-4. **Confounding** — `is_high_tier` is included in your transactions. Check whether any of your cross-sell rules disappear or have their lift drop below 1.2 when you restrict the analysis to Gold/Platinum policyholders only (`subset(rules, lhs %pin% "is_high_tier")`). Discuss whether plan tier is a confounder.
+5. **Task 4 — Scatter plot and recommendations**: Create a scatter plot with `method = "scatter", shading = "lift"`. Inspect the top 3 rules by lift and write one actionable business recommendation for each. Recommendations must be specific: name the cover involved, the direction of the campaign (which customers to target), and why the lift justifies the action.
 
 ## Submission
 
-Knit your Rmd to HTML with the table filled in and the confounding analysis visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. Recommendations (Task 4) must be written as R comments inside the code chunk. Do not copy the lesson's example recommendations verbatim.

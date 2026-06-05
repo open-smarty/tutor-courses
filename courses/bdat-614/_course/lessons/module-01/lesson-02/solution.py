@@ -1,42 +1,77 @@
 """
-Module 1, Lesson 2 — Process Variation (Solution)
-Note: The 5 Whys answers are one plausible chain — any logically consistent chain is acceptable.
+BDAT 614 — Module 1, Lesson 2
+Solution: Process Variation — Common Cause vs Special Cause
 """
+import numpy as np
+import matplotlib.pyplot as plt
 
-scenarios = [
-    {"description": "A bottling machine fills between 499 ml and 501 ml every cycle due to minor pressure fluctuations.", "type": "common"},
-    {"description": "A batch of raw plastic pellets from a new supplier causes 20% of parts to be brittle.", "type": "special"},
-    {"description": "Daily website response times vary between 120 ms and 140 ms with no clear pattern.", "type": "common"},
-    {"description": "A server hardware failure causes response times to spike to 8000 ms.", "type": "special"},
-    {"description": "Sensor readings in a factory fluctuate by ±0.5°C throughout the day due to normal air circulation.", "type": "common"},
-    {"description": "A data analyst changes the ETL script without testing it, doubling the number of null records.", "type": "special"},
-]
+np.random.seed(42)
 
-special_causes = [
-    {"description": "A sensor that measures temperature drifts due to a dead battery.", "source": "Measurement"},
-    {"description": "An operator skips a required cleaning step because they were not trained properly.", "source": "Man"},
-    {"description": "A new batch of raw data contains duplicate records from the upstream database.", "source": "Material"},
-    {"description": "High humidity in the storage room causes product to absorb moisture and gain weight.", "source": "Environment"},
-    {"description": "Two teams use different rounding rules when aggregating sales figures.", "source": "Method"},
-]
+# ============================================================
+# Task 1: Generate baseline data
+# ============================================================
+baseline_mean = 245  # ms
+baseline_sd   = 15   # ms
+n = 50
 
-five_whys = {
-    "Problem": "The daily data pipeline failed at 3am and no alert was sent.",
-    "Why 1": "The pipeline job ran out of memory and crashed silently.",
-    "Why 2": "A new data source added that day tripled the data volume unexpectedly.",
-    "Why 3": "There was no capacity check when onboarding the new data source.",
-    "Why 4": "There is no formal data source onboarding process.",
-    "Why 5": "Root cause: no documented change management process for pipeline data sources.",
-}
+response_times = np.random.normal(baseline_mean, baseline_sd, n)
 
-print("=== Part 1: Common vs Special Cause ===")
-for s in scenarios:
-    print(f"  [{s['type'].upper():7s}] {s['description']}")
+# ============================================================
+# Task 2: Insert special cause at observation 35
+# ============================================================
+special_cause_start = 34  # 0-based index (observation 35)
+response_times[special_cause_start:] += 200
 
-print("\n=== Part 2: 6M Categories ===")
-for sc in special_causes:
-    print(f"  [{sc['source']:12s}] {sc['description']}")
+print("First 34 observations (common-cause only):")
+print(f"  Mean: {response_times[:special_cause_start].mean():.1f} ms")
+print(f"  Std:  {response_times[:special_cause_start].std():.1f} ms")
+print(f"\nObservations 35-50 (after special cause):")
+print(f"  Mean: {response_times[special_cause_start:].mean():.1f} ms")
+print(f"  Std:  {response_times[special_cause_start:].std():.1f} ms")
 
-print("\n=== Part 3: 5 Whys Chain ===")
-for step, answer in five_whys.items():
-    print(f"  {step}: {answer}")
+# ============================================================
+# Task 3: Run chart
+# ============================================================
+obs_numbers = np.arange(1, n + 1)
+
+fig, ax = plt.subplots(figsize=(12, 5))
+
+# Full time series
+ax.plot(obs_numbers, response_times, color="steelblue", linewidth=1.5,
+        marker="o", markersize=4, label="Response time")
+
+# Highlight the special-cause point
+ax.scatter(
+    special_cause_start + 1,  # 1-based observation number
+    response_times[special_cause_start],
+    color="red", s=120, zorder=5, label="Special cause detected"
+)
+
+# Baseline mean reference line
+ax.axhline(baseline_mean, color="green", linestyle="--", linewidth=1.5,
+           label=f"Baseline mean = {baseline_mean} ms")
+
+# Vertical marker for the deployment
+ax.axvline(special_cause_start + 1, color="red", linestyle=":", linewidth=1.5,
+           label="Special cause: bad SQL deployment")
+
+# Annotation
+ax.annotate(
+    "Bad deployment\n(full table scan)",
+    xy=(special_cause_start + 1, response_times[special_cause_start]),
+    xytext=(special_cause_start - 8, response_times[special_cause_start] + 30),
+    arrowprops=dict(arrowstyle="->", color="red"),
+    fontsize=9, color="red",
+)
+
+ax.set_xlabel("Observation number")
+ax.set_ylabel("Response time (ms)")
+ax.set_title("Server Response Times — Run Chart\n"
+             "Common-cause variation up to obs 34; special cause from obs 35")
+ax.legend(loc="upper left")
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig("module-01-lesson-02-run-chart.png", dpi=150, bbox_inches="tight")
+plt.show()
+print("\nChart saved as module-01-lesson-02-run-chart.png")

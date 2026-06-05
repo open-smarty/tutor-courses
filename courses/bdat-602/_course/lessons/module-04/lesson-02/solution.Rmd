@@ -1,56 +1,91 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 2 Solution"
-subtitle: "Hierarchical Clustering"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Hierarchical Clustering"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Prepare data and distance matrix
+```{r load-packages}
+library(tidyverse)
+library(cluster)
 
-```{r task1}
-library(dplyr)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 5000, seed = 602)
+```
 
+## Task 1: Prepare the data
+
+```{r task1-prepare}
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  scale()
+
+dim(clust_data)
+```
+
+## Task 2: Fit hierarchical clustering (Ward linkage) and plot the dendrogram
+
+```{r task2-hclust}
+D  <- dist(clust_data, method = "euclidean")
+hc <- hclust(D, method = "ward.D2")
+
+plot(hc, labels = FALSE, hang = -1,
+     main = "Ward.D2 Dendrogram — Insurance Policyholders",
+     xlab = "", sub = "")
+abline(h = 30, col = "red", lty = 2)
+```
+
+```{r task2-interpret}
+# The dendrogram shows two main branches merging at the top (~height 60-80).
+# Each branch splits further into sub-branches.
+# Cutting at h ≈ 30 separates the tree into approximately 4 groups,
+# which corresponds to the elbow k identified in the k-means lesson.
+```
+
+## Task 3: Extract clusters and compare to k-means
+
+```{r task3-cutree}
+clusters_hc <- cutree(hc, k = 4)
+table(clusters_hc)
+```
+
+```{r task3-compare}
 set.seed(602)
-hc_sub <- health_small |>
-  slice_sample(n = 500) |>
-  select(age, bmi, num_claims) |>
-  mutate(bmi = if_else(is.na(bmi), median(bmi, na.rm = TRUE), bmi)) |>
-  na.omit()
+km4 <- kmeans(clust_data, centers = 4, nstart = 25)
 
-hc_scaled <- scale(hc_sub)
-dist_mat  <- dist(hc_scaled, method = "euclidean")
+cat("Hierarchical cluster sizes:", table(clusters_hc), "\n")
+cat("k-means cluster sizes:     ", km4$size, "\n")
 
-cat("Matrix dimensions:", nrow(as.matrix(dist_mat)), "×",
-    ncol(as.matrix(dist_mat)), "\n")
+# Ward hierarchical clustering often produces more balanced cluster sizes than
+# k-means because Ward's merge criterion directly minimises variance increase
+# (analogous to k-means objective), making the two methods produce similar results.
+# k-means cluster sizes tend to vary more due to random initialisation effects.
 ```
 
-## Task 2 — Fit hierarchical clustering and plot dendrogram
+## Task 4: Single linkage — chaining effect
 
-```{r task2}
-hc_ward <- hclust(dist_mat, method = "ward.D2")
+```{r task4-single-linkage}
+hc_single <- hclust(D, method = "single")
 
-plot(hc_ward, labels = FALSE, hang = -1,
-     main = "Dendrogram: Ward.D2 Linkage",
-     xlab = "", ylab = "Height")
-abline(h = 6, col = "red", lty = 2)
+plot(hc_single, labels = FALSE, hang = -1,
+     main = "Single Linkage Dendrogram — Insurance Policyholders",
+     xlab = "", sub = "")
 ```
 
-The dendrogram shows the merge hierarchy. The red line at height 6 suggests roughly 3–4 natural clusters.
+```{r task4-chaining}
+clusters_single <- cutree(hc_single, k = 4)
+table(clusters_single)
 
-## Task 3 — Cut at k = 3
-
-```{r task3}
-clusters <- cutree(hc_ward, k = 3)
-table(clusters)
+# The single linkage dendrogram is characteristic: one giant cluster grows by
+# absorbing individual points one at a time (chaining), rather than merging
+# two similarly-sized sub-clusters. Extracting k = 4 clusters typically gives
+# one cluster with ~4,990+ members and 3 clusters with only 1-2 members.
+# This is the "chaining effect": single linkage cannot produce compact,
+# balanced clusters because it always links via the nearest pair of points,
+# not the nearest pair of cluster centroids.
+# Ward linkage avoids this by penalising increases in within-cluster variance.
 ```
-
-With Ward.D2 and k = 3, the clusters are typically balanced, each containing roughly 100–200 of the 500 sampled observations.

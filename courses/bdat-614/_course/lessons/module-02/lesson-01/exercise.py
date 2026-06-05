@@ -1,53 +1,82 @@
 """
-Module 2, Lesson 1 — Xbar-R Control Charts
-Exercise: Compute control limits and plot an Xbar-R chart.
-
-Requirements: numpy, matplotlib
+BDAT 614 — Module 2, Lesson 1
+Exercise: Xbar-R Control Charts for Fill Weight Data
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Subgroup data: each row is one subgroup of n=5 measurements (bolt diameter in mm)
-subgroups = [
-    [10.02, 10.05, 9.98, 10.01, 10.03],
-    [10.04, 10.00, 10.06, 9.99, 10.02],
-    [9.97, 10.03, 10.01, 10.00, 9.99],
-    [10.05, 10.02, 10.04, 10.01, 10.03],
-    [10.00, 9.98, 10.02, 10.05, 10.01],
-    [10.03, 10.01, 9.99, 10.04, 10.02],
-    [10.08, 10.06, 10.07, 10.09, 10.05],  # possible out-of-control
-    [10.01, 10.03, 10.00, 10.02, 10.04],
-    [9.99, 10.00, 10.01, 9.98, 10.02],
-    [10.02, 10.04, 10.01, 10.03, 10.00],
-]
+np.random.seed(7)
 
-# Control chart constants for n=5
+# Control chart constants for subgroup size n=5
 A2 = 0.577
 D3 = 0.0
 D4 = 2.114
 
-# TODO: Step 1 — compute subgroup means and ranges
-xbar_values = None  # replace with a list of subgroup means
-r_values = None     # replace with a list of subgroup ranges
+# ============================================================
+# Task 1: Generate subgroup data
+# ============================================================
+# Simulate 25 subgroups of n=5 fill weight measurements.
+# Use np.random.normal(loc=500, scale=1.5, size=(25, 5)).
+# This gives a 25×5 array where each row is one subgroup.
+#
+# TODO: create the `data` array (shape 25×5)
+data = None
 
-# TODO: Step 2 — compute grand mean (xbar_bar) and average range (r_bar)
+
+# ============================================================
+# Task 2: Compute subgroup statistics
+# ============================================================
+# For each of the 25 subgroups:
+#   - subgroup_means[i] = mean of row i (use np.mean with axis=1)
+#   - subgroup_ranges[i] = max - min of row i
+#     (use np.max(..., axis=1) - np.min(..., axis=1))
+#
+# Then compute:
+#   - xbar_bar = mean of subgroup_means
+#   - R_bar    = mean of subgroup_ranges
+#
+# TODO: compute subgroup_means, subgroup_ranges, xbar_bar, R_bar
+subgroup_means  = None
+subgroup_ranges = None
 xbar_bar = None
-r_bar = None
+R_bar    = None
 
-# TODO: Step 3 — compute control limits
-xbar_ucl = None
-xbar_lcl = None
-r_ucl = None
-r_lcl = None
 
-# TODO: Step 4 — print the limits
-print("=== Xbar-R Control Chart Limits ===")
-# print(f"Grand Mean (x̄̄):  {xbar_bar:.4f}")
-# print(f"Average Range (R̄): {r_bar:.4f}")
-# print(f"Xbar UCL: {xbar_ucl:.4f}  CL: {xbar_bar:.4f}  LCL: {xbar_lcl:.4f}")
-# print(f"R    UCL: {r_ucl:.4f}   CL: {r_bar:.4f}  LCL: {r_lcl:.4f}")
+# ============================================================
+# Task 3: Compute control limits
+# ============================================================
+# Xbar chart limits:
+#   UCL_xbar = xbar_bar + A2 * R_bar
+#   LCL_xbar = xbar_bar - A2 * R_bar
+#
+# R chart limits:
+#   UCL_R = D4 * R_bar
+#   LCL_R = D3 * R_bar
+#
+# TODO: compute and print all six limit values
+UCL_xbar = None
+LCL_xbar = None
+UCL_R    = None
+LCL_R    = None
 
-# TODO: Step 5 — plot both charts
-# Create a figure with two subplots (Xbar on top, R on bottom)
-# Draw the data points, CL, UCL, LCL lines
-# Highlight any out-of-control points in red
+
+# ============================================================
+# Task 4: Plot Xbar chart and R chart side by side
+# ============================================================
+# Use plt.subplots(2, 1, figsize=(12, 8)) to create two vertically
+# stacked subplots — top for Xbar, bottom for R.
+#
+# For each chart:
+#   a) Plot the statistic (subgroup_means or subgroup_ranges) as a line
+#      with circular markers.
+#   b) Draw UCL as a red dashed horizontal line, labeled "UCL".
+#   c) Draw CL (xbar_bar or R_bar) as a green dashed line, labeled "CL".
+#   d) Draw LCL as a red dashed horizontal line, labeled "LCL".
+#   e) Find out-of-control points (where the statistic > UCL or < LCL).
+#      Plot those points in red with a larger marker (s=80 or markersize=8).
+#   f) Label axes and add a title for each subplot.
+#   g) Add a legend to each subplot.
+#
+# TODO: build the two-panel control chart
+
+

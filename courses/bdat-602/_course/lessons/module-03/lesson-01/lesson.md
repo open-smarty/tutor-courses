@@ -1,124 +1,88 @@
-# Lesson 1: Market Basket Analysis and the Apriori Algorithm
+# Lesson 6: Market Basket Analysis and the Apriori Algorithm
 
 ## Goal
 
-Define support, confidence, and lift, explain why the Apriori algorithm is efficient, and mine association rules from a small grocery transaction dataset using the `arules` package.
+After this lesson you can formally define support, confidence, and lift, compute them by hand from a toy transaction table, and explain step-by-step how the Apriori algorithm exploits the anti-monotone property to prune its search space.
 
 ## Concept
 
-### What Are Association Rules?
+### The market basket problem
 
-An association rule has the form $\{A\} \Rightarrow \{B\}$, meaning: "when item A is present, item B tends to be present too."
+Imagine a supermarket receipt: {milk, bread, butter}. A transaction database is a collection of such receipts. The question market basket analysis asks is: "which items tend to appear together more often than chance would predict?" In insurance the "basket" is a policyholder's set of cover add-ons: {dental\_cover, vision\_cover, mental\_cover, maternity\_cover}.
 
-Three measures quantify rule quality:
+### Key definitions
 
-| Measure | Formula | Interpretation |
-|---------|---------|---------------|
-| **Support** | $\text{supp}(A \cup B) = \frac{|A \cup B|}{N}$ | How common is the itemset? |
-| **Confidence** | $\text{conf}(A \Rightarrow B) = \frac{\text{supp}(A \cup B)}{\text{supp}(A)}$ | Given A, how often does B appear? |
-| **Lift** | $\text{lift}(A \Rightarrow B) = \frac{\text{conf}(A \Rightarrow B)}{\text{supp}(B)}$ | Is the rule better than random chance? |
+**Itemset**: a non-empty set of items. $\{A, B\}$ is a 2-itemset.
 
-Lift interpretation:
-- Lift = 1: A and B are independent — the rule is no better than chance
-- Lift > 1: A and B co-occur more than expected — positive association
-- Lift < 1: A and B co-occur less than expected — negative association (substitutes)
+**Transaction set**: $\mathcal{T} = \{t_1, t_2, \ldots, t_N\}$ where each $t_i \subseteq \mathcal{I}$ and $\mathcal{I}$ is the set of all possible items.
 
----
+**Support** of an itemset $X$:
 
-### The Apriori Algorithm
+$$\text{supp}(X) = \frac{|\{t \in \mathcal{T} : X \subseteq t\}|}{|\mathcal{T}|}$$
 
-With $n$ items there are $2^n - 1$ possible itemsets — explosive. The **Apriori principle** prunes this space:
+Interpretation: the proportion of transactions that contain $X$. Equivalently, $\text{supp}(X) = P(X)$ — the probability that a randomly chosen transaction contains all items in $X$.
 
-> If an itemset is infrequent (below `minSupport`), all of its supersets are also infrequent.
+**Confidence** of a rule $X \Rightarrow Y$:
 
-This means you can prune entire branches of the search tree. The algorithm:
+$$\text{conf}(X \Rightarrow Y) = \frac{\text{supp}(X \cup Y)}{\text{supp}(X)} = P(Y \mid X)$$
 
-1. Find all frequent 1-itemsets (items meeting `minSupport`)
-2. Combine into candidate 2-itemsets; prune using Apriori principle
-3. Scan database to count candidate 2-itemsets; keep frequent ones
-4. Repeat until no new frequent itemsets are found
-5. Generate rules from frequent itemsets; keep rules meeting `minConfidence`
+Interpretation: among all transactions that contain $X$, what fraction also contains $Y$? This is the conditional probability.
 
----
+**Lift** of a rule $X \Rightarrow Y$:
 
-### Running Apriori in R with arules
+$$\text{lift}(X \Rightarrow Y) = \frac{\text{conf}(X \Rightarrow Y)}{\text{supp}(Y)} = \frac{P(X \cap Y)}{P(X) \cdot P(Y)}$$
 
-The `arules` package works with a special `transactions` object (a sparse binary matrix):
+Interpretation: how much more often $X$ and $Y$ appear together than we would expect if they were statistically independent. Lift = 1 means $X$ and $Y$ are independent; lift > 1 means positive association (knowing $X$ increases the probability of $Y$); lift < 1 means negative association.
 
-```r
-library(arules)
-library(arulesViz)
+### Worked example (5 transactions)
 
-# Built-in Groceries dataset (9,835 transactions, 169 items)
-data("Groceries")
+| Transaction | Items |
+|---|---|
+| T1 | dental, vision |
+| T2 | dental, mental |
+| T3 | dental, vision, mental |
+| T4 | vision, mental |
+| T5 | dental, vision |
 
-rules <- apriori(
-  Groceries,
-  parameter = list(
-    supp       = 0.01,   # at least 1% of transactions
-    conf       = 0.30,   # at least 30% confidence
-    minlen     = 2       # minimum rule length (LHS + RHS)
-  )
-)
+$N = 5$.
 
-inspect(head(sort(rules, by = "lift"), 10))
-```
+- $\text{supp}(\{\text{dental}\}) = 4/5 = 0.80$
+- $\text{supp}(\{\text{vision}\}) = 4/5 = 0.80$
+- $\text{supp}(\{\text{mental}\}) = 3/5 = 0.60$
+- $\text{supp}(\{\text{dental, vision}\}) = 3/5 = 0.60$
+- $\text{conf}(\text{dental} \Rightarrow \text{vision}) = 0.60 / 0.80 = 0.75$
+- $\text{lift}(\text{dental} \Rightarrow \text{vision}) = 0.75 / 0.80 = 0.9375$
 
-Visualise rules:
+Lift < 1 here, so in this tiny example dental and vision are slightly negatively associated (transaction T2 has dental but not vision; T4 has vision but not dental). With a real dataset of 500,000 rows the patterns are more stable.
 
-```r
-# Scatter plot: support vs confidence, colour = lift
-plot(rules, method = "scatter", measure = c("support", "confidence"),
-     shading = "lift")
+### The Apriori algorithm
 
-# Graph for top 10 rules by lift
-plot(head(sort(rules, by = "lift"), 10),
-     method = "graph", control = list(type = "items"))
-```
+With $|\mathcal{I}|$ items, the number of possible itemsets is $2^{|\mathcal{I}|} - 1$ — exponential. For $|\mathcal{I}| = 40$ this is over a trillion. Apriori makes the search tractable using the **anti-monotone property** (also called the Apriori property):
 
----
+> **If an itemset $X$ is infrequent (supp($X$) < min\_supp), then every superset of $X$ is also infrequent.**
 
-### Data Format: Transactions
+**Proof**: for any $Y \supset X$, every transaction containing $Y$ also contains $X$ (since $X \subseteq Y$). Therefore $|\{t : Y \subseteq t\}| \leq |\{t : X \subseteq t\}|$, which implies $\text{supp}(Y) \leq \text{supp}(X) < \text{min\_supp}$.
 
-The `transactions` class stores binary item presence/absence efficiently as a sparse matrix:
-
-```r
-# Convert a binary data frame to transactions
-df_trans <- data.frame(
-  bread   = c(1, 1, 0, 1),
-  milk    = c(1, 0, 1, 1),
-  butter  = c(0, 1, 1, 1),
-  eggs    = c(1, 0, 0, 1)
-)
-
-trans <- as(as.matrix(df_trans) == 1, "transactions")
-summary(trans)
-itemFrequencyPlot(trans, topN = 4)
-```
+**Algorithm** (with min\_supp = 0.05, min\_conf = 0.70):
+1. Scan all transactions, count the support of every 1-itemset. Keep only frequent 1-itemsets ($L_1$).
+2. Generate candidate 2-itemsets by taking all pairs of items from $L_1$ (if either item in a pair is infrequent, the pair cannot be frequent — prune it).
+3. Scan transactions, count 2-itemset supports. Keep frequent ones ($L_2$).
+4. Repeat: generate $L_{k+1}$ candidates from $L_k$, prune, scan, filter.
+5. Stop when no new frequent itemsets are found.
+6. Generate association rules from all frequent itemsets: for each $X$, try $X \setminus \{y\} \Rightarrow \{y\}$ for all $y \in X$; keep rules with conf ≥ min\_conf.
 
 ## Example
 
-```r
-# Which rules have lift > 3?
-rules_high_lift <- subset(rules, lift > 3)
-inspect(sort(rules_high_lift, by = "lift"))
-
-# Rules with whole milk on the right-hand side
-milk_rules <- subset(rules, rhs %pin% "whole milk")
-inspect(head(sort(milk_rules, by = "confidence"), 5))
-```
-
-The `%pin%` operator matches partial item names (pin = partial item name).
+Full worked example with 5 items and 5 transactions (see table above). Setting min\_supp = 0.60:
+- $L_1 = \{\{dental\}, \{vision\}, \{mental\}\}$ — all support ≥ 0.60.
+- Candidates for $L_2$: {dental, vision} (supp = 0.60 ✓), {dental, mental} (supp = 0.40 ✗, pruned), {vision, mental} (supp = 0.40 ✗, pruned).
+- $L_2 = \{\{dental, vision\}\}$.
+- No candidates for $L_3$ (only one 2-itemset, can't form a 3-itemset with the anti-monotone pruning).
+- Rule dental → vision: conf = 0.60/0.80 = 0.75 ✓. Rule vision → dental: conf = 0.60/0.80 = 0.75 ✓.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Load the `Groceries` dataset from `arules`. Call `summary()`. Report: how many transactions? how many items?
-2. Run `apriori()` with `supp = 0.01`, `conf = 0.25`. How many rules are generated?
-3. Print the top 5 rules sorted by lift using `inspect(head(sort(...), 5))`.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) compute support, confidence, and lift by hand (with R arithmetic) for a small toy transaction table; (2) verify the anti-monotone property by showing that a superset of an infrequent itemset is also infrequent; (3) run `arules::apriori()` on the toy transactions; (4) interpret the top three rules by lift and write a business-friendly sentence for each.
 
 ## Check
 
@@ -128,4 +92,4 @@ npm run check -- bdat-602 module-03 lesson-01
 
 ## Reflection
 
-A colleague sets `minSupport = 0.001` (0.1%) to find more rules. What is the computational risk of this choice, and why does the Apriori principle not fully protect you from it?
+Lift measures association relative to independence. A rule can have high confidence but lift close to 1 — meaning the consequent is simply very common. Can you think of an insurance example where high confidence is misleading and lift reveals the rule is not actionable?

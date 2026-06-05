@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Hierarchical (agglomerative) clustering builds clusters by:",
+      "text": "Agglomerative hierarchical clustering starts with:",
       "options": [
-        "Starting with k clusters and merging until one remains",
-        "Starting with each observation in its own cluster and merging bottom-up",
-        "Randomly assigning observations and then computing centroids",
-        "Splitting one large cluster top-down"
+        "One cluster containing all observations, then splits it",
+        "k randomly chosen centroids",
+        "n singleton clusters (each observation is its own cluster), then merges",
+        "A pre-specified number of clusters k"
       ],
-      "correct": 1,
-      "explanation": "Agglomerative hierarchical clustering starts with n singletons and merges the two closest clusters at each step, building up the dendrogram from the bottom. Divisive clustering (DIANA) goes top-down."
+      "correct": 2,
+      "explanation": "Agglomerative clustering is a bottom-up approach: it starts with n singleton clusters and repeatedly merges the two closest clusters until all observations are in a single cluster. Divisive hierarchical clustering is the reverse (top-down)."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Ward.D2 linkage minimises:",
+      "text": "Which linkage criterion is most likely to produce the 'chaining effect' (one giant cluster absorbing individuals)?",
       "options": [
-        "The maximum pairwise distance between clusters",
-        "The minimum pairwise distance between clusters",
-        "The increase in total within-cluster variance when merging two clusters",
-        "The average pairwise distance between all observations"
+        "Ward",
+        "Complete",
+        "Average",
+        "Single"
       ],
-      "correct": 2,
-      "explanation": "Ward.D2 merges the pair of clusters whose fusion produces the smallest increase in total within-cluster variance (sum of squared deviations). This tends to produce compact, equal-sized clusters."
+      "correct": 3,
+      "explanation": "Single linkage defines inter-cluster distance as the minimum pairwise distance. This means a cluster can grow by absorbing any nearby point, even if that point is far from most of the cluster — producing long, chain-like clusters."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "Hierarchical clustering is generally faster than k-means for datasets with 100,000+ observations.",
-      "correct": false,
-      "explanation": "Hierarchical clustering requires computing an n × n distance matrix, which is O(n²) in memory and O(n² log n) in time. For large n this becomes infeasible. k-Means is O(nkd) per iteration and scales much better."
+      "type": "multiple-choice",
+      "text": "In a dendrogram, the HEIGHT at which two clusters merge represents:",
+      "options": [
+        "The number of observations in each cluster",
+        "The inter-cluster distance at the time of the merge",
+        "The WCSS reduction achieved by the merge",
+        "The number of steps taken to reach this merge"
+      ],
+      "correct": 1,
+      "explanation": "The y-axis of a dendrogram is the dissimilarity (distance) at which two clusters were merged. Merges at low height join very similar clusters; merges at high height join dissimilar clusters. This is why the final merge (all into one) is at the top."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "What is the purpose of cutree(hc, k = 4)?",
+      "text": "You run hclust on 5,000 observations and then call cutree(hc, k = 4). What does this return?",
       "options": [
-        "Prunes branches of the dendrogram below height 4",
-        "Returns cluster labels by cutting the dendrogram at a level that yields 4 clusters",
-        "Runs hierarchical clustering with k = 4 initial clusters",
-        "Removes 4 outlier observations from the clustering"
+        "A dendrogram with 4 branches highlighted",
+        "An integer vector of length 5,000, giving each observation's cluster label (1–4)",
+        "A list of 4 centroids",
+        "The height at which the dendrogram is cut to give 4 clusters"
       ],
       "correct": 1,
-      "explanation": "cutree() converts the hierarchical tree to a flat partition. Specifying k = 4 cuts at the height where exactly 4 clusters are obtained. You can also specify h (height) instead of k."
+      "explanation": "cutree() cuts the dendrogram at the height that yields k clusters and returns an integer vector of cluster labels — one label per observation. You can then attach this to your data frame for profiling."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "Hierarchical clustering is more scalable than k-means and is the preferred method for datasets with more than 100,000 rows.",
+      "correct": false,
+      "explanation": "Hierarchical clustering requires computing and storing an n × n distance matrix, which is O(n²) in both time and memory. For n = 100,000, this would require storing 10 billion distances. k-means is far more scalable for large datasets."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Which linkage method is most prone to 'chaining' (producing long, elongated clusters)?",
+      "text": "Ward's linkage criterion merges the two clusters that minimise which quantity?",
       "options": [
-        "Complete linkage",
-        "Ward.D2",
-        "Single linkage",
-        "Average linkage"
+        "The minimum pairwise distance between any two points across clusters",
+        "The maximum pairwise distance between any two points across clusters",
+        "The increase in total within-cluster sum of squares (WCSS) after the merge",
+        "The difference in cluster sizes after the merge"
       ],
       "correct": 2,
-      "explanation": "Single linkage uses the minimum pairwise distance between clusters. A new observation only needs to be close to the nearest point in a cluster to be merged into it, creating chains of loosely connected points."
+      "explanation": "Ward's linkage merges the pair of clusters whose combination produces the smallest increase in WCSS — exactly the k-means objective. This is why Ward tends to produce compact, similarly-sized clusters similar to those from k-means, and is usually the best default for continuous data."
     }
   ]
 }

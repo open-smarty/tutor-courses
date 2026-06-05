@@ -1,54 +1,106 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 3 Solution"
-subtitle: "Scaling, Encoding, and the recipes Pipeline"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Scaling, Encoding, and the recipes Pipeline"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Full preprocessing pipeline
+```{r load-packages}
+library(tidyverse)
+library(tidymodels)
 
-```{r task1}
-library(recipes)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
+```
 
-pp_rec <- recipe(claim_amount ~ ., data = health_small) |>
-  step_impute_median(bmi, income) |>
-  step_dummy(sex, region, one_hot = FALSE) |>
+## Task 1: Manual scaling of age
+
+```{r task1-zscore}
+age_z <- (health_data$age - mean(health_data$age, na.rm = TRUE)) /
+           sd(health_data$age, na.rm = TRUE)
+
+cat("Mean of age_z:", round(mean(age_z, na.rm = TRUE), 6), "\n")
+cat("SD of age_z:  ", round(sd(age_z, na.rm = TRUE), 6), "\n")
+# Mean ≈ 0 (within floating-point precision), SD = 1 exactly.
+```
+
+```{r task1-minmax}
+age_mm <- (health_data$age - min(health_data$age, na.rm = TRUE)) /
+           (max(health_data$age, na.rm = TRUE) - min(health_data$age, na.rm = TRUE))
+
+cat("Min of age_mm:", round(min(age_mm, na.rm = TRUE), 4), "\n")
+cat("Max of age_mm:", round(max(age_mm, na.rm = TRUE), 4), "\n")
+# Min = 0.0, Max = 1.0
+```
+
+## Task 2: Dummy encoding for plan_tier
+
+```{r task2-dummy-recipe}
+rec_dummy <- recipe(churned ~ plan_tier, data = health_data) |>
+  step_dummy(plan_tier)
+
+rec_dummy_prepped <- prep(rec_dummy, training = health_data)
+dummy_result      <- bake(rec_dummy_prepped, new_data = health_data)
+
+names(dummy_result)
+# Output: "churned", "plan_tier_Gold", "plan_tier_Platinum", "plan_tier_Silver"
+# "Bronze" is the reference level (alphabetically first → dropped by default).
+# 3 dummy columns for 4 categories — as expected (k - 1 = 3).
+```
+
+## Task 3: Full preprocessing pipeline
+
+```{r task3-split}
+set.seed(602)
+split <- initial_split(health_data, prop = 0.80, strata = churned)
+train <- training(split)
+test  <- testing(split)
+cat("Train:", nrow(train), " | Test:", nrow(test), "\n")
+```
+
+```{r task3-recipe}
+rec_full <- recipe(
+  churned ~ age + bmi + income + plan_tier + education + num_claims + num_chronic_conditions,
+  data = train
+) |>
+  step_impute_median(income, bmi) |>
+  step_impute_mode(plan_tier, education) |>
+  step_dummy(all_nominal_predictors()) |>
   step_normalize(all_numeric_predictors())
-
-pp_prep          <- prep(pp_rec, training = health_small)
-health_processed <- bake(pp_prep, new_data = health_small)
-
-cat("NAs in bmi:   ", sum(is.na(health_processed$bmi)),    "\n")
-cat("NAs in income:", sum(is.na(health_processed$income)),  "\n")
-cat("Mean of bmi:  ", round(mean(health_processed$bmi), 4), "\n")
 ```
 
-`bmi` and `income` have 0 NAs. The mean of scaled `bmi` is approximately 0 and the SD is approximately 1.
+```{r task3-prep-bake}
+rec_full_prepped <- prep(rec_full, training = train)
+train_baked      <- bake(rec_full_prepped, new_data = train)
+test_baked       <- bake(rec_full_prepped, new_data = test)
 
-## Task 2 — Column count before and after step_nzv
-
-```{r task2}
-cat("Columns without nzv:", ncol(health_processed), "\n")
-
-pp_rec2 <- recipe(claim_amount ~ ., data = health_small) |>
-  step_impute_median(bmi, income) |>
-  step_dummy(sex, region, one_hot = FALSE) |>
-  step_normalize(all_numeric_predictors()) |>
-  step_nzv(all_predictors())
-
-pp_prep2  <- prep(pp_rec2, training = health_small)
-health_p2 <- bake(pp_prep2, new_data = health_small)
-
-cat("Columns with nzv:   ", ncol(health_p2), "\n")
+glimpse(train_baked)
 ```
 
-`step_nzv()` typically removes one or two near-constant dummy columns (e.g. rare categories that appear in fewer than 10% of rows after encoding). The exact columns depend on the random seed.
+## Task 4: Verify the baked dataset
+
+```{r task4-check-missing}
+total_missing <- sum(is.na(train_baked))
+cat("Missing values in baked training set:", total_missing, "\n")
+# Should be 0
+```
+
+```{r task4-check-scale}
+train_baked |>
+  summarise(
+    age_mean    = round(mean(age), 4),
+    age_sd      = round(sd(age), 4),
+    income_mean = round(mean(income), 4),
+    income_sd   = round(sd(income), 4)
+  )
+# age_mean ≈ 0, age_sd ≈ 1; income_mean ≈ 0, income_sd ≈ 1
+```
+
+```{r task4-check-dummies}
+names(train_baked)[grepl("plan_tier", names(train_baked))]
+# plan_tier_Gold, plan_tier_Platinum, plan_tier_Silver
+# Reference level: Bronze (dropped)
+```

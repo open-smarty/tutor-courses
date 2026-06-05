@@ -1,55 +1,105 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 2 Exercise"
-subtitle: "Outlier Detection and Treatment"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Outlier Detection and Treatment"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Flag BMI outliers (IQR rule)
+```{r load-packages}
+library(tidyverse)
 
-Compute Q1, Q3, and IQR for `bmi`. Add a `bmi_outlier` column (TRUE if below Q1 – 1.5×IQR or above Q3 + 1.5×IQR). Count how many records are flagged.
-
-```{r task1}
-# YOUR CODE HERE
-# library(dplyr)
-# q1  <- quantile(health_small$bmi, 0.25, na.rm = TRUE)
-# ...
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-**How many BMI outliers?** ___
+## Task 1: Detect outliers using the IQR rule and Z-score
 
-## Task 2 — Winsorise income
+### claim_amount
 
-Cap `income` at the 1st and 99th percentiles. Store the result in `health_win`. Compare `summary(health_small$income)` to `summary(health_win$income)`.
+```{r task1-iqr-claim}
+# TODO: compute Q1, Q3, IQR, lower fence, and upper fence for claim_amount
+# Count and report the number of outliers above the upper fence
 
-```{r task2}
-# YOUR CODE HERE
-# p01 <- quantile(health_small$income, 0.01, na.rm = TRUE)
-# p99 <- quantile(health_small$income, 0.99, na.rm = TRUE)
-# health_win <- health_small |>
-#   mutate(income = pmax(p01, pmin(p99, income)))
-# summary(health_small$income)
-# summary(health_win$income)
+q1_claim  <- NULL  # quantile(health_data$claim_amount, ...)
+q3_claim  <- NULL
+iqr_claim <- NULL
+hi_claim  <- NULL
+lo_claim  <- NULL
+
+n_outliers_claim <- NULL  # count rows where claim_amount > hi_claim
+cat("Outliers in claim_amount:", n_outliers_claim, "\n")
 ```
 
-## Task 3 — Log transformation of claim_amount
+```{r task1-zscore-claim}
+# TODO: compute Z-scores for claim_amount and count outliers with |z| > 3
+z_claim <- NULL  # (health_data$claim_amount - mean(...)) / sd(...)
+n_z_claim <- NULL
+cat("Z-score outliers (|z|>3):", n_z_claim, "\n")
+```
 
-For rows where `claim_amount > 0`, create side-by-side histograms of `claim_amount` (raw) and `log1p(claim_amount)`. Use base R `par(mfrow = c(1, 2))` and `hist()`.
+### bmi
 
-```{r task3}
-# YOUR CODE HERE
-# pos_claims <- health_small$claim_amount[health_small$claim_amount > 0]
-# par(mfrow = c(1, 2))
-# hist(pos_claims,        main = "Claim Amount (raw)",    col = "steelblue")
-# hist(log1p(pos_claims), main = "Claim Amount (log1p)", col = "darkorange")
-# par(mfrow = c(1, 1))
+```{r task1-iqr-bmi}
+# TODO: repeat the IQR outlier detection for bmi
+# Note: bmi has injected extreme values (e.g., 120, 150, 200)
+
+q1_bmi  <- NULL
+q3_bmi  <- NULL
+iqr_bmi <- NULL
+hi_bmi  <- NULL
+
+n_outliers_bmi <- NULL
+cat("Outliers in bmi:", n_outliers_bmi, "\n")
+```
+
+## Task 2: Box plots
+
+```{r task2-boxplot-claim}
+# TODO: draw a box plot of claim_amount for non-zero claims
+# Use geom_boxplot() and label the y-axis with dollar amounts
+```
+
+```{r task2-boxplot-bmi}
+# TODO: draw a box plot of bmi
+# The extreme injected values (120, 150, 200) should appear as individual points
+```
+
+## Task 3: Winsorise claim_amount
+
+```{r task3-winsorise}
+# TODO: compute p1 and p99 of claim_amount, then create claim_amount_win
+p1_claim  <- NULL
+p99_claim <- NULL
+
+health_data <- health_data |>
+  mutate(claim_amount_win = NULL)  # pmin(pmax(...), ...)
+
+# TODO: verify the new maximum is p99
+cat("Original max:", max(health_data$claim_amount, na.rm = TRUE), "\n")
+cat("Winsorised max:", max(health_data$claim_amount_win, na.rm = TRUE), "\n")
+```
+
+## Task 4: Log transformation and before/after comparison
+
+```{r task4-log}
+# TODO: create log_claim = log(claim_amount + 1) and log_bmi = log(bmi)
+# (claim_amount can be 0 so add 1; bmi is always > 0)
+health_data <- health_data |>
+  mutate(
+    log_claim = NULL,
+    log_bmi   = NULL
+  )
+```
+
+```{r task4-histograms}
+# TODO: create side-by-side histograms:
+# Left panel: raw claim_amount (non-zero only)
+# Right panel: log_claim
+# Describe in a comment: how does the shape change?
+
+# Shape before:
+# Shape after:
 ```

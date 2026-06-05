@@ -1,33 +1,21 @@
-# Task: Module 1, Lesson 1 — Identifying Signal and Noise
+# Task: What Is a Statistical Model?
 
 ## Objective
 
-Distinguish signal from noise in a real dataset, and describe the modelling cycle step that would come next.
+Apply the signal/noise decomposition to the `diamonds` dataset: fit a simple linear model, compute and visualise residuals, and draw a conclusion about model adequacy.
 
 ## Instructions
 
-1. Run the following code in R:
-
-```r
-library(modelr)
-library(ggplot2)
-data("sim1")
-
-ggplot(sim1, aes(x, y)) +
-  geom_point(size = 3, colour = "#1B3A6B") +
-  geom_smooth(method = "lm", se = FALSE, colour = "#C9A84C", linewidth = 1.2) +
-  theme_minimal() +
-  labs(title = "sim1 with a linear trend line")
-```
-
-2. Answer the following questions **in 2–4 sentences each**:
-
-   a. Looking at the plot, describe what you think the signal (systematic trend) is. What shape is it?
-
-   b. The gold line is a fitted model. Point to a specific observation that has a **large positive residual** (the actual y is well above the line). What does this residual tell you about that observation?
-
-   c. At step 3 of the modelling cycle (after fitting the model), what would you do next, and what would you be looking for?
+1. Load the `diamonds` dataset from `ggplot2` and the `modelr` package.
+2. Create a scatter plot of `price` vs `carat` coloured by `cut`. Describe in one sentence what the plot tells you about the relationship.
+3. Fit `lm(price ~ carat, data = diamonds)` and record:
+   - The intercept and slope.
+   - The R² value.
+   - The meaning of the slope in plain English (no jargon).
+4. Use `add_residuals()` to attach residuals to the dataset.
+5. Plot residuals on the y-axis vs `carat` on the x-axis. Add a horizontal line at zero.
+6. Write two to three sentences describing any pattern you see in the residuals. Is the model correctly specified? What would you do next?
 
 ## Submission
 
-Copy your three answers into a comment block in your `exercise.Rmd` and re-knit.
+Knit your `exercise.Rmd` to HTML and submit the `.html` file together with the `.Rmd` source. Your submission must include all four plots and the written interpretations for steps 2 and 6.

@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "What happens to LASSO coefficients as lambda increases?",
+      "text": "Ridge regression minimises RSS + λΣβⱼ². What happens to the coefficients as λ → ∞?",
       "options": [
-        "They all increase toward their OLS values",
-        "They shrink toward zero and some become exactly zero",
-        "They become negative regardless of the sign of the true effect",
-        "They remain unchanged until lambda exceeds 1"
+        "All coefficients are set to exactly zero (variable selection occurs)",
+        "All coefficients shrink toward zero but remain non-zero — Ridge never sets a coefficient to exactly zero",
+        "The model becomes equivalent to OLS",
+        "Only the largest coefficient is affected"
       ],
       "correct": 1,
-      "explanation": "As lambda increases, the L1 penalty grows stronger, forcing more coefficients to exactly zero. At the largest lambda, all coefficients are zero (the null model)."
+      "explanation": "As λ → ∞, the penalty dominates and all coefficients are driven toward zero. However, the L2 penalty (squared) has a smooth ball with no corners on the coordinate axes, so the minimum of RSS + λ||β||² always lies in the interior, never exactly on an axis. Ridge shrinks but does not select."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "Ridge regression (alpha = 0) can set individual coefficients exactly to zero, performing automatic variable selection.",
-      "correct": false,
-      "explanation": "Ridge uses an L2 penalty (sum of squared coefficients). This shrinks all coefficients toward zero but never sets any of them exactly to zero. Only LASSO (L1 penalty) produces exact zeros."
+      "text": "LASSO can set some regression coefficients to exactly zero, performing automatic variable selection.",
+      "correct": true,
+      "explanation": "The L1 penalty (sum of absolute values) creates a diamond-shaped constraint region with corners on the coordinate axes. The RSS contours tend to touch the constraint at a corner where one or more coordinates are exactly zero. This geometric property gives LASSO its variable selection capability."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "In cv.glmnet(), what does lambda.min represent?",
+      "text": "cv.glmnet() returns lambda.min and lambda.1se. In which situation would you prefer lambda.1se over lambda.min?",
       "options": [
-        "The minimum value of lambda in the penalty path",
-        "The lambda value that minimises cross-validated prediction error",
-        "The lambda value that gives the fewest non-zero coefficients",
-        "The value of lambda at which all coefficients become zero"
+        "When you want the model with the lowest training error",
+        "When you want a more parsimonious model that is nearly as good as the minimum-CV model — one-SE rule sacrifices a little CV performance for fewer predictors",
+        "When the sample size is very large (n > 10,000)",
+        "When using Ridge (alpha = 0) rather than LASSO"
       ],
       "correct": 1,
-      "explanation": "lambda.min is the value of the regularisation parameter that produces the lowest average cross-validated error across the folds. lambda.1se is a slightly larger (more regularised) lambda still within one SE of the minimum."
+      "explanation": "lambda.1se applies the one-standard-error rule: choose the most regularised (largest lambda) model whose CV error is within one SE of the minimum CV error model. This gives a sparser, more interpretable model at minimal cost in predictive performance. It is especially useful when interpretability matters."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "What is the key visual characteristic of a decision tree's prediction surface compared to a linear model's?",
+      "text": "In a regression tree, the first split is on carat ≤ 1.0 vs carat > 1.0. What does this tell you?",
       "options": [
-        "The tree surface is a smooth gradient; the linear surface is piecewise flat",
-        "The tree surface is piecewise constant with rectangular boundaries; the linear surface is a plane",
-        "Both surfaces are identical when the tree has maximum depth",
-        "The tree surface is always lower (fewer predicted values) than the linear surface"
+        "Carat = 1.0 is the most common diamond size",
+        "Carat is the most important predictor — the split that reduces price variance most at the root",
+        "Diamonds weighing more than 1 carat are rare",
+        "The tree cannot use other predictors until carat is exhausted"
       ],
       "correct": 1,
-      "explanation": "Decision trees partition the space into rectangular regions and predict the mean response within each region. This creates a step-function (piecewise constant) surface with hard edges, unlike the smooth plane of a linear model."
+      "explanation": "A regression tree greedily chooses the split that maximally reduces the residual variance at each step. If carat is the first split, it is the single predictor-threshold combination that explains the most variance in price — confirming carat as the dominant predictor."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "You have p = 200 predictors and n = 150 observations. Ordinary OLS cannot be fitted because X^T X is not invertible. Which approach is appropriate?",
+      "text": "Why does the log-log OLS model typically have lower RMSE than a regression tree with maxdepth = 4 on the diamonds dataset?",
       "options": [
-        "Increase the dataset size before fitting any model",
-        "Use Ridge or LASSO regularisation, which can fit models when p > n",
-        "Remove predictors until p < n, using expert judgement only",
-        "Use a decision tree, which does not require matrix inversion"
+        "OLS always has lower RMSE than trees on any dataset",
+        "The tree with maxdepth=4 has at most 16 leaf nodes — very coarse piecewise-constant predictions — while OLS captures the smooth continuous price-carat relationship",
+        "Trees are fitted by minimising MAE, not RMSE",
+        "OLS uses more predictors than the tree"
       ],
       "correct": 1,
-      "explanation": "Ridge and LASSO regularisation add a penalty that makes the optimisation problem well-posed even when p > n. They effectively shrink or select among the many predictors, producing stable estimates without needing n > p."
+      "explanation": "A tree with maxdepth=4 partitions the feature space into at most 2⁴ = 16 rectangular regions, predicting the mean price within each region. This is very coarse compared to the smooth, continuous OLS fitted surface. The tree's prediction surface is a staircase; OLS produces a smooth curve that fits the data more precisely."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "In glmnet, alpha = 0.5 fits an Elastic Net that uses a mixture of Ridge and LASSO penalties.",
+      "correct": true,
+      "explanation": "The glmnet penalty is λ[α||β||₁ + (1−α)||β||₂²]. alpha = 0 is pure Ridge, alpha = 1 is pure LASSO, and intermediate values (0 < alpha < 1) are Elastic Net — combining the variable selection of LASSO with the grouping and stability of Ridge."
     }
   ]
 }

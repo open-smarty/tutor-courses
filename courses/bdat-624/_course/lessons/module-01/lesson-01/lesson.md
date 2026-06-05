@@ -2,130 +2,103 @@
 
 ## Goal
 
-By the end of this lesson you will be able to define a stochastic process formally, decode every symbol in the standard notation, and classify any real biological process into one of four types based on its state space and parameter space.
+Understand what a stochastic process is, how it differs from a single random variable, and how to classify processes into four fundamental types based on their time and state spaces.
 
 ## Concept
 
-### Why randomness can't be avoided
+### Motivation: From Snapshots to Movies
 
-Suppose you're modelling the spread of an infection through a hospital ward. You could write a deterministic ODE — one that tells you the exact number of infected patients at any future time. That model is useful. But it misses something important.
+A **random variable** is like a single photograph — it captures the value of some uncertain quantity at one fixed instant. You roll a die: the outcome is a random variable. A patient's blood pressure at 9 a.m. on Monday: a random variable.
 
-Real biological systems are noisy. A patient's immune response, the exact moment a bacterium divides, whether a drug works on a given individual — these outcomes are inherently random. When that randomness is the *point* (not a nuisance), we need a different framework: **stochastic processes**.
+But biology rarely deals with single instants. Diseases progress. Populations grow and shrink. Patients move between health states over weeks and months. We need to track *how* randomness evolves over time — we need a movie, not a photograph.
 
-Here's the key insight: deterministic models tell you what *will* happen on average. Stochastic models tell you the full *distribution* of what can happen — including low-probability but high-consequence events like population extinction or epidemic die-out.
+A **stochastic process** is that movie: an indexed collection of random variables, one per point in time (or space, or any other index), each potentially depending on what came before.
 
----
+### Formal Definition
 
-### The formal definition
+**Notation:** Let T denote the **index set** — the set of "times" (or positions) at which we observe the process. Let S denote the **state space** — the set of values the process can take. Let X(t) denote the value of the process at index t. The process itself is the entire collection {X(t) : t ∈ T}.
 
-> **Notation:** *{X(t), t ∈ T}* — read this as "the family of random variables X(t), indexed by t, where t ranges over the set T."
+> **Notation block:**
+> - T — the **index set** (often time: days, hours, or any real number ≥ 0)
+> - S — the **state space** (the possible values X(t) can take)
+> - X(t) — the **random variable** at time t; read "X at time t"
+> - {X(t) : t ∈ T} — the full **stochastic process**; read "the collection of all X(t) as t ranges over T"
 
-A **stochastic process** is a collection of random variables
+**Formal definition.** A stochastic process is a collection of random variables {X(t) : t ∈ T} all defined on the same probability space (Ω, F, P), indexed by a parameter t ∈ T, where each X(t) takes values in the state space S.
 
-$$\{X(t),\; t \in T\}$$
+The probability space (Ω, F, P) is the mathematical foundation: Ω is the set of all possible outcomes (every conceivable trajectory of the process), F is a σ-algebra of events we can assign probabilities to, and P is the probability measure. In practice you rarely work with this directly, but it guarantees the probabilities are well-defined.
 
-all defined on the same probability space, where:
+### The Four Types of Stochastic Processes
 
-- **X(t)** is the **state** of the process at "time" *t* — it is a random variable, not a fixed number. At any given *t*, X(t) could take different values depending on chance.
-- **T** is the **parameter space** (also called the *index set*) — the set of values that *t* ranges over. Most often T represents time, but it can be any ordered set.
-- The set of all values that X(t) *can* take is called the **state space**, written **S** (or sometimes *SS* in notes).
+The index set T and the state space S each come in two flavors: **discrete** or **continuous**. Combining them gives four types.
 
-Think of a stochastic process as a *movie* rather than a *photograph*. Each frame (time point) shows a random value; the full sequence of frames is the process.
+**Type 1 — Discrete time, discrete state.** Both T and S are countable sets.
 
----
+> **Notation:** T = {0, 1, 2, 3, ...} — we observe the process at integer time steps. S = {s₁, s₂, ...} — a finite or countably infinite list of states.
 
-### Decoding the two common notations
+*Example:* A sequence of coin flips. Record outcome at each flip n = 0, 1, 2, ... as Xₙ ∈ {H, T}. Or: the number of new infections diagnosed each day in a hospital ward — we count on integer days, and the count is a whole number.
 
-You will see stochastic processes written in two ways depending on whether time is discrete or continuous:
+**Type 2 — Discrete time, continuous state.** T is discrete but S = ℝ (or an interval).
 
-> **Notation:** *{X_n, n = 0, 1, 2, ...}* — a discrete-time process. The subscript *n* counts steps. X_0 is the starting state, X_1 is the state after one step, and so on.
+> **Notation:** T = {0, 1, 2, ...} as before, but S ⊆ ℝ — real numbers.
 
-> **Notation:** *{X(t), t ≥ 0}* — a continuous-time process. The argument *t* is a non-negative real number. X(t) is the state at the instant *t* seconds (or minutes, or years) after the start.
+*Example:* Record a patient's body temperature each hour: X₁, X₂, X₃, ... where Xₙ ∈ [35°C, 42°C]. The observation times are discrete (hourly) but the temperature is continuous.
 
-The difference is purely in T: for the first, T = {0, 1, 2, ...} (countable); for the second, T = [0, ∞) (uncontinuous).
+**Type 3 — Continuous time, discrete state.** T = [0, ∞) and S is countable.
 
----
+> **Notation:** T = [0, ∞) — the process is defined at *every* real time t ≥ 0. S = {s₁, s₂, ...} — a finite or countable set of discrete states.
 
-### The four types
+*Example:* A patient's health status at any instant: S = {Healthy, Mildly Ill, Severely Ill, Recovered}. The patient can change state at any moment in continuous time, but is always in one of four discrete states.
 
-Two independent choices produce four combinations:
+**Type 4 — Continuous time, continuous state.** T = [0, ∞) and S ⊆ ℝ.
 
-| | **Discrete state space S** | **Continuous state space S** |
-|---|---|---|
-| **Discrete T** | Type I | Type III |
-| **Continuous T** | Type II | Type IV |
+> **Notation:** Both time and state are continuous real-valued quantities.
 
-Let's ground each type in a real biostatistics scenario.
+*Example:* The concentration of bacteria in a culture flask measured continuously: X(t) ∈ [0, ∞) for t ≥ 0. Or: the voltage across a neuron's membrane as a function of time.
 
-**Type I — Discrete time, discrete state**
+### Why the Classification Matters
 
-> **Notation:** S = {0, 1, 2, ...} or a finite label set like {Healthy, Sick, Dead}; T = {0, 1, 2, ...}
+The mathematics — and the software tools — differ sharply across types. Discrete-time, discrete-state processes (Markov chains) are analyzed with matrix algebra. Continuous-time, discrete-state processes (birth-death processes) require differential equations. Continuous-state processes often require stochastic calculus. Knowing the type is the first step in choosing the right tool.
 
-A patient's disease status is checked every month. At each checkup, the patient is classified as Healthy (H), Sick (S), or Dead (D). The state space is S = {H, S, D}; the parameter space is T = {0, 1, 2, ...} months. This is the classic **Markov chain** setup — the core of Arc 1 of this course.
+### Sample Paths
 
-**Type II — Continuous time, discrete state**
+A **sample path** (also called a **realization** or **trajectory**) is what you actually observe when the process plays out: one specific sequence of values over time.
 
-> **Notation:** S is countable (e.g., S = {0, 1, 2, ...}); T = [0, ∞)
+> **Notation:** ω ∈ Ω — a specific outcome (scenario). The sample path corresponding to ω is the function t ↦ X(t, ω) — "the value of the process at time t, given that the world unfolded as ω."
 
-The number of bacteria in a culture flask changes only by integer jumps (one cell divides → count goes up by 1; one cell dies → count goes down by 1), but these events can happen at *any* instant in continuous time. This is the setting of **birth-death processes** (Module 4).
-
-**Type III — Discrete time, continuous state**
-
-> **Notation:** S = ℝ (or an interval); T = {0, 1, 2, ...}
-
-A participant's body weight is recorded once a week. Weight is a real number — it does not jump in whole-number steps. The parameter space is weekly time points (discrete), but the state space is continuous.
-
-**Type IV — Continuous time, continuous state**
-
-> **Notation:** S = ℝ; T = [0, ∞)
-
-A patient's blood pressure is monitored continuously by an arterial line. At every instant in time, blood pressure is a real-valued measurement. **Brownian motion** is the canonical example and will appear again in later modules as a limiting process.
-
----
-
-### State space and parameter space — a quick reference
-
-> **Notation:** *S* — the **state space**: the set of all values X(t) can take. If S is finite or countable we call it a *discrete state space*; if S is an interval or all of ℝ we call it a *continuous state space*.
-
-> **Notation:** *T* — the **parameter space** (index set): the set of "times" the process is observed. If T = {0, 1, 2, ...} we have *discrete time*; if T = [0, ∞) we have *continuous time*.
-
-These two choices are independent, which is why we get four types, not two.
-
----
+Think of it this way: you run an epidemic simulation ten times; each run is a different sample path from the same stochastic process.
 
 ## Example
 
-### Tracking HIV treatment response
+**Classifying four biological processes.**
 
-A clinical trial follows 300 HIV-positive patients starting antiretroviral therapy (ART). Every 3 months, each patient is classified into one of three states:
+Consider the following four processes. For each, we identify T, S, and the type.
 
-- **State 1:** Virologically suppressed (viral load < 200 copies/mL)
-- **State 2:** Virologically failing (viral load ≥ 200 copies/mL)
-- **State 3:** Lost to follow-up / discontinued
+**Process A: Number of patients admitted to an ICU each day.**
+- T = {1, 2, 3, ...} — one observation per day (discrete)
+- S = {0, 1, 2, 3, ...} — a count of admissions (discrete, whole numbers)
+- **Type: Discrete time, discrete state.** This is a counting process on a discrete grid.
 
-Let X_n denote patient status at the *n*-th 3-month checkpoint.
+**Process B: Patient core temperature measured every hour during a fever.**
+- T = {0, 1, 2, ..., 24} — hourly observations over 24 hours (discrete)
+- S = [35.0, 42.0] ⊆ ℝ — temperature in degrees Celsius (continuous)
+- **Type: Discrete time, continuous state.** The observation schedule is fixed (every hour) but temperature is a real number.
 
-**Decoding the setup:**
-- *X_n* is the state at checkpoint *n*. For a specific patient, X_0 might be 1 (suppressed at baseline), X_1 might be 1 again, X_4 might be 2 (failing at month 12).
-- State space: S = {1, 2, 3} — finite and discrete.
-- Parameter space: T = {0, 1, 2, 3, 4} checkpoints — discrete.
-- **Classification: Type I (discrete time, discrete state).**
+**Process C: Patient's clinical state (Healthy / Infected / Recovered) — transitions can happen at any moment.**
+- T = [0, ∞) — transitions happen in continuous time
+- S = {Healthy, Infected, Recovered} — three discrete states
+- **Type: Continuous time, discrete state.** The state is discrete but time is continuous. This is the type we'll spend the most time on in this course: it describes Markov chains, branching processes, and birth-death processes.
 
-Now compare this with a second study that monitors viral load *continuously* using real-time PCR. Here X(t) is the actual viral count (a large integer) at any instant *t* ≥ 0. The count changes by integer jumps but at arbitrary continuous times — **Type II (continuous time, discrete state)**.
+**Process D: Concentration of a drug metabolite in bloodstream after injection.**
+- T = [0, ∞) — measured continuously
+- S = [0, ∞) — concentration in mg/L (continuous, non-negative)
+- **Type: Continuous time, continuous state.** Both time and state are real-valued.
 
-Here's the key insight: the same biological system can be modelled as different types of stochastic process depending on what you measure and when. Choosing the right type is a modelling decision.
-
----
+Here's the key insight: for this course, we will focus almost entirely on **Type 3** (continuous time, discrete state) and **Type 1** (discrete time, discrete state). These are the types that govern disease progression, population dynamics, clinical trials, and survival analysis.
 
 ## Task
 
-Open `exercise.R`. You will simulate all four types of stochastic processes in R and produce a 2×2 grid of plots. Each simulation is short (< 15 lines of code), but pay close attention to what the axes represent — that will tell you the type.
-
-Run the check when done:
-
-```
-npm run check -- bdat-624 module-01 lesson-01
-```
+See `exercise.R` for the full instructions. You will use the `markovchain` package to define a 3-state health chain (Healthy, Sick, Recovered), simulate a 100-step trajectory, plot the simulation, and classify four given biological processes by hand.
 
 ## Check
 
@@ -135,4 +108,4 @@ npm run check -- bdat-624 module-01 lesson-01
 
 ## Reflection
 
-A colleague says: "I always use a deterministic ODE model — it's simpler, and if I simulate it many times with slightly different parameters I can capture variability." What is the fundamental difference between this bootstrap-style approach and a proper stochastic process model? Think about what happens near a critical threshold — for example, when a bacterial population is close to extinction. Which model captures that behaviour correctly, and why?
+A stochastic process requires that all X(t) are defined on the **same** probability space. Why does this matter biologically? Suppose you observe two patients independently — can their health trajectories form a single stochastic process? What if they share a common infection source (a hospital ward outbreak)? How does dependence between patients change the appropriate probability space, and why might an independent-patients model be wrong for a nosocomial (hospital-acquired) infection study?

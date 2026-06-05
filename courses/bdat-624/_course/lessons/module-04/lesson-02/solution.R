@@ -1,197 +1,109 @@
-# BDAT 624 — Module 4, Lesson 2: The Pure Death Process
-# SOLUTION FILE — complete working implementation
-#
-# Libraries -----------------------------------------------------------------
+# SOLUTION: Module 04 Lesson 02 — Pure Death Process
 library(ggplot2)
 library(dplyr)
 
-set.seed(42)
+N0 <- 200; mu <- 0.5
+t_obs <- c(1, 3, 5, 8)
 
-# Parameters ----------------------------------------------------------------
-mu      <- 0.1
-j       <- 50
-t_end   <- 30
-n_sims  <- 200
-t_check <- 10
+# ============================================================
+# Task 1: Theoretical Binomial PMF
+# ============================================================
+theoretical_df <- lapply(t_obs, function(t) {
+  p_t <- exp(-mu*t)
+  nv  <- 0:N0
+  data.frame(n=nv, t=t, prob=dbinom(nv, N0, p_t), t_label=paste0("t=",t," days"))
+}) |> bind_rows()
 
-# ---------------------------------------------------------------------------
-# Pure death process simulator
-# ---------------------------------------------------------------------------
-
-simulate_death <- function(mu, j, t_end) {
-  t     <- 0
-  n     <- j
-  times <- c(0)
-  pops  <- c(j)
-
-  while (t < t_end && n > 0) {
-    dt <- rexp(1, rate = n * mu)   # waiting time: Exp(n*mu)
-    t  <- t + dt
-    if (t >= t_end) break
-    n  <- n - 1                    # death event
-    times <- c(times, t)
-    pops  <- c(pops, n)
-  }
-  times <- c(times, t_end)
-  pops  <- c(pops, n)
-  data.frame(time = times, population = pops)
+cat("Mean and variance:\n")
+for (t in t_obs) {
+  p_t <- exp(-mu*t)
+  cat(sprintf("  t=%d: E=%.2f Var=%.2f SD=%.2f\n",
+              t, N0*p_t, N0*p_t*(1-p_t), sqrt(N0*p_t*(1-p_t))))
 }
 
-all_sims <- bind_rows(
-  lapply(1:n_sims, function(i) {
-    df      <- simulate_death(mu, j, t_end)
-    df$sim  <- i
-    df
-  })
-)
-
-# ---------------------------------------------------------------------------
-# Step-function lookup
-# ---------------------------------------------------------------------------
-
-get_pop_at <- function(sim_df, t_query) {
-  idx <- which(sim_df$time <= t_query)
-  if (length(idx) == 0) return(j)
-  sim_df$population[max(idx)]
-}
-
-# ---------------------------------------------------------------------------
-# Part 2: Trajectory plot
-# ---------------------------------------------------------------------------
-
-t_grid     <- seq(0, t_end, length.out = 200)
-theo_mean  <- j * exp(-mu * t_grid)
-
-pop_matrix <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  sapply(t_grid, function(t) get_pop_at(sim_df, t))
-})
-emp_mean   <- rowMeans(pop_matrix)
-
-mean_df <- data.frame(time = t_grid, emp_mean = emp_mean, theo_mean = theo_mean)
-
-p1 <- ggplot() +
-  geom_step(
-    data   = all_sims,
-    aes(x = time, y = population, group = sim),
-    colour = "grey70", alpha = 0.2
-  ) +
-  geom_line(
-    data   = mean_df,
-    aes(x = time, y = emp_mean),
-    colour = "red", linewidth = 1.1
-  ) +
-  geom_line(
-    data     = mean_df,
-    aes(x = time, y = theo_mean),
-    colour   = "blue", linetype = "dashed", linewidth = 1.1
-  ) +
-  labs(
-    title    = "Pure Death Process: 200 Simulated Trajectories",
-    subtitle = paste0("mu = ", mu, ", X(0) = ", j,
-                      " | red = empirical mean, blue dashed = j*exp(-mu*t)"),
-    x = "Time", y = "Population size"
-  ) +
-  theme_minimal()
-
+p1 <- ggplot(theoretical_df |> filter(prob > 0.001), aes(x=n, y=prob, fill=factor(t))) +
+  geom_col(alpha=0.8) +
+  facet_wrap(~t_label, scales="free") +
+  scale_fill_brewer(palette="Reds") +
+  labs(title="Pure Death: N(t) ~ Binomial(N0, exp(-mu*t))",
+       subtitle=paste0("N0=",N0,", mu=",mu),
+       x="Surviving cells", y="Probability", fill="Day") +
+  theme_minimal(base_size=12)
 print(p1)
 
-# ---------------------------------------------------------------------------
-# Part 3: Distribution of X(t_check) vs Binomial PMF
-# ---------------------------------------------------------------------------
+# ============================================================
+# Tasks 2 & 3: Gillespie + distribution comparison
+# ============================================================
+simulate_death <- function(N0, mu, T_max) {
+  times <- c(0); pops <- c(N0); n <- N0; t <- 0
+  while (n > 0 && t < T_max) {
+    wait <- rexp(1, rate=n*mu); t <- t+wait
+    if (t > T_max) break
+    n <- n-1; times <- c(times,t); pops <- c(pops,n)
+  }
+  data.frame(time=times, pop=pops)
+}
 
-x_at_check <- sapply(1:n_sims, function(i) {
-  get_pop_at(all_sims[all_sims$sim == i, ], t_check)
-})
+set.seed(111)
+T_max <- 15
+traj_all <- bind_rows(lapply(1:5, function(i) {
+  sim <- simulate_death(N0, mu, T_max); sim$sim_id <- i; sim
+}))
 
-p_binom  <- exp(-mu * t_check)         # Binomial success probability
-x_range  <- 0:j
-theo_pmf <- dbinom(x_range, size = j, prob = p_binom)
+t_seq <- seq(0, T_max, by=0.05)
+mean_df <- data.frame(t=t_seq, mean_pop=N0*exp(-mu*t_seq))
 
-dist_df  <- data.frame(x = x_at_check)
-theo_df  <- data.frame(x = x_range, pmf = theo_pmf)
-
-p2 <- ggplot(dist_df, aes(x = x)) +
-  geom_bar(
-    aes(y = after_stat(count) / n_sims),
-    fill = "steelblue", colour = "white", alpha = 0.7, width = 0.8
-  ) +
-  geom_point(
-    data   = theo_df[theo_df$pmf > 1e-4, ],
-    aes(x = x, y = pmf),
-    colour = "red", size = 2
-  ) +
-  geom_line(
-    data   = theo_df[theo_df$pmf > 1e-4, ],
-    aes(x = x, y = pmf),
-    colour = "red", linewidth = 0.8
-  ) +
-  labs(
-    title    = paste0("Distribution of X(", t_check, ") — ", n_sims, " simulations"),
-    subtitle = paste0("Theoretical: Binomial(j = ", j, ", p = ", round(p_binom, 3), ")"),
-    x = paste0("X(", t_check, ")"), y = "Proportion / Probability"
-  ) +
-  theme_minimal()
-
+p2 <- ggplot(traj_all, aes(x=time, y=pop, group=sim_id, color=factor(sim_id))) +
+  geom_step(linewidth=0.8, alpha=0.8) +
+  geom_line(data=mean_df, aes(x=t, y=mean_pop), inherit.aes=FALSE,
+            color="black", linewidth=1.5, linetype="dashed") +
+  labs(title="Pure Death Process: 5 Trajectories",
+       subtitle="Dashed = E[N(t)] = N0 * exp(-mu*t)",
+       x="Day", y="Surviving cells", color="Simulation") +
+  theme_minimal(base_size=12)
 print(p2)
 
-# ---------------------------------------------------------------------------
-# Part 4: Half-life
-# ---------------------------------------------------------------------------
+set.seed(222)
+N_at_3 <- replicate(1000, tail(simulate_death(N0, mu, 3)$pop, 1))
+p_t3   <- exp(-mu*3)
+n_show <- 100:175  # focus on plausible range
+comp_df <- data.frame(
+  n=n_show,
+  empirical   = tabulate(N_at_3+1, nbins=N0+1)[n_show+1] / 1000,
+  theoretical = dbinom(n_show, N0, p_t3)
+) |> tidyr::pivot_longer(c(empirical,theoretical), names_to="source", values_to="prob")
 
-t_half_analytical <- log(2) / mu
-cat(sprintf("\nAnalytical half-life: %.4f time units\n", t_half_analytical))
-
-half_times <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  hit    <- which(sim_df$population <= j / 2)
-  if (length(hit) == 0) return(NA_real_)
-  sim_df$time[min(hit)]
-})
-
-emp_half <- mean(half_times, na.rm = TRUE)
-cat(sprintf("Empirical half-life (mean time to X <= j/2): %.4f time units\n", emp_half))
-cat(sprintf("Difference: %.4f\n", abs(emp_half - t_half_analytical)))
-
-# ---------------------------------------------------------------------------
-# Part 5: Extinction time distributions for mu = 0.1, 0.2, 0.5
-# ---------------------------------------------------------------------------
-
-mu_vals <- c(0.1, 0.2, 0.5)
-
-ext_times_all <- lapply(mu_vals, function(m) {
-  sims <- lapply(1:n_sims, function(i) {
-    df  <- simulate_death(m, j, t_end = 60)   # extend horizon
-    hit <- which(df$population == 0)
-    if (length(hit) == 0) return(NA_real_)
-    df$time[min(hit)]
-  })
-  data.frame(
-    mu       = m,
-    ext_time = unlist(sims)
-  )
-})
-
-ext_df <- bind_rows(ext_times_all)
-ext_df <- ext_df[!is.na(ext_df$ext_time), ]
-ext_df$mu <- factor(ext_df$mu)
-
-p3 <- ggplot(ext_df, aes(x = ext_time, fill = mu)) +
-  geom_density(alpha = 0.5, colour = NA) +
-  labs(
-    title    = "Distribution of extinction times for three death rates",
-    subtitle = paste0("Pure death process, X(0) = ", j),
-    x = "Time to extinction", y = "Density",
-    fill = expression(mu)
-  ) +
-  theme_minimal()
-
+p3 <- ggplot(comp_df, aes(x=n, y=prob, fill=source)) +
+  geom_col(position="dodge", alpha=0.8) +
+  scale_fill_manual(values=c(empirical="#3498db", theoretical="#e74c3c")) +
+  labs(title=paste0("N(t=3): Simulation vs Binomial(",N0,",",round(p_t3,3),")"),
+       x="Surviving cells", y="Probability", fill="Source") +
+  theme_minimal(base_size=12)
 print(p3)
 
-# Summary statistics
-cat("\n--- Extinction time summary ---\n")
-for (m in mu_vals) {
-  et <- ext_df$ext_time[ext_df$mu == as.character(m)]
-  cat(sprintf("mu = %.1f | N extinct = %d/%d | mean = %.2f | median = %.2f\n",
-              m, length(et), n_sims, mean(et), median(et)))
-}
+# ============================================================
+# Task 4: Extinction time
+# ============================================================
+set.seed(333)
+T_ext_sims <- replicate(500, tail(simulate_death(N0, mu, 100)$time, 1))
+
+t_ext_r <- seq(min(T_ext_sims)*0.8, max(T_ext_sims)*1.1, length.out=200)
+f_T <- N0*mu*exp(-mu*t_ext_r)*(1-exp(-mu*t_ext_r))^(N0-1)
+
+p4 <- ggplot(data.frame(T_ext=T_ext_sims), aes(x=T_ext)) +
+  geom_histogram(aes(y=after_stat(density)), bins=30,
+                 fill="#9b59b6", alpha=0.7, color="white") +
+  geom_line(data=data.frame(t=t_ext_r, f=f_T), aes(x=t, y=f),
+            color="#e74c3c", linewidth=1.3) +
+  labs(title="Extinction Time Distribution",
+       subtitle=paste0("N0=",N0,", mu=",mu,"; red = theoretical PDF"),
+       x="Days until last cell dies", y="Density") +
+  theme_minimal(base_size=12)
+print(p4)
+
+H_N0 <- sum(1/(1:N0))
+cat(sprintf("\nExpected extinction time: theoretical = %.3f days, simulated = %.3f days\n",
+            H_N0/mu, mean(T_ext_sims)))
+# Note: H_200 ≈ 5.88, so E[T_ext] ≈ 5.88/0.5 ≈ 11.76 days
+# Individual expected lifetime = 1/mu = 2 days — extinction takes ~6x longer
+# due to the "last survivor" needing to outlive all others.

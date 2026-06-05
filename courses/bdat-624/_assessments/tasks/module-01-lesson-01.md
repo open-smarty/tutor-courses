@@ -1,68 +1,25 @@
-# Task: Identify and Classify Stochastic Processes
+# Task: Classifying and Simulating Stochastic Processes
+
+## Objective
+
+Apply the four-way classification of stochastic processes to real biological examples, build a Markov chain in R using the `markovchain` package, simulate a trajectory, and interpret the results in biological terms.
 
 ## Instructions
 
-Identify **three real stochastic processes** from your own area of interest — choose from biology, public health, or data science. For each process, answer the four questions below. Write your answers as structured comments in a new R file called `my_processes.R`.
+1. **Classification exercise.** For each of the four processes in Part 1 of `exercise.R`, write clear comments identifying: (a) the index set T and whether it is discrete or continuous, (b) the state space S and whether it is discrete or continuous, and (c) the type (DT-DS, DT-CS, CT-DS, or CT-CS). Include one sentence justifying your classification.
 
-Your R file does not need to run any simulations — this task is about articulating your understanding in writing.
+2. **Build the transition matrix.** Fill in the `trans_matrix` in Part 2 using the stated probabilities. Verify that every row sums to exactly 1 by running `rowSums(trans_matrix)`. If any row does not sum to 1, adjust your entries.
 
----
+3. **Create and inspect the chain.** Construct the `markovchain` object and print its summary. Note: the output should display the states and the transition matrix.
 
-## For each of your three processes, address:
+4. **Simulate and plot.** Run the 100-step simulation starting from state "H". Create a `ggplot2` figure that clearly shows the trajectory over time. Your plot must include a title, axis labels, and a colour legend distinguishing the three states.
 
-1. **What does X(t) or X_n represent?**
-   Describe in plain English what the random variable measures. Is it a count, a category, a continuous measurement? What are the units?
+5. **Interpret proportions.** In Part 5, compute the empirical proportion of time the simulated chain spends in each state. Write a one-sentence comment interpreting the proportion in state "S" (Sick): is it large or small, and why does that make clinical sense given the transition probabilities?
 
-2. **What is the state space S?**
-   List the possible values X can take. If the state space is discrete, enumerate the states. If it is continuous, describe the range (e.g., "all positive real numbers").
+## Submission
 
-3. **What is the parameter space T?**
-   Describe the index set. Is it discrete (daily, monthly, by generation) or continuous (any real time ≥ 0)? What are the units?
-
-4. **What type is the process?**
-   Classify it as one of:
-   - Type I: Discrete time, discrete state
-   - Type II: Continuous time, discrete state
-   - Type III: Discrete time, continuous state
-   - Type IV: Continuous time, continuous state
-
-   Justify your choice in one or two sentences.
-
----
-
-## Example R file structure
-
-```r
-# my_processes.R
-# BDAT 624 — Module 1, Lesson 1 Task
-# Student: [your name]
-
-# ---- Process 1: [descriptive name] ----
-# What X(t) represents:
-#   ...
-#
-# State space S:
-#   ...
-#
-# Parameter space T:
-#   ...
-#
-# Type and justification:
-#   ...
-
-# ---- Process 2: [descriptive name] ----
-# ...
-
-# ---- Process 3: [descriptive name] ----
-# ...
-```
-
----
-
-## Grading guidance
-
-A strong response will:
-- Use precise biological or epidemiological language to describe X(t)
-- Be specific about the state space (e.g., "S = {0, 1, 2, ..., 10⁶}" rather than "S = counts")
-- Correctly distinguish whether time in your system is best modelled as discrete or continuous, and defend that choice
-- Choose three genuinely different types where possible — try not to submit three Type I processes
+Submit your completed `exercise.R` file. Your solution must:
+- Contain no `NA` values in the transition matrix
+- Produce a plot that renders without error
+- Include interpretive comments for Parts 1 and 5
+- Pass `npm run check -- bdat-624 module-01 lesson-01`

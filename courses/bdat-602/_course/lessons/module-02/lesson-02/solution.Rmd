@@ -1,63 +1,134 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 2 Solution"
-subtitle: "Outlier Detection and Treatment"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Outlier Detection and Treatment"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Flag BMI outliers (IQR rule)
+```{r load-packages}
+library(tidyverse)
 
-```{r task1}
-library(dplyr)
-
-q1  <- quantile(health_small$bmi, 0.25, na.rm = TRUE)
-q3  <- quantile(health_small$bmi, 0.75, na.rm = TRUE)
-iqr <- q3 - q1
-
-health_flagged <- health_small |>
-  mutate(bmi_outlier = !is.na(bmi) &
-           (bmi < (q1 - 1.5 * iqr) | bmi > (q3 + 1.5 * iqr)))
-
-health_flagged |> count(bmi_outlier)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-A small number of records (typically 20–60 in a 10k sample) are flagged, mostly the injected extreme values (BMI = 5, 120, 150, 200).
+## Task 1: Detect outliers using the IQR rule and Z-score
 
-## Task 2 — Winsorise income
+### claim_amount
 
-```{r task2}
-p01 <- quantile(health_small$income, 0.01, na.rm = TRUE)
-p99 <- quantile(health_small$income, 0.99, na.rm = TRUE)
+```{r task1-iqr-claim}
+q1_claim  <- quantile(health_data$claim_amount, 0.25, na.rm = TRUE)
+q3_claim  <- quantile(health_data$claim_amount, 0.75, na.rm = TRUE)
+iqr_claim <- q3_claim - q1_claim
+hi_claim  <- q3_claim + 1.5 * iqr_claim
+lo_claim  <- q1_claim - 1.5 * iqr_claim
 
-health_win <- health_small |>
-  mutate(income = pmax(p01, pmin(p99, income)))
-
-summary(health_small$income)
-summary(health_win$income)
+n_outliers_claim <- sum(
+  health_data$claim_amount > hi_claim | health_data$claim_amount < lo_claim,
+  na.rm = TRUE
+)
+cat("Q1:", q1_claim, " Q3:", q3_claim, " IQR:", iqr_claim, "\n")
+cat("Upper fence:", hi_claim, " Lower fence:", lo_claim, "\n")
+cat("Outliers in claim_amount (IQR rule):", n_outliers_claim, "\n")
 ```
 
-After winsorisation the maximum drops to the 99th percentile and the minimum rises to the 1st percentile. The mean shifts slightly closer to the median, reducing the influence of injected extreme values.
-
-## Task 3 — Log transformation of claim_amount
-
-```{r task3}
-pos_claims <- health_small$claim_amount[health_small$claim_amount > 0]
-
-par(mfrow = c(1, 2))
-hist(pos_claims,        main = "Claim Amount (raw)",
-     col = "steelblue", border = "white", xlab = "USD")
-hist(log1p(pos_claims), main = "Claim Amount (log1p)",
-     col = "darkorange", border = "white", xlab = "log1p(USD)")
-par(mfrow = c(1, 1))
+```{r task1-zscore-claim}
+mu_claim <- mean(health_data$claim_amount, na.rm = TRUE)
+sd_claim <- sd(health_data$claim_amount, na.rm = TRUE)
+z_claim  <- (health_data$claim_amount - mu_claim) / sd_claim
+n_z_claim <- sum(abs(z_claim) > 3, na.rm = TRUE)
+cat("Z-score outliers (|z| > 3) in claim_amount:", n_z_claim, "\n")
+# Z-score finds more outliers than the IQR rule because the skewed distribution
+# inflates the standard deviation, pulling the threshold inward.
 ```
 
-The raw distribution is severely right-skewed. After `log1p()` the distribution is approximately symmetric — much better suited for algorithms that assume normality or compute Euclidean distances.
+### bmi
+
+```{r task1-iqr-bmi}
+q1_bmi  <- quantile(health_data$bmi, 0.25, na.rm = TRUE)
+q3_bmi  <- quantile(health_data$bmi, 0.75, na.rm = TRUE)
+iqr_bmi <- q3_bmi - q1_bmi
+hi_bmi  <- q3_bmi + 1.5 * iqr_bmi
+lo_bmi  <- q1_bmi - 1.5 * iqr_bmi
+
+n_outliers_bmi <- sum(
+  health_data$bmi > hi_bmi | health_data$bmi < lo_bmi,
+  na.rm = TRUE
+)
+cat("Upper fence for bmi:", hi_bmi, "\n")
+cat("Outliers in bmi:", n_outliers_bmi, "(includes injected values like 120, 150, 200)\n")
+```
+
+## Task 2: Box plots
+
+```{r task2-boxplot-claim}
+health_data |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(y = claim_amount)) +
+  geom_boxplot(fill = "steelblue", outlier.alpha = 0.1) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(title = "Claim Amount — Box Plot (non-zero claims)", y = "Claim Amount (USD)") +
+  theme_minimal()
+```
+
+```{r task2-boxplot-bmi}
+health_data |>
+  ggplot(aes(y = bmi)) +
+  geom_boxplot(fill = "darkorange", outlier.colour = "red", outlier.alpha = 0.5) +
+  labs(title = "BMI — Box Plot (injected outliers visible in red)", y = "BMI") +
+  theme_minimal()
+```
+
+## Task 3: Winsorise claim_amount
+
+```{r task3-winsorise}
+p1_claim  <- quantile(health_data$claim_amount, 0.01, na.rm = TRUE)
+p99_claim <- quantile(health_data$claim_amount, 0.99, na.rm = TRUE)
+
+health_data <- health_data |>
+  mutate(claim_amount_win = pmin(pmax(claim_amount, p1_claim), p99_claim))
+
+cat("p1  (1st percentile):", p1_claim, "\n")
+cat("p99 (99th percentile):", p99_claim, "\n")
+cat("Original max:", max(health_data$claim_amount, na.rm = TRUE), "\n")
+cat("Winsorised max:", max(health_data$claim_amount_win, na.rm = TRUE), "\n")
+# The winsorised max equals p99 — all values above p99 are now capped.
+```
+
+## Task 4: Log transformation and before/after comparison
+
+```{r task4-log}
+health_data <- health_data |>
+  mutate(
+    log_claim = log(claim_amount + 1),
+    log_bmi   = log(bmi)
+  )
+```
+
+```{r task4-histograms}
+p_raw <- health_data |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(x = claim_amount)) +
+  geom_histogram(bins = 60, fill = "steelblue") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Raw claim_amount", x = "Claim Amount") +
+  theme_minimal()
+
+p_log <- health_data |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(x = log_claim)) +
+  geom_histogram(bins = 60, fill = "darkorange") +
+  labs(title = "log(claim_amount + 1)", x = "log(Claim Amount + 1)") +
+  theme_minimal()
+
+library(patchwork)
+p_raw + p_log
+
+# Shape before: strongly right-skewed, with a very long tail to the right.
+# Shape after: approximately bell-shaped (slightly left-skewed), with far fewer
+# extreme values. The log transform makes the distribution much more suitable
+# for regression modelling.
+```

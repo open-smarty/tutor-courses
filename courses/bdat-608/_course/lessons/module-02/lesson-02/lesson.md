@@ -1,97 +1,87 @@
-# Lesson 4: Search Strategies and Numerical Optimisation
+# Lesson 2: Search Strategies and Numerical Optimisation
 
 ## Goal
 
-Use random search, grid search, and `optim()` to find the parameter values that minimise a loss function, and understand the relationship between these methods and the RMSE landscape.
+Compare grid search, gradient descent intuition, and `optim()` as strategies for minimising the loss function, and understand why the closed-form OLS solution dominates all of them for standard linear models.
 
 ## Concept
 
-Once you have a loss function, fitting a model means finding the parameter values at the **minimum** of that function. There are three strategies, ordered from least to most efficient:
+In lesson 1 we used random search: sample many parameter pairs and pick the best. This is simple but wasteful. Here we introduce more systematic approaches.
 
-### 1. Random Search
+**Grid search.** Instead of random sampling, lay down a structured rectangular grid over the parameter space and evaluate the loss at every grid point. For two parameters with $n$ grid points each, this requires $n^2$ evaluations. That is already slow: if you want $n = 100$ points per parameter for precision, you need $100^2 = 10{,}000$ evaluations. With ten parameters, grid search is completely infeasible — this is why we need smarter methods.
 
-Generate many random parameter pairs, evaluate the loss for each, and keep the best ones.
+**Gradient descent (the intuition).** Imagine the loss surface as a hilly landscape. You are standing somewhere on the hill and want to get to the lowest point. The gradient $\nabla L(\boldsymbol{\beta})$ at your current position tells you the direction of steepest ascent — the slope pointing uphill. To go downhill, step in the opposite direction:
 
-```r
-models <- tibble(
-  a1 = runif(250, -20, 40),
-  a2 = runif(250, -5, 5)
-) |>
-  mutate(dist = map2_dbl(a1, a2, sim1_dist))
-```
+$$\boldsymbol{\beta} \leftarrow \boldsymbol{\beta} - \alpha \, \nabla L(\boldsymbol{\beta})$$
 
-**Pro:** Simple to implement.  
-**Con:** Wastes evaluations in poor regions; unlikely to find the true minimum precisely.
+Here $\alpha > 0$ is the **learning rate** (step size). Large $\alpha$: you take big steps — fast but might overshoot the minimum. Small $\alpha$: slow but precise. The gradient of RMSE is a sum of partial derivatives, one per parameter. We do not implement gradient descent manually in R for standard linear models — but understanding it is essential for neural networks, LASSO, and any non-standard loss.
 
-### 2. Grid Search
-
-Evaluate the loss on a structured, evenly spaced grid of parameter values.
+**`optim()` in R.** R's `optim()` function accepts any user-defined objective function and minimises it numerically. The default method is Nelder-Mead (a simplex algorithm that does not require derivatives). The BFGS method approximates the Hessian (second derivative matrix) to take Newton-like steps — faster convergence for smooth, differentiable losses.
 
 ```r
-grid_search <- expand.grid(
-  a1 = seq(-5, 20, length = 25),
-  a2 = seq(1, 3, length = 25)
-) |>
-  mutate(dist = map2_dbl(a1, a2, sim1_dist))
+best <- optim(
+  par  = c(0, 0),            # starting values for (b0, b1)
+  fn   = my_loss_function,   # function to minimise
+  data = my_data,            # extra argument passed to fn
+  method = "BFGS"
+)
+best$par   # estimated (b0, b1)
+best$value # minimum loss
 ```
 
-**Pro:** Systematic; explores the space evenly.  
-**Con:** Exponentially expensive as the number of parameters grows (the *curse of dimensionality*). With 50 parameters and 10 grid points each, you need $10^{50}$ evaluations.
+**Convergence check.** `best$convergence == 0` means `optim()` thinks it found a local minimum. Always check this. If `convergence != 0`, try different starting values.
 
-### 3. `optim()` — Numerical Optimisation
+**Why closed-form beats all.** For the standard linear model, the OLS solution has an exact formula:
 
-`optim()` starts at a given point and iteratively moves toward lower loss values using an algorithm (default: Nelder-Mead simplex).
+$$\hat{\boldsymbol{\beta}} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$$
 
-```r
-best <- optim(par = c(0, 0), fn = measure_distance, data = sim1)
-best$par    # optimal (intercept, slope)
-best$value  # minimum RMSE achieved
-```
+This is not an approximation — it is the exact global minimum of RSS, computed in a single matrix operation. `lm()` implements this via QR decomposition (numerically more stable than computing the inverse directly). No iteration needed, no learning rate to tune, no convergence to worry about.
 
-**Pro:** Scales to many parameters; converges to the minimum far more efficiently than search.  
-**Con:** Requires sensible starting values; can get trapped in local minima for non-convex loss surfaces.
-
-### The RMSE landscape
-
-It helps to visualise the loss as a surface over the parameter space:
-
-```r
-ggplot(models, aes(a1, a2, colour = dist)) +
-  geom_point(size = 2) +
-  scale_colour_viridis_c(name = "RMSE") +
-  labs(title = "RMSE landscape over (intercept, slope)")
-```
-
-The low-RMSE region (yellow in viridis) is a narrow valley. `optim()` walks down into that valley; random and grid search just sample from it.
+The hierarchy: random search → grid search → gradient descent → `optim()` → closed-form OLS. Each step is more efficient. For linear models, jump straight to `lm()`. The other methods become necessary when the loss is non-standard or the model is non-linear.
 
 ## Example
 
+We use the `sim1` dataset from `modelr` to compare all three approaches.
+
+**Grid search** over $\beta_0 \in [-5, 20]$ and $\beta_1 \in [1, 3]$ with 25 points each (625 evaluations):
+
 ```r
-library(modelr); library(tidyverse)
-data("sim1")
+grid <- expand.grid(
+  b0 = seq(-5, 20, length = 25),
+  b1 = seq(1, 3, length = 25)
+) |>
+  mutate(rmse = map2_dbl(b0, b1, ~ rmse_sim1(.x, .y)))
 
-model1 <- function(a, data) a[1] + data$x * a[2]
-measure_distance <- function(mod, data) {
-  sqrt(mean((data$y - model1(mod, data))^2))
-}
-sim1_dist <- function(a1, a2) measure_distance(c(a1, a2), sim1)
-
-# optim() finds the minimum
-best <- optim(c(0, 0), measure_distance, data = sim1)
-cat("Intercept:", round(best$par[1], 4), "  Slope:", round(best$par[2], 4))
-cat("Min RMSE:", round(best$value, 4))
+grid |> slice_min(rmse, n = 1)
+# b0 ≈ 4.17, b1 ≈ 2.08, RMSE ≈ 2.14
 ```
 
-Running this gives approximately intercept = 4.22, slope = 2.05 — the same as `lm()`. The difference is that `optim()` uses an iterative algorithm while `lm()` has a closed-form solution (more on that in Lesson 5).
+**`optim()` with BFGS:**
+
+```r
+res <- optim(c(0, 0), fn = rmse_sim1_vec, method = "BFGS")
+res$par    # b0 ≈ 4.22, b1 ≈ 2.05
+res$value  # RMSE ≈ 2.13
+```
+
+**`lm()` (closed-form):**
+
+```r
+lm(y ~ x, data = sim1) |> coef()
+# (Intercept): 4.221, x: 2.052
+```
+
+Grid search is close but coarse. `optim()` is very close. `lm()` is exact and runs in milliseconds regardless of data size. The message: understanding optimisation builds intuition; in practice, use `lm()`.
 
 ## Task
 
-Open `exercise.Rmd` and complete:
+Open `exercise.Rmd`. Using `sim1` from `modelr`:
 
-1. Run a random search with 500 candidate models on `sim1`. Plot the top 10 lines (ranked by RMSE) overlaid on the scatter plot.
-2. Plot the RMSE landscape — a scatter plot of `a1` vs `a2` coloured by `dist`.
-3. Run `optim()` to find the best (intercept, slope) for RMSE. Print the result.
-4. Compare: which search method came closest to `optim()`'s answer?
+1. Implement `rmse_sim1(b0, b1)` that computes RMSE for `y ~ b0 + b1*x` on `sim1`.
+2. Run a grid search over $\beta_0 \in [-5, 20]$ (25 points) and $\beta_1 \in [1, 3]$ (25 points). Report the best pair.
+3. Use `optim(c(0, 0), fn, method = "BFGS")` to minimise `rmse_sim1`. Report the result and check `convergence`.
+4. Fit `lm(y ~ x, data = sim1)`. Compare all three estimates.
+5. Plot the grid-search results as a coloured scatter of `b0` vs `b1`, coloured by `rmse`. Mark the `optim()` result with a red dot.
 
 ## Check
 
@@ -101,4 +91,4 @@ npm run check -- bdat-608 module-02 lesson-02
 
 ## Reflection
 
-Grid search is systematic but impractical for many parameters. `optim()` is efficient but needs starting values. What is the risk of providing poor starting values to `optim()`, and how would you mitigate it?
+Grid search has complexity $O(n^k)$ where $n$ is points per dimension and $k$ is the number of parameters. With 10 parameters and 100 points each, how many evaluations would be needed? At 1 microsecond per evaluation, how long would that take? What does this tell you about why practitioners use gradient-based methods for neural networks with millions of parameters?

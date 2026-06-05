@@ -1,257 +1,158 @@
-# BDAT 624 — Module 4, Lesson 3: Birth-Death Process — Linear Growth and Extinction
-# Exercise: simulate supercritical, critical, subcritical, and immigration birth-death processes
-#
-# Instructions: fill in every # TODO: marker.
-# Run: npm run check -- bdat-624 module-04 lesson-03
-#
-# Libraries -----------------------------------------------------------------
+# Required packages
 library(ggplot2)
 library(dplyr)
 
-set.seed(42)
+# Scenario: An epidemic is seeded with 1 infectious individual.
+# We model spread using a birth-death process with:
+#   Birth (new infections) rate lambda_n = n * lambda (each case infects others)
+#   Death (recovery/isolation) rate mu_n = n * mu  (each case recovers)
+# Compare outcomes for rho = mu/lambda = 0.5, 1.0, 1.5.
 
-# ---------------------------------------------------------------------------
-# Birth-death simulator (handles births, deaths, and optional immigration)
-# ---------------------------------------------------------------------------
-# Arguments:
-#   lambda  — per-individual birth rate
-#   mu      — per-individual death rate
-#   epsilon — immigration rate (constant, default 0)
-#   i       — initial population X(0)
-#   t_end   — simulation horizon
-# Returns: data.frame with columns (time, population)
+# ============================================================
+# Task 1: Theoretical extinction probabilities
+# ============================================================
+# q = min(1, mu/lambda) when starting from 1 individual
+# q = min(1, rho)^n0   when starting from n0 individuals
 
-simulate_bd <- function(lambda, mu, i, t_end, epsilon = 0) {
-  # TODO: initialise t = 0, n = i, times = c(0), pops = c(i)
-  t     <- 0
-  n     <- i
-  times <- c(0)
-  pops  <- c(i)
+lambda_vals <- c(2, 1, 2)
+mu_vals     <- c(1, 1, 3)
+rho_vals    <- mu_vals / lambda_vals  # 0.5, 1.0, 1.5
+labels      <- paste0("rho = ", rho_vals)
 
-  while (t < t_end) {
-    # TODO: compute the total event rate:
-    #   rate_birth = n * lambda
-    #   rate_death = n * mu
-    #   rate_immig = epsilon
-    #   total_rate = rate_birth + rate_death + rate_immig
-    total_rate <- # TODO
+cat("Theoretical extinction probabilities (from 1 individual):\n")
+for (i in seq_along(rho_vals)) {
+  q_theo <- min(1, rho_vals[i])
+  cat(sprintf("  lambda=%.0f, mu=%.0f, rho=%.1f: q* = %.4f\n",
+              lambda_vals[i], mu_vals[i], rho_vals[i], q_theo))
+}
 
-    # If total rate is 0 (absorbing state and no immigration), process is stuck
-    if (total_rate == 0) break
-
-    # TODO: draw inter-event time from Exp(total_rate)
-    dt <- # TODO
-    t  <- t + dt
-    if (t >= t_end) break
-
-    # TODO: determine event type by drawing from the three possibilities
-    # using a uniform random number u in [0, 1]:
-    #   if u < rate_birth / total_rate  → birth
-    #   else if u < (rate_birth + rate_death) / total_rate  → death
-    #   else  → immigration
-    u <- runif(1)
-    rate_birth <- n * lambda
-    rate_death <- n * mu
-    if (u < rate_birth / total_rate) {
-      # TODO: birth — increment n
-      n <- # TODO
-    } else if (u < (rate_birth + rate_death) / total_rate) {
-      # TODO: death — decrement n (but not below 0)
-      n <- # TODO
+# ============================================================
+# Task 2: Simulate birth-death process (Gillespie)
+# ============================================================
+# Function: simulate one birth-death process trajectory
+# Returns: data frame of (time, population) pairs
+simulate_bd <- function(lambda, mu, T_max, n0 = 1) {
+  times <- c(0); pops <- c(n0); n <- n0; t <- 0
+  while (n > 0 && t < T_max) {
+    # Total rate = birth rate + death rate = n*(lambda + mu)
+    total_rate <- n * (lambda + mu)
+    wait       <- rexp(1, rate = total_rate)
+    t          <- t + wait
+    if (t > T_max) break
+    # Decide: birth or death?
+    # P(birth) = lambda/(lambda+mu), P(death) = mu/(lambda+mu)
+    if (runif(1) < lambda / (lambda + mu)) {
+      n <- n + 1   # birth
     } else {
-      # TODO: immigration — increment n
-      n <- # TODO
+      n <- n - 1   # death
     }
-
-    times <- c(times, t)
-    pops  <- c(pops, n)
+    times <- c(times, t); pops <- c(pops, n)
   }
-  times <- c(times, t_end)
-  pops  <- c(pops, n)
-  data.frame(time = times, population = pops)
+  data.frame(time = times, pop = pops)
 }
 
-# Step-function lookup (reused from previous lessons)
-get_pop_at <- function(sim_df, t_query) {
-  idx <- which(sim_df$time <= t_query)
-  if (length(idx) == 0) return(sim_df$population[1])
-  sim_df$population[max(idx)]
-}
+# TODO: Simulate 500 trajectories for each (lambda, mu) pair
+# Use T_max = 20 and record whether the process goes extinct (n=0)
+set.seed(2024)
+n_sim  <- 500
+T_max  <- 20
 
-# Simulation settings
-n_sims <- 300
-t_end  <- 30
+results_list <- lapply(seq_along(rho_vals), function(i) {
+  lam <- lambda_vals[i]; mu_i <- mu_vals[i]; rho <- rho_vals[i]
+  extinct_by_t <- matrix(NA, nrow = n_sim, ncol = T_max + 1)
+  final_pops <- numeric(n_sim)
 
-# ---------------------------------------------------------------------------
-# Part 1: Supercritical birth-death (lambda > mu)
-# ---------------------------------------------------------------------------
-
-lambda_s <- 0.4; mu_s <- 0.3; i_s <- 5
-# Theoretical mean: E[X(t)] = i * exp((lambda - mu) * t)
-
-# TODO: simulate n_sims trajectories using simulate_bd
-all_super <- bind_rows(
-  lapply(1:n_sims, function(k) {
-    df     <- # TODO: call simulate_bd with lambda_s, mu_s, i_s, t_end
-    df$sim <- k
-    df
-  })
-)
-
-t_grid      <- seq(0, t_end, length.out = 200)
-theo_super  <- i_s * exp((lambda_s - mu_s) * t_grid)
-
-# TODO: compute empirical mean at each t_grid point
-pop_mat_s <- sapply(1:n_sims, function(k) {
-  # TODO
+  for (sim in seq_len(n_sim)) {
+    traj <- simulate_bd(lam, mu_i, T_max)
+    final_pops[sim] <- tail(traj$pop, 1)
+    # Record whether extinct at each integer time
+    for (t_int in 0:T_max) {
+      # Find population just before or at time t_int
+      idx <- max(which(traj$time <= t_int), na.rm=TRUE)
+      if (length(idx) == 0 || is.na(idx)) {
+        extinct_by_t[sim, t_int+1] <- 0
+      } else {
+        extinct_by_t[sim, t_int+1] <- as.integer(traj$pop[idx] == 0)
+      }
+    }
+  }
+  list(lam=lam, mu=mu_i, rho=rho, final_pops=final_pops,
+       extinct_by_t=extinct_by_t, label=labels[i])
 })
-emp_super <- rowMeans(pop_mat_s)
 
-# TODO: plot all trajectories (grey) + empirical mean (red) + theoretical mean (blue dashed)
-p1 <- ggplot() +
-  # TODO
+# ============================================================
+# Task 3: Compute empirical extinction probability over time
+# ============================================================
+cat("\nEmpirical extinction probabilities at T_max=20:\n")
+ext_df_all <- lapply(results_list, function(res) {
+  ext_prob_t <- colMeans(res$extinct_by_t)
+  final_ext  <- mean(res$final_pops == 0)
+  cat(sprintf("  rho=%.1f: P(extinct by T=20) = %.4f (theoretical = %.4f)\n",
+              res$rho, final_ext, min(1, res$rho)))
+  data.frame(t     = 0:T_max,
+             p_ext = ext_prob_t,
+             rho   = res$rho,
+             label = res$label)
+}) |> bind_rows()
+
+# TODO: Plot extinction probability over time for all three rho values
+# Add horizontal dashed lines at theoretical q* = min(1, rho)
+ggplot(ext_df_all, aes(x=t, y=p_ext, color=factor(rho), group=factor(rho))) +
+  geom_line(linewidth=1.2) +
+  geom_hline(data=data.frame(rho=rho_vals, q=pmin(1, rho_vals)),
+             aes(yintercept=q, color=factor(rho)), linetype="dashed") +
   labs(
-    title    = "Supercritical Birth-Death Process",
-    subtitle = paste0("lambda = ", lambda_s, ", mu = ", mu_s, ", X(0) = ", i_s,
-                      " | intrinsic growth rate = ", lambda_s - mu_s),
-    x = "Time", y = "Population size"
+    title    = "Empirical P(Extinction by time t) for Birth-Death Process",
+    subtitle = "Dashed = theoretical ultimate extinction probability",
+    x = "Time t", y = "P(Extinct by t)", color = "rho = mu/lambda"
   ) +
   theme_minimal()
 
-print(p1)
+# ============================================================
+# Task 4: Simulate sample trajectories and plot
+# ============================================================
+# Plot 3 example trajectories per rho value
+set.seed(42)
+traj_examples <- lapply(seq_along(rho_vals), function(i) {
+  lapply(1:3, function(j) {
+    traj <- simulate_bd(lambda_vals[i], mu_vals[i], T_max)
+    traj$rho    <- rho_vals[i]
+    traj$sim_id <- j
+    traj$label  <- labels[i]
+    traj
+  }) |> bind_rows()
+}) |> bind_rows()
 
-# ---------------------------------------------------------------------------
-# Part 2: Critical birth-death (lambda = mu)
-# ---------------------------------------------------------------------------
-
-lambda_c <- 0.3; mu_c <- 0.3; i_c <- 5
-
-# TODO: simulate n_sims trajectories
-all_crit <- bind_rows(
-  lapply(1:n_sims, function(k) {
-    df     <- # TODO
-    df$sim <- k
-    df
-  })
-)
-
-# Fraction extinct by t_end
-frac_extinct_crit <- mean(sapply(1:n_sims, function(k) {
-  sim_df <- all_crit[all_crit$sim == k, ]
-  # TODO: return 1 if the population at t_end is 0, else 0
-  # TODO
-}))
-cat(sprintf("\nCritical (lambda=mu=%.1f): fraction extinct by t=%.0f = %.3f\n",
-            lambda_c, t_end, frac_extinct_crit))
-cat("Theoretical: extinction is certain (probability 1) eventually.\n")
-
-# ---------------------------------------------------------------------------
-# Part 3: Subcritical birth-death (lambda < mu)
-# ---------------------------------------------------------------------------
-
-lambda_b <- 0.3; mu_b <- 0.4; i_b <- 5
-
-# TODO: simulate n_sims trajectories
-all_sub <- bind_rows(
-  lapply(1:n_sims, function(k) {
-    df     <- # TODO
-    df$sim <- k
-    df
-  })
-)
-
-frac_extinct_sub <- mean(sapply(1:n_sims, function(k) {
-  sim_df <- all_sub[all_sub$sim == k, ]
-  # TODO: return 1 if extinct at t_end, else 0
-  # TODO
-}))
-cat(sprintf("\nSubcritical (lambda=%.1f, mu=%.1f): fraction extinct by t=%.0f = %.3f\n",
-            lambda_b, mu_b, t_end, frac_extinct_sub))
-cat("Theoretical: extinction is certain (probability 1).\n")
-
-# ---------------------------------------------------------------------------
-# Part 4: Verify theoretical extinction probability for supercritical case
-# ---------------------------------------------------------------------------
-
-# Theoretical extinction probability for supercritical case starting at i_s
-rho      <- mu_s / lambda_s
-ext_prob_theo <- rho^i_s
-cat(sprintf("\nSupercritical extinction probability: theoretical = (%.2f)^%d = %.5f\n",
-            rho, i_s, ext_prob_theo))
-
-# Empirical: run n_sims = 1000 trajectories to t = 100 (long enough)
-n_long <- 1000
-all_long <- bind_rows(
-  lapply(1:n_long, function(k) {
-    df     <- simulate_bd(lambda_s, mu_s, i_s, t_end = 100)
-    df$sim <- k
-    df
-  })
-)
-
-# TODO: compute empirical extinction fraction by t = 100
-frac_ext_super <- # TODO: mean of (pop at t=100 == 0) across all_long
-
-cat(sprintf("Empirical (t=100): %.5f\n", frac_ext_super))
-cat(sprintf("Difference: %.5f\n", abs(frac_ext_super - ext_prob_theo)))
-
-# ---------------------------------------------------------------------------
-# Part 5: Immigration rescues the subcritical process
-# ---------------------------------------------------------------------------
-
-epsilon <- 0.5   # immigration rate
-
-# TODO: simulate n_sims subcritical + immigration trajectories
-all_immig <- bind_rows(
-  lapply(1:n_sims, function(k) {
-    df     <- # TODO: use simulate_bd with epsilon = epsilon
-    df$sim <- k
-    df
-  })
-)
-
-frac_ext_immig <- mean(sapply(1:n_sims, function(k) {
-  sim_df <- all_immig[all_immig$sim == k, ]
-  # TODO: return 1 if extinct at t_end
-  # TODO
-}))
-cat(sprintf(
-  "\nSubcritical + immigration (epsilon=%.1f): fraction extinct by t=%.0f = %.4f\n",
-  epsilon, t_end, frac_ext_immig
-))
-cat("Expected: near 0 (immigration prevents absorption at state 0).\n")
-
-# TODO: compare mean trajectories of subcritical (no immigration) vs subcritical + immigration
-# Plot both mean trajectories on one graph
-t_grid_b     <- seq(0, t_end, length.out = 200)
-
-pop_mat_sub  <- sapply(1:n_sims, function(k) {
-  sim_df <- all_sub[all_sub$sim == k, ]
-  # TODO
-})
-emp_sub <- rowMeans(pop_mat_sub)
-
-pop_mat_imm  <- sapply(1:n_sims, function(k) {
-  sim_df <- all_immig[all_immig$sim == k, ]
-  # TODO
-})
-emp_imm <- rowMeans(pop_mat_imm)
-
-cmp_df <- data.frame(
-  time  = rep(t_grid_b, 2),
-  mean  = c(emp_sub, emp_imm),
-  model = rep(c("Subcritical (no immigration)", "Subcritical + immigration"), each = length(t_grid_b))
-)
-
-p5 <- ggplot(cmp_df, aes(x = time, y = mean, colour = model)) +
-  geom_line(linewidth = 1.1) +
+# TODO: Plot step trajectories, faceted by rho value
+ggplot(traj_examples, aes(x=time, y=pop, group=sim_id, color=factor(sim_id))) +
+  geom_step(linewidth=0.8, alpha=0.9) +
+  facet_wrap(~ label) +
   labs(
-    title    = "Effect of immigration on subcritical birth-death process",
-    subtitle = paste0("lambda = ", lambda_b, ", mu = ", mu_b, ", epsilon = ", epsilon),
-    x = "Time", y = "Mean population size",
-    colour = ""
+    title = "Birth-Death Process Trajectories for rho = 0.5, 1.0, 1.5",
+    x = "Time", y = "Population size N(t)", color = "Replicate"
   ) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  theme_minimal()
 
-print(p5)
+# ============================================================
+# Task 5: Extinction probability as function of rho (theoretical)
+# ============================================================
+# Plot q* = min(1, rho) vs rho for rho in [0, 2], starting from 1, 3, 5 individuals
+
+rho_grid <- seq(0, 2, by = 0.01)
+n0_vals  <- c(1, 3, 5)
+
+q_theory <- lapply(n0_vals, function(n0) {
+  q_vals <- pmin(1, rho_grid)^n0
+  data.frame(rho=rho_grid, q=q_vals, n0=paste0("n0 = ", n0))
+}) |> bind_rows()
+
+ggplot(q_theory, aes(x=rho, y=q, color=n0, group=n0)) +
+  geom_line(linewidth=1.2) +
+  geom_vline(xintercept=1, linetype="dashed", color="grey50") +
+  annotate("text", x=1.05, y=0.5, label="rho = 1\n(threshold)", hjust=0, size=3.5) +
+  labs(
+    title    = "Extinction Probability q* = min(1, rho)^n0 vs Death-to-Birth Ratio",
+    subtitle = "Left of rho=1: births dominate; Right: deaths dominate (certain extinction)",
+    x = "rho = mu/lambda", y = "Extinction probability q*", color = "Starting size"
+  ) +
+  theme_minimal()

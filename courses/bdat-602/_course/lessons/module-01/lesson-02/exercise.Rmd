@@ -1,52 +1,78 @@
 ---
-title: "BDAT 602 — Module 1, Lesson 2 Exercise"
-subtitle: "CRISP-DM and Setting Up the Course Dataset"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: CRISP-DM and Setting Up the Course Dataset"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Read data from CSV
+## Task 1: Load packages and generate the dataset
 
-Read `data/raw/health_insurance_small.csv` using `readr::read_csv()`. Call `glimpse()` on the result.
-
-```{r task1}
-# YOUR CODE HERE
-# library(readr)
-# df <- read_csv("data/raw/health_insurance_small.csv")
-# glimpse(df)
+```{r load-packages}
+library(tidyverse)
+library(skimr)
+# sparklyr is loaded separately in the Spark chunk below
 ```
 
-**How many rows?** ___
-**How many columns?** ___
-**Which columns were parsed as `<lgl>` (logical)?** ___
+```{r task1-generate}
+# TODO: source the simulator with bdat602.source_only = TRUE to prevent auto-run
+options(bdat602.source_only = TRUE)
+# source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
 
-## Task 2 — Histogram of claim amounts
+# TODO: call simulate_bdat602(n = 500000, seed = 602)
+health_data <- NULL  # replace NULL
 
-Filter to rows where `claim_amount > 0`, then plot a histogram on a log10 x-axis. Title: "Claim Amounts: 10k Sample".
-
-```{r task2}
-# YOUR CODE HERE
-# library(ggplot2)
-# library(dplyr)
-# ggplot(df |> filter(claim_amount > 0), aes(x = claim_amount)) +
-#   ...
+# TODO: print dimensions with dim() and confirm 500000 rows and 40 columns
 ```
 
-## Task 3 — Missing value map
+## Task 2: CRISP-DM Phase 1 — Business Understanding for fraud detection
 
-Use `DataExplorer::plot_missing()` to visualise missing values. List which columns have missing data.
+Write a short (4–6 sentence) business understanding paragraph for a fraud detection project using this dataset. Answer: What is the business problem? What is the mining objective? What success criterion would you set? Replace the placeholder below.
 
-```{r task3}
-# YOUR CODE HERE
-# library(DataExplorer)
-# plot_missing(df)
+```{r task2-business-understanding}
+# TODO: Write your Phase 1 document as R comments here.
+# Business problem:
+# Mining objective:
+# Success criterion:
+# Data source:
+# Constraints:
 ```
 
-**Columns with missing values:** ___
+## Task 3: Explore the three target variables
+
+Use `skim()` on just the three target columns, then create at least one visualisation.
+
+```{r task3-targets-skim}
+# TODO: select churned, high_risk, claim_amount from health_data, then skim()
+```
+
+```{r task3-plot}
+# TODO: create a ggplot histogram of claim_amount (hint: filter claim_amount > 0 first)
+# Then describe the shape of the distribution in a comment.
+
+# Distribution shape:
+```
+
+```{r task3-churn-rate}
+# TODO: compute the churn rate (mean of churned) and the high_risk rate (mean of high_risk)
+# Compare them — which target is more imbalanced?
+```
+
+## Task 4: Spark connection (eval=FALSE — do not run)
+
+```{r task4-spark, eval=FALSE}
+library(sparklyr)
+
+# TODO: connect to local Spark
+sc <- spark_connect(master = "???", version = "3.4.1")
+
+# TODO: push health_data to Spark with copy_to(), name = "health_insurance"
+health_tbl <- NULL  # replace NULL
+
+# TODO: count records by plan_tier using dplyr syntax, then collect() the result
+plan_counts <- NULL  # replace NULL
+
+# TODO: disconnect from Spark
+spark_disconnect(sc)
+```

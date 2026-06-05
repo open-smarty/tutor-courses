@@ -1,45 +1,65 @@
-"""
-Module 2, Lesson 3 — Attribute Control Charts
-Exercise: Build a p-chart and a u-chart.
+"""BDAT 614 — Module 2, Lesson 3
+Exercise: Attribute Control Charts — p, np, c, and u Charts"""
 
-Requirements: numpy, matplotlib
-"""
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
-# ----- Dataset 1: p-chart -----
-# A call centre monitors the proportion of calls with a complaint.
-# Sample sizes and number of complaints per day (20 days):
-sample_sizes_p = [150, 160, 145, 155, 150, 165, 148, 152, 158, 150,
-                  153, 147, 161, 156, 149, 154, 160, 151, 157, 155]
-complaints =     [6,   8,   5,   10,  7,   9,   4,   11,  8,   6,
-                  7,   5,   9,   12,  6,   8,   10,  7,   9,   6]
+rng = np.random.default_rng(seed=42)
 
-# TODO: Step 1 — compute p̄ (overall proportion)
-p_bar = None
+# ── Simulated data ──────────────────────────────────────────────────────────
+# 20 nightly ETL batches.  Each batch has a variable number of records (n_i).
+# For the p chart: each record either passes or fails validation (binary).
+# For the u chart: each record may carry multiple data quality defects.
 
-# TODO: Step 2 — compute per-day proportions pᵢ = complaints[i] / sample_sizes_p[i]
-p_values = None
+k = 20  # number of batches
 
-# TODO: Step 3 — compute per-day UCL and LCL (variable limits)
-p_ucl = None  # list of UCLs, one per day
-p_lcl = None  # list of LCLs, one per day (max with 0)
+# Task 1: Generate variable batch sizes between 350 and 600 records
+# TODO: use rng.integers(350, 601, size=k) and store in n_sizes
 
-# TODO: Step 4 — plot the p-chart
+# Task 2: Generate defective-item counts for the p chart
+# Assume true proportion defective p_true = 0.04
+# Hint: use rng.binomial(n_sizes, p_true) to get defective counts D_i
+# TODO: compute D_i and p_i = D_i / n_sizes
 
+# Task 3: Generate defect counts for the u chart
+# Assume mean defects per unit u_true = 0.018
+# Hint: defect counts per batch ~ Poisson(u_true * n_i); use rng.poisson(u_true * n_sizes)
+# TODO: compute c_i and u_i = c_i / n_sizes
 
-# ----- Dataset 2: u-chart -----
-# A data pipeline is monitored for validation errors (defects).
-# Each day a different number of data batches is processed.
-batches_per_day = [50, 60, 55, 70, 45, 65, 58, 52, 67, 53]
-total_errors =    [12, 14,  8, 21,  9, 16, 13, 10, 20, 11]
+# ── p Chart ─────────────────────────────────────────────────────────────────
+# Task 4: Compute p-bar (overall proportion defective)
+# TODO: p_bar = sum(D_i) / sum(n_sizes)
 
-# TODO: Step 5 — compute ū (overall defects per unit)
-u_bar = None
+# Task 5: Compute variable UCL and LCL for each subgroup
+# UCL_i = p_bar + 3 * sqrt(p_bar * (1 - p_bar) / n_i)
+# LCL_i = max(0, p_bar - 3 * sqrt(p_bar * (1 - p_bar) / n_i))
+# TODO: compute ucl_p and lcl_p as arrays of length k
 
-# TODO: Step 6 — compute per-day u values and variable limits
-u_values = None
-u_ucl = None
-u_lcl = None
+# Task 6: Plot the p chart
+# TODO:
+# - Plot p_i as a line with markers
+# - Plot CL (p_bar) as a dashed green line
+# - Plot UCL and LCL as dashed red lines (they vary per batch)
+# - Highlight out-of-control points (p_i > UCL_i or p_i < LCL_i) in red
+# - Label axes and add a title
 
-# TODO: Step 7 — plot the u-chart
+# ── u Chart ─────────────────────────────────────────────────────────────────
+# Task 7: Compute u-bar (overall defects per unit)
+# TODO: u_bar = sum(c_i) / sum(n_sizes)
+
+# Task 8: Compute variable UCL and LCL for each subgroup
+# UCL_i = u_bar + 3 * sqrt(u_bar / n_i)
+# LCL_i = max(0, u_bar - 3 * sqrt(u_bar / n_i))
+# TODO: compute ucl_u and lcl_u as arrays of length k
+
+# Task 9: Plot the u chart
+# TODO:
+# - Plot u_i as a line with markers
+# - Plot CL (u_bar) as a dashed green line
+# - Plot variable UCL and LCL as dashed red lines
+# - Highlight out-of-control points in red
+# - Label axes and add a title
+
+plt.tight_layout()
+plt.show()

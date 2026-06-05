@@ -1,31 +1,19 @@
-# Task: Module 5, Lesson 2 — GAM vs Linear Model Comparison
+# Task: Robust Regression and GAMs
 
 ## Objective
 
-Compare a GAM with a linear model and decide which is more appropriate.
+Demonstrate the OLS sensitivity to outliers by comparing `lm()` and `rlm()` on a contaminated dataset, then fit a GAM on diamonds and interpret the estimated smooth functions.
 
 ## Instructions
 
-The `airquality` dataset has a non-linear relationship between `Ozone` and `Temp`.
-
-```r
-air <- na.omit(airquality)
-```
-
-1. Fit two models:
-   - `mod_lin <- lm(Ozone ~ Temp + Wind, data = air)`
-   - `mod_gam <- gam(Ozone ~ s(Temp) + s(Wind), data = air, method = "REML")`
-
-2. Print `summary(mod_gam)`. Report the edf for each smooth. Is either relationship approximately linear?
-
-3. Plot the two smooth effects with `plot(mod_gam, shade = TRUE)`.
-
-4. Create a prediction grid with `data_grid(Temp = seq_range(Temp, 30), Wind = median(air$Wind))`. Generate predictions from both models and plot both curves on the same scatter plot.
-
-5. Compare the AIC of `mod_lin` and `mod_gam`. Which is preferred?
-
-6. Write a 3–4 sentence interpretation: what do the smooth effects tell you about how Temp and Wind relate to Ozone levels?
+1. Add outliers to `sim1`: add 20 to `y` for rows 5 and 15. Fit both `lm(y ~ x)` and `rlm(y ~ x, method = "M")`. Report intercepts and slopes.
+2. Plot the scatter of the contaminated `sim1` with both fitted lines. Label the outlier points distinctly. Describe which line is pulled more.
+3. Fit `gam(log(price) ~ s(log(carat)) + s(depth) + cut, data = diamonds, method = "REML")`.
+4. Print `summary()`. For each smooth term, report the EDF and whether it is approximately linear or non-linear.
+5. Produce the smooth plot with `plot(mod_gam, pages = 1, shade = TRUE)`. Describe the shape of each smooth in one sentence each.
+6. Fit `lm(log(price) ~ log(carat) + depth + cut, data = diamonds)` and compare AIC with the GAM. Which wins?
+7. In two sentences, explain why the GAM wins: what structure in the data does the smooth capture that the linear model cannot?
 
 ## Submission
 
-Submit the knitted HTML with all plots and your written interpretation.
+Knit to HTML. Required: the OLS vs robust plot, the GAM smooth plot, the AIC comparison, and all written interpretations.

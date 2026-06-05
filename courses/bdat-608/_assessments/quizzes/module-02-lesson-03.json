@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In the lm() summary output, what does the 'Std. Error' column represent?",
+      "text": "The OLS estimator is β̂ = (X'X)⁻¹X'y. What is the condition required for this formula to exist?",
       "options": [
-        "The residual standard deviation of the response variable",
-        "The standard deviation of the estimated coefficient across repeated samples",
-        "The absolute value of the residuals",
-        "The standard deviation of the predictor variable x"
+        "The response y must be normally distributed",
+        "The matrix X'X must be invertible (no perfect multicollinearity among predictors)",
+        "The sample size n must exceed the number of predictors p by at least 100",
+        "The residuals must be homoscedastic"
       ],
       "correct": 1,
-      "explanation": "The standard error of a coefficient measures how precisely it is estimated — it is the standard deviation of the sampling distribution of that coefficient. Smaller Std. Error = more precise estimate."
+      "explanation": "The formula requires (X'X)⁻¹ to exist, which requires X'X to be invertible (full rank). This fails when two or more columns of X are perfectly linearly dependent — perfect multicollinearity. In that case, there are infinitely many β vectors that minimise RSS, and the unique OLS solution does not exist."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "An lm() summary shows R-squared = 0.86. What does this mean?",
-      "options": [
-        "86% of observations lie within one standard deviation of the fitted line",
-        "The model makes correct predictions 86% of the time",
-        "86% of the variance in y is explained by the predictor(s) in the model",
-        "There is an 86% probability that the model is correctly specified"
-      ],
-      "correct": 2,
-      "explanation": "R-squared is the proportion of variance in the response (y) explained by the model. R² = 0.86 means the predictor(s) account for 86% of the variation in y; the remaining 14% is unexplained (residual)."
+      "type": "true-false",
+      "text": "In the summary() output of lm(), the t-value for a coefficient is computed as: t = Estimate / Std. Error.",
+      "correct": true,
+      "explanation": "The t-statistic tests H₀: βⱼ = 0. It equals the estimated coefficient divided by its standard error. Under H₀ and assuming normal errors, this statistic follows a t-distribution with n − p − 1 degrees of freedom."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "lm() uses an iterative algorithm and therefore requires starting values, just like optim().",
-      "correct": false,
-      "explanation": "lm() uses QR decomposition — a direct (non-iterative) algorithm that computes the exact solution in one pass. No starting values are needed."
+      "type": "multiple-choice",
+      "text": "You fit lm(log(price) ~ log(carat)) on diamonds and get a slope of 1.676. How do you interpret this?",
+      "options": [
+        "A 1-unit increase in carat is associated with a $1.676 increase in price",
+        "A 1% increase in carat is associated with a 1.676% increase in price",
+        "A 1-unit increase in log(carat) is associated with a $1.676 increase in price",
+        "The model explains 1.676% of the variance in price"
+      ],
+      "correct": 1,
+      "explanation": "In a log-log model, the slope is the elasticity: a 1% increase in the predictor is associated with a (slope)% increase in the response. This follows from differentiating log(y) = β₀ + β₁log(x), which gives d(log y)/d(log x) = β₁, i.e., the percentage change in y per percentage change in x."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "What does confint(sim1_mod) return?",
+      "text": "The R² of the linear model lm(price ~ carat) is 0.849, while the log-log model lm(log(price) ~ log(carat)) gives R² = 0.933 (on log-price). Can we directly conclude the log-log model is better?",
       "options": [
-        "A vector of fitted values for each observation",
-        "Confidence intervals for the fitted values at each observed x",
-        "Confidence intervals for the model coefficients (intercept and slope)",
-        "A hypothesis test for the overall model fit"
+        "Yes — higher R² always means better model",
+        "Not directly, because the R² values are on different scales (raw price vs log price). We should also use residual diagnostics and compare within-scale metrics.",
+        "No — R² of 0.849 is already very high and further improvement is unnecessary",
+        "Yes, because R² closer to 1 is always the goal regardless of scale"
       ],
-      "correct": 2,
-      "explanation": "confint() computes confidence intervals for each coefficient (by default, 95%). These are the intervals within which the true parameter values are expected to fall with the stated confidence level."
+      "correct": 1,
+      "explanation": "The two R² values are on different response scales (price vs log-price) and cannot be directly compared numerically. However, residual plots confirm that the log-log model has more constant variance and more symmetric residuals — two additional lines of evidence supporting the log-log model beyond the R² comparison."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "The p-value for the slope in an lm() summary is 0.0001. This tells you that:",
+      "text": "Why does lm() use QR decomposition rather than directly computing (X'X)⁻¹?",
       "options": [
-        "There is a 0.01% chance that x causes y",
-        "If the true slope were zero, observing a slope this large or larger purely by chance has probability 0.0001",
-        "The slope estimate is exactly 0.0001",
-        "The model explains 99.99% of the variance in y"
+        "QR decomposition is slower but always produces integer-valued coefficients",
+        "Computing (X'X)⁻¹ directly can be numerically unstable when columns of X are nearly collinear; QR avoids inverting the matrix and is more stable",
+        "QR decomposition requires fewer observations",
+        "R cannot compute matrix inverses, so QR is used instead"
       ],
       "correct": 1,
-      "explanation": "A p-value is the probability of observing a test statistic as extreme as the one computed, assuming the null hypothesis (β=0) is true. Small p-values indicate that the null hypothesis is unlikely given the data."
+      "explanation": "Inverting X'X amplifies numerical rounding errors, especially when the matrix is nearly singular (near-collinearity). QR decomposition avoids inversion entirely by reducing the normal equations to a triangular system (Rβ = Q'y) solved by back-substitution, which is both faster and more numerically stable."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "The F-statistic in summary(lm_fit) tests whether all slope coefficients are simultaneously equal to zero.",
+      "correct": true,
+      "explanation": "The F-test compares the full model to the null model (intercept only). Under H₀: β₁ = β₂ = ... = βₚ = 0, the statistic F = [(TSS − RSS)/p] / [RSS/(n−p−1)] follows an F(p, n−p−1) distribution. A large F (small p-value) means at least one predictor has a non-zero coefficient."
     }
   ]
 }

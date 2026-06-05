@@ -1,66 +1,73 @@
 {
   "id": "module-05-lesson-02",
-  "title": "Quiz: Robust Regression and Generalised Additive Models",
+  "title": "Quiz: Robust Regression and GAMs",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In robust regression with Huber's M-estimator, how are large residuals treated compared to OLS?",
+      "text": "Huber's loss function ρ(r) = r²/2 for |r| ≤ c, and c|r| − c²/2 for |r| > c. What is the purpose of the threshold c?",
       "options": [
-        "Large residuals are excluded completely from the loss calculation",
-        "Large residuals are squared, just like in OLS",
-        "Large residuals are assigned linear (not quadratic) weight, reducing their influence",
-        "Large residuals are replaced by their absolute value before squaring"
+        "c is the number of predictors in the model",
+        "c separates the quadratic region (normal errors) from the linear region (outlier errors), capping the influence of large residuals",
+        "c is the confidence level for hypothesis tests",
+        "c is the maximum allowed residual — observations beyond c are removed"
       ],
-      "correct": 2,
-      "explanation": "The Huber loss is quadratic for small residuals (|r| ≤ k) but linear for large residuals (|r| > k). This caps the influence of outliers — they contribute linearly, not quadratically."
+      "correct": 1,
+      "explanation": "The threshold c defines 'what counts as a large residual.' Below c, the loss is quadratic (like OLS). Above c, the loss grows only linearly — large residuals are down-weighted relative to OLS, capping their influence. Observations beyond c are not removed; they are simply down-weighted in the IRLS algorithm."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "In a GAM, edf = 1.0 for a smooth term s(x) means the relationship between x and y is estimated to be perfectly linear.",
-      "correct": true,
-      "explanation": "edf = 1 means the smooth degenerates to a straight line — mgcv estimated that no non-linearity is needed. You can replace s(x) with the linear term x without loss of fit."
+      "text": "MASS::rlm() with method = 'M' removes all observations with large residuals from the dataset before fitting.",
+      "correct": false,
+      "explanation": "rlm() does not remove observations. It down-weights them using the Huber psi-function through iteratively reweighted least squares (IRLS). Observations with large residuals receive a small weight (not zero weight), so they still contribute to the fit, but their influence is capped."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "When would you prefer MASS::rlm() over lm()?",
+      "text": "In a GAM fitted with gam(log(price) ~ s(carat) + cut), the EDF for s(carat) is 8.7. What does this mean?",
       "options": [
-        "When you need p-values for the coefficients",
-        "When the residuals contain a few large outliers that may not represent the bulk of the data",
-        "When the response variable is binary",
-        "When the model has more than 10 predictors"
+        "The smooth for carat uses 8.7 observations",
+        "The carat-price relationship is estimated to be approximately as complex as an 8.7-degree polynomial — highly non-linear",
+        "The model has 8.7% of the variance explained by carat",
+        "There are 8.7 knots placed at equal intervals in carat"
       ],
       "correct": 1,
-      "explanation": "rlm() is designed for situations where some observations have unusually large residuals (outliers or contaminated data). By down-weighting large residuals, it produces estimates that reflect the bulk of the data."
+      "explanation": "EDF (effective degrees of freedom) measures the complexity of the estimated smooth. EDF = 1 is a straight line. EDF = 8.7 means the smooth bends approximately as often as an 8.7-degree polynomial. It does not directly equal the number of knots or observations."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In mgcv::gam(), what does te(x1, x2) do differently from s(x1) + s(x2)?",
+      "text": "In the GAM smooth plot from plot(mod_gam), the shaded region around a smooth represents:",
       "options": [
-        "te() fits separate linear models for x1 and x2",
-        "te() estimates a 2D interaction surface; s(x1) + s(x2) assumes the effects are additive",
-        "te() requires x1 and x2 to be categorical variables",
-        "te() forces edf = 1 for both x1 and x2"
+        "The distribution of the predictor variable",
+        "A 95% confidence band for the smooth function estimate",
+        "The range of observed values for that predictor",
+        "The residuals from the GAM fit"
       ],
       "correct": 1,
-      "explanation": "s(x1) + s(x2) is an additive model: the effect of x1 on y is the same regardless of x2 (and vice versa). te(x1, x2) fits a tensor-product smooth — a full 2D surface that allows the effect of x1 to depend on x2."
+      "explanation": "The shaded region (produced by shade = TRUE) is a pointwise 95% confidence band for the estimated smooth function f(x). A narrow band means the smooth is precisely estimated; a wide band means high uncertainty (typically at the extremes of the predictor range where few data points exist)."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "method = 'REML' in gam() is preferred over method = 'ML' because:",
+      "text": "You compare lm(log(price) ~ log(carat) + cut) and gam(log(price) ~ s(log(carat)) + cut) using AIC. The GAM has lower AIC. What is the correct interpretation?",
       "options": [
-        "REML is faster to compute for large datasets",
-        "REML produces less biased estimates of the smoothness parameters, reducing overfitting",
-        "REML allows the model to have more knots",
-        "REML is the only method that supports te() tensor smooths"
+        "The GAM has more parameters, so it always has lower AIC",
+        "The GAM's smooth for log(carat) captures non-linear structure that the linear term cannot, improving fit enough to compensate for the extra EDF",
+        "The linear model should always be preferred for interpretability",
+        "Lower AIC means the GAM overfits the training data"
       ],
       "correct": 1,
-      "explanation": "Restricted Maximum Likelihood (REML) treats the smoothness parameters as variance components and estimates them more accurately than ML, which tends to undersmooth (overfit). REML is the recommended default in mgcv."
+      "explanation": "AIC penalises complexity (+2 per effective parameter). A GAM with lower AIC means its improved fit (lower deviance) more than compensates for its extra EDF. This is only possible if genuine non-linearity exists in the data that the GAM captures and the linear model misses."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "The te(x1, x2) term in mgcv::gam() specifies a tensor product smooth that models a full 2D interaction surface between x1 and x2.",
+      "correct": true,
+      "explanation": "te(x1, x2) constructs a tensor product spline basis for two predictors, estimating a 2D smooth surface. It is appropriate when x1 and x2 are on different scales (unlike s(x1, x2) which assumes the same scale). It models a full interaction: the effect of x1 can change with x2 in any smooth way."
     }
   ]
 }

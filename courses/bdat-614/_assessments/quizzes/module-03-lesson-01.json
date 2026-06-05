@@ -6,55 +6,81 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A process has USL = 110, LSL = 90, μ = 100, σ = 3. What is Cp?",
+      "text": "A process has USL = 50, LSL = 40, and sigma = 1.2. What is Cp?",
       "options": [
-        "(110 − 90) / (6 × 3) = 1.11",
-        "(110 − 90) / (3 × 3) = 2.22",
-        "(110 − 100) / (3 × 3) = 1.11",
-        "(110 − 90) / (2 × 3) = 3.33"
+        "0.69",
+        "1.39",
+        "2.08",
+        "0.83"
       ],
-      "correct": 0,
-      "explanation": "Cp = (USL − LSL) / 6σ = (110 − 90) / (6 × 3) = 20/18 = 1.11. Cp measures the ratio of the spec width to the natural process spread (6σ)."
+      "correct": 1,
+      "explanation": "Cp = (USL - LSL) / (6*sigma) = (50 - 40) / (6 * 1.2) = 10 / 7.2 = 1.389. The answer is 1.39."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Using the same process (USL=110, LSL=90, μ=100, σ=3), what is Cpk?",
+      "text": "A process has mu = 48, USL = 50, LSL = 40, and sigma = 1.2. What is Cpk?",
       "options": [
-        "1.11",
-        "min(1.11, 1.11) = 1.11",
-        "min(10/9, 10/9) = 1.11",
-        "All of the above — they are the same"
+        "1.39",
+        "0.56",
+        "0.97",
+        "1.94"
       ],
-      "correct": 3,
-      "explanation": "Cpk = min((USL−μ)/3σ, (μ−LSL)/3σ) = min(10/9, 10/9) = 1.11. Since μ=100 is exactly centred, Cp = Cpk = 1.11."
+      "correct": 1,
+      "explanation": "Cpk = min((USL - mu)/(3*sigma), (mu - LSL)/(3*sigma)) = min((50-48)/3.6, (48-40)/3.6) = min(0.556, 2.222) = 0.556. The mean is very close to USL, making Cpk much lower than Cp."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "It is valid to perform process capability analysis on an unstable (out-of-control) process.",
-      "correct": false,
-      "explanation": "Process capability analysis assumes the process is in statistical control (stable). Calculating Cp/Cpk on an unstable process gives misleading results — the control chart must confirm stability first."
+      "type": "multiple-choice",
+      "text": "A process reports Cp = 1.80 and Cpk = 0.60. What is the most likely diagnosis?",
+      "options": [
+        "The process spread is too wide relative to the specification window",
+        "The process is capable and perfectly centred",
+        "The process spread fits well inside the spec window but the mean is off-centre",
+        "The measurement system is unreliable"
+      ],
+      "correct": 2,
+      "explanation": "When Cp >> Cpk, the natural spread (Cp) is adequate, but the process mean has shifted far toward one specification limit. The fix is to re-centre the process, not to reduce variation."
     },
     {
       "id": "q4",
-      "type": "multiple-choice",
-      "text": "A process has Cp = 1.60 but Cpk = 0.90. The best immediate action is:",
-      "options": [
-        "Reduce process variation by upgrading equipment",
-        "Recentre the process mean toward the midpoint of the spec limits",
-        "Widen the specification limits",
-        "Stop production — the process is not capable"
-      ],
-      "correct": 1,
-      "explanation": "High Cp but low Cpk means the process is capable of fitting inside the specs but is off-centred. Simply recentring the mean (without changing variability) will improve Cpk immediately."
+      "type": "true-false",
+      "text": "Control limits (UCL/LCL) and specification limits (USL/LSL) are derived from the same source and will always coincide for a capable process.",
+      "correct": false,
+      "explanation": "Control limits are calculated from the process data and represent the natural voice of the process. Specification limits are set externally by customers or engineers. They are independent and rarely coincide."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "Which index uses the overall (long-term) standard deviation rather than the within-subgroup standard deviation?",
+      "options": [
+        "Cp",
+        "Cpk",
+        "Ppk",
+        "Both Cp and Cpk"
+      ],
+      "correct": 2,
+      "explanation": "Pp and Ppk use the overall sigma computed from all observations pooled together, capturing both within- and between-subgroup variation. Cp and Cpk use within-subgroup sigma from the control chart."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "text": "An automotive supplier achieves Cpk = 1.67. What is the minimum requirement generally expected by the automotive industry (AIAG/PPAP)?",
+      "options": [
+        "Cpk >= 1.00",
+        "Cpk >= 1.33",
+        "Cpk >= 1.67",
+        "Cpk >= 2.00"
+      ],
+      "correct": 1,
+      "explanation": "Most industries require Cpk >= 1.33 for a process to be considered capable. Automotive OEMs often require 1.67 for safety-critical features, but 1.33 is the common baseline."
+    },
+    {
+      "id": "q7",
       "type": "true-false",
-      "text": "A Cpk of exactly 1.00 means that the process produces approximately 2700 defects per million opportunities (DPMO).",
+      "text": "A process can have Cpk = 0.80 even though every point on its control chart is within the UCL and LCL.",
       "correct": true,
-      "explanation": "Cpk = 1.00 corresponds to ±3σ — a process centred at 3σ from the nearest spec limit. The area beyond 3σ in a normal distribution is about 0.0027, or roughly 2700 DPMO."
+      "explanation": "Control limits reflect the natural voice of the process; specification limits reflect customer requirements. A process can be 'in control' (stable, predictable) yet still produce output that does not meet specifications if the process spread or centring is inadequate."
     }
   ]
 }

@@ -1,76 +1,57 @@
 """
-Module 1, Lesson 2 — Process Variation: Sources and Types
-Exercise: Classify variation, identify 6M categories, and trace a 5 Whys chain.
+BDAT 614 — Module 1, Lesson 2
+Exercise: Process Variation — Common Cause vs Special Cause
 """
+import numpy as np
+import matplotlib.pyplot as plt
 
-# ----- Part 1: Common Cause vs Special Cause -----
-# Classify each scenario as "common" or "special" cause variation.
+np.random.seed(42)
 
-scenarios = [
-    {
-        "description": "A bottling machine fills between 499 ml and 501 ml every cycle due to minor pressure fluctuations.",
-        "type": ""  # TODO: "common" or "special"
-    },
-    {
-        "description": "A batch of raw plastic pellets from a new supplier causes 20% of parts to be brittle.",
-        "type": ""  # TODO
-    },
-    {
-        "description": "Daily website response times vary between 120 ms and 140 ms with no clear pattern.",
-        "type": ""  # TODO
-    },
-    {
-        "description": "A server hardware failure causes response times to spike to 8000 ms.",
-        "type": ""  # TODO
-    },
-    {
-        "description": "Sensor readings in a factory fluctuate by ±0.5°C throughout the day due to normal air circulation.",
-        "type": ""  # TODO
-    },
-    {
-        "description": "A data analyst changes the ETL script without testing it, doubling the number of null records.",
-        "type": ""  # TODO
-    },
-]
+# ============================================================
+# Task 1: Generate baseline data with common-cause variation
+# ============================================================
+# Generate 50 server response times (ms).
+# Baseline: mean = 245 ms, standard deviation = 15 ms.
+# Use np.random.normal(mean, sd, n_observations).
+#
+# TODO: create an array called `response_times` with 50 observations
+baseline_mean = 245 # ms
+baseline_sd = 15 # ms
+n = 50
+response_times = np.random.normal(baseline_mean, baseline_sd, n)
 
-# ----- Part 2: 6M Category -----
-# For each special-cause scenario below, identify the 6M source.
-# Choose from: "Man", "Machine", "Material", "Method", "Measurement", "Environment"
 
-special_causes = [
-    {
-        "description": "A sensor that measures temperature drifts due to a dead battery.",
-        "source": ""  # TODO
-    },
-    {
-        "description": "An operator skips a required cleaning step because they were not trained properly.",
-        "source": ""  # TODO
-    },
-    {
-        "description": "A new batch of raw data contains duplicate records from the upstream database.",
-        "source": ""  # TODO
-    },
-    {
-        "description": "High humidity in the storage room causes product to absorb moisture and gain weight.",
-        "source": ""  # TODO
-    },
-    {
-        "description": "Two teams use different rounding rules when aggregating sales figures.",
-        "source": ""  # TODO
-    },
-]
+# ============================================================
+# Task 2: Insert a special cause at observation 35
+# ============================================================
+# A bad SQL query was deployed at observation 35.
+# Simulate a process shift: add 200 ms to observations 35 through 50
+# (Python index 34 onwards — remember 0-based indexing).
+#
+# TODO: modify response_times so that observations 35-50 are shifted up by 200 ms
+# Hint: response_times[34:] += 200
+special_casuse_start = 34
+response_times[special_casuse_start:] += 200
 
-# ----- Part 3: 5 Whys Chain -----
-# Problem: "The daily data pipeline failed at 3am and no alert was sent to the team."
-# Fill in each 'why' answer to trace the root cause.
 
-five_whys = {
-    "Problem": "The daily data pipeline failed at 3am and no alert was sent.",
-    "Why 1": "",  # TODO: what caused the failure?
-    "Why 2": "",  # TODO: why did that happen?
-    "Why 3": "",  # TODO: why did that happen?
-    "Why 4": "",  # TODO: why did that happen?
-    "Why 5": "",  # TODO: what is the root cause?
-}
+# ============================================================
+# Task 3: Create a run chart
+# ============================================================
+# A run chart is simply a line plot of measurements in time order.
+#
+# Steps:
+#   a) Create observation numbers 1 to 50.
+#   b) Plot all observations as a connected line (use plt.plot).
+#   c) Mark observation 35 with a large red marker (use plt.scatter or plt.plot
+#      with a single point, color='red', marker='o', s=100 or markersize=10).
+#   d) Draw a horizontal dashed line at the BASELINE mean (245 ms).
+#      Label it "Baseline mean = 245 ms".
+#   e) Add a vertical dashed line at observation 35 to mark the deployment.
+#      Label it "Special cause: bad deployment".
+#   f) Label axes: x = "Observation number", y = "Response time (ms)".
+#   g) Add a title: "Server Response Times — Run Chart".
+#   h) Add a legend and call plt.tight_layout() and plt.show().
+#
+# TODO: build the run chart
+obs_numbers = np.arrange(1, n + 1)
 
-# TODO: print Part 1 and Part 2 results, and print the 5 Whys chain

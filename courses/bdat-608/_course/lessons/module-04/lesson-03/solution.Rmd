@@ -1,122 +1,137 @@
 ---
-title: "BDAT 608 | Module 4, Lesson 3 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Splines, Cross-Validation, and Missing Values"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 9, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
 library(splines)
 library(caret)
 library(mice)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-sim1_base <- sim1
-
-set.seed(1)
-sim5 <- tibble(
-  x = seq(0, 3.5 * pi, length = 50),
-  y = 4 * sin(x) + rnorm(50)
-)
 ```
 
-## Task 1 — Fit Spline Models
+```{r load-data}
+data("diamonds", package = "ggplot2")
+data("sim5",    package = "modelr")
+```
 
-```{r spline-models}
-sp_mods <- list(
+## Task 1: Natural spline fits on sim5
+
+```{r task1}
+mods_spline <- list(
   df1 = lm(y ~ ns(x, 1), data = sim5),
   df3 = lm(y ~ ns(x, 3), data = sim5),
   df5 = lm(y ~ ns(x, 5), data = sim5)
 )
 
 grid5 <- sim5 |>
-  data_grid(x = seq_range(x, n = 60, expand = 0.1)) |>
-  gather_predictions(!!!sp_mods, .pred = "y")
+  data_grid(x = seq_range(x, n = 100)) |>
+  gather_predictions(!!!mods_spline)
 
 ggplot(sim5, aes(x, y)) +
-  geom_point(colour = "grey40") +
-  geom_line(data = grid5, colour = "#C9A84C", linewidth = 1) +
-  facet_wrap(~ model, labeller = label_both) +
-  labs(title = "Natural splines: df = 1, 3, 5") +
-  theme_minimal(base_size = 12)
-```
-
-## Task 2 — 10-fold Cross-Validation
-
-```{r cv-splines}
-set.seed(42)
-cv_rmse <- sapply(1:8, function(df) {
-  folds <- createFolds(sim5$y, k = 10)
-  mean(sapply(folds, function(idx) {
-    train <- sim5[-idx, ]; test <- sim5[idx, ]
-    mod  <- lm(y ~ ns(x, df), data = train)
-    pred <- predict(mod, newdata = test)
-    sqrt(mean((test$y - pred)^2))
-  }))
-})
-
-optimal_df <- which.min(cv_rmse)
-tibble(df = 1:8, cv_rmse) |>
-  ggplot(aes(df, cv_rmse)) +
-  geom_line(colour = "#1B3A6B", linewidth = 1) +
-  geom_point(colour = "#C9A84C", size = 3) +
-  geom_vline(xintercept = optimal_df, linetype = "dashed", colour = "darkred") +
+  geom_point(colour = "grey50") +
+  geom_line(data = grid5, aes(y = pred, colour = model), linewidth = 1) +
+  scale_colour_brewer(palette = "Set1",
+                      labels = c("df = 1", "df = 3", "df = 5")) +
   labs(
-    title    = "10-fold CV RMSE for ns(x, df)",
-    subtitle = paste0("Optimal df = ", optimal_df),
-    x = "Degrees of freedom", y = "CV RMSE"
+    title    = "Natural spline fits on sim5 (sinusoidal data)",
+    subtitle = "df = 1 underfits; df = 5 captures the full sine pattern.",
+    colour   = "Spline df"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal()
 ```
 
-## Task 3 — na.exclude vs na.omit
+## Task 2: 10-fold CV to choose df
 
-```{r na-handling}
-df_na <- tribble(~x, ~y, 1, 2.2, 2, NA, 3, 3.5, 4, 8.3, NA, 10)
+```{r task2}
+set.seed(42)
+cv_results <- tibble(
+  df      = 1:8,
+  cv_rmse = sapply(1:8, function(df) {
+    folds <- createFolds(sim5$y, k = 10)
+    mean(sapply(folds, function(idx) {
+      train <- sim5[-idx, ]
+      test  <- sim5[ idx, ]
+      pred  <- predict(lm(y ~ ns(x, df), data = train), newdata = test)
+      sqrt(mean((test$y - pred)^2))
+    }))
+  })
+)
 
-mod_omit   <- lm(y ~ x, data = df_na)                              # default na.omit
-mod_excl   <- lm(y ~ x, data = df_na, na.action = na.exclude)
+best_df <- cv_results$df[which.min(cv_results$cv_rmse)]
+cat("Optimal df:", best_df, "(CV-RMSE =", round(min(cv_results$cv_rmse), 3), ")\n")
 
-cat("nobs (na.omit):   ", nobs(mod_omit), "\n")
-cat("nobs (na.exclude):", nobs(mod_excl), "\n")
-
-cat("\nresiduals (na.omit):   "); print(residuals(mod_omit))
-cat("residuals (na.exclude):"); print(residuals(mod_excl))
-# na.exclude preserves positions 2 and 5 as NA in the residual vector.
+ggplot(cv_results, aes(df, cv_rmse)) +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_point(colour = "darkorange", size = 3) +
+  geom_vline(xintercept = best_df, linetype = "dashed", colour = "red") +
+  labs(
+    title    = "10-fold CV RMSE vs spline degrees of freedom (sim5)",
+    subtitle = paste0("Optimal df = ", best_df, " (red dashed line)."),
+    x        = "Degrees of freedom",
+    y        = "CV RMSE"
+  ) +
+  theme_minimal()
 ```
 
-## Task 4 — Multiple Imputation
+## Task 3: na.omit vs na.exclude
 
-```{r mice-imputation}
-set.seed(10)
-df_miss <- sim1_base |>
-  mutate(y = ifelse(runif(n()) < 0.1, NA, y))
+```{r task3}
+set.seed(99)
+diam_miss <- diamonds |>
+  mutate(carat = ifelse(runif(n()) < 0.10, NA, carat))
 
-imp     <- mice(df_miss, m = 5, method = "pmm", printFlag = FALSE)
-fit_imp <- with(imp, lm(y ~ x))
-pooled  <- pool(fit_imp) |> summary()
-print(pooled)
+# Default: na.omit (rows with NA are dropped entirely)
+mod_omit <- lm(log(price) ~ log(carat), data = diam_miss)
+cat("na.omit:   nobs =", nobs(mod_omit), "\n")
+cat("na.omit:   length(residuals) =", length(residuals(mod_omit)), "\n")
 
-cc_mod  <- lm(y ~ x, data = na.omit(df_miss))
-cat("\nComplete-case slope:  ", round(coef(cc_mod)[2], 4), "\n")
-cat("Multiple imputation slope:", round(pooled$estimate[2], 4), "\n")
+# na.exclude: rows with NA dropped but positions preserved in output
+mod_excl <- lm(log(price) ~ log(carat), data = diam_miss,
+               na.action = na.exclude)
+cat("na.exclude: nobs =", nobs(mod_excl), "\n")
+cat("na.exclude: length(residuals) =", length(residuals(mod_excl)), "\n")
+
+# With na.exclude, length(residuals) = nrow(diam_miss) = 53,940.
+# The NA positions are preserved as NA in the residuals vector,
+# making it easy to cbind() back to the original data frame.
+# With na.omit, length(residuals) = nobs (only complete cases).
 ```
 
-## Reflection
+## Task 4: Multiple imputation with mice
 
-**Few folds (e.g., 3-fold):** Each training set uses only 2/3 of the data, so the model is trained on fewer observations than the full dataset. The CV estimate will be slightly **pessimistic** (high bias) because models trained on less data tend to perform slightly worse. However, 3-fold CV is computationally cheap and has **low variance** between runs.
+```{r task4}
+set.seed(1)
+diam_miss2 <- diamonds |>
+  mutate(carat = ifelse(runif(n()) < 0.10, NA, carat))
 
-**Many folds (LOOCV = leave-one-out):** Each training set uses n-1 observations — almost the full dataset. The bias is very small. But the n CV estimates are highly correlated (each training set differs by just one observation), giving the CV estimate **high variance**. LOOCV is also computationally expensive for large n.
+# Multiple imputation: 5 complete datasets
+imp <- mice(
+  diam_miss2 |> select(price, carat, cut),
+  m         = 5,
+  method    = "pmm",
+  printFlag = FALSE
+)
 
-**Practical choice:** 10-fold CV is the industry standard because it balances low-enough bias and manageable variance at reasonable computational cost.
+# Fit model on each imputed dataset and pool estimates
+fit_mi <- with(imp, lm(log(price) ~ log(carat) + cut))
+pool_summary <- pool(fit_mi) |> summary()
+print(pool_summary)
+
+# Compare to complete-case analysis
+mod_cc <- lm(log(price) ~ log(carat) + cut,
+             data = diam_miss2 |> filter(!is.na(carat)))
+cat("\nComplete-case log(carat) std.error:",
+    round(summary(mod_cc)$coefficients["log(carat)", "Std. Error"], 5), "\n")
+cat("MI pooled  log(carat) std.error:  ",
+    round(pool_summary[pool_summary$term == "log(carat)", "std.error"], 5), "\n")
+
+# MI standard errors are slightly larger than complete-case because
+# MI propagates the additional uncertainty due to the missing values
+# (between-imputation variance) via Rubin's rules.
+```

@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "The formula y ~ x1 * x2 expands to which set of terms?",
+      "text": "The formula y ~ x1 * x2 expands to which model equation?",
       "options": [
-        "x1 and x2 only",
-        "x1, x2, and x1:x2 (the interaction term)",
-        "x1:x2 only",
-        "x1, x2, x1:x2, and an additional x1^2:x2 term"
+        "y = β₀ + β₁x₁x₂ + ε",
+        "y = β₀ + β₁x₁ + β₂x₂ + β₃x₁x₂ + ε",
+        "y = β₀ + β₁x₁ + β₂x₂ + ε",
+        "y = β₀ + β₁x₁² + β₂x₂ + ε"
       ],
       "correct": 1,
-      "explanation": "y ~ x1 * x2 is shorthand for y ~ x1 + x2 + x1:x2 — main effects for x1 and x2 plus their interaction term."
+      "explanation": "In R, x1 * x2 is shorthand for x1 + x2 + x1:x2. The ':' operator creates the product term x1×x2. So y ~ x1 * x2 fits the model with both main effects (x1 and x2) and their interaction (x1×x2), with four total parameters: β₀, β₁, β₂, β₃."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "In an additive model y ~ x1 + x2 (with x2 categorical), the slope of x1 is the same for all levels of x2.",
-      "correct": true,
-      "explanation": "The additive model allows different intercepts per group (via dummy variables) but forces a single shared slope for x1. Only the interaction model (y ~ x1 * x2) allows slopes to differ by group."
+      "text": "In the formula y ~ x^2, R creates a column containing x².",
+      "correct": false,
+      "explanation": "In R formulas, the '^' operator means 'crossing up to degree k', not arithmetic exponentiation. y ~ x^2 is treated the same as y ~ x. To create a literal x² column, write y ~ I(x^2). The I() function protects the arithmetic from the formula parser."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "You fit both additive and interaction models. The residual plot for the additive model shows a strong colour gradient (coloured by the grouping variable x2). This indicates:",
+      "text": "In lm(log(price) ~ log(carat) * cut), the coefficient for 'log(carat):cutIdeal' is −0.08. How do you interpret this?",
       "options": [
-        "The model has heteroscedastic errors",
-        "The slopes of x1 differ by group — the interaction term is needed",
-        "The intercepts are identical across groups",
-        "There are influential outliers in the data"
+        "Ideal diamonds cost 8% less than Fair diamonds per carat",
+        "The slope of log(carat) is 0.08 log-units lower for Ideal-cut diamonds than for Fair-cut diamonds — Ideal diamonds have a slightly smaller price elasticity for carat",
+        "Ideal diamonds have a price that is 0.08 log-units higher than Fair after controlling for carat",
+        "The interaction term means the model predicts negative prices for some Ideal diamonds"
       ],
       "correct": 1,
-      "explanation": "A colour gradient in residuals (where colour encodes group) means the additive model's single shared slope is wrong for some groups. The interaction term would allow different slopes per group."
+      "explanation": "The interaction coefficient log(carat):cutIdeal = −0.08 means the slope of log(carat) decreases by 0.08 for Ideal vs Fair diamonds. The effective slope for Ideal is β₁ + (−0.08). This captures the idea that Ideal diamonds derive less incremental value from additional carat weight — their quality premium is partly independent of size."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "You want to fit a model with log(y) as the response and x as the predictor. Which formula is correct?",
+      "text": "In a prediction grid plot with colour = cut and facet by model (additive vs interaction), what visual pattern confirms that the interaction matters?",
       "options": [
-        "lm(y ~ log(x))",
-        "lm(log(y) ~ x)",
-        "lm(y ~ I(log(y)) + x)",
-        "lm(y ~ x, transform = 'log')"
+        "All lines in both panels are horizontal",
+        "Lines are parallel in both panels",
+        "Lines are parallel in the additive panel but fan out (non-parallel) in the interaction panel",
+        "The interaction panel has fewer lines"
       ],
-      "correct": 1,
-      "explanation": "In R, transformations of the response are written directly in the formula: lm(log(y) ~ x). R evaluates log(y) before fitting. lm(y ~ log(x)) would instead transform the predictor."
+      "correct": 2,
+      "explanation": "The additive model forces parallel lines by construction (one shared slope). The interaction model allows each group to have its own slope. If the interaction is meaningful, the lines in the interaction panel will be non-parallel — they diverge or converge across the range of x."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "Which code correctly creates a quadratic term for x in an lm() formula?",
+      "text": "You fit poly(log(carat), 2, raw = TRUE) and get coefficients β₁ = 1.80 for log(carat) and β₂ = −0.10 for log(carat)². What does β₂ < 0 mean?",
       "options": [
-        "lm(y ~ x^2, data = df)",
-        "lm(y ~ poly(x, 2, raw=TRUE), data = df)",
-        "lm(y ~ x**2, data = df)",
-        "lm(y ~ sq(x), data = df)"
+        "The price-carat relationship is increasing at a decreasing rate on the log scale — concave",
+        "The model predicts negative prices for large diamonds",
+        "The quadratic term is not significant",
+        "The log transformation was unnecessary"
       ],
-      "correct": 1,
-      "explanation": "poly(x, 2, raw=TRUE) creates ordinary polynomial terms x and x². Using I(x^2) also works. y ~ x^2 is a formula crossing operator and collapses to y ~ x."
+      "correct": 0,
+      "explanation": "A negative quadratic coefficient β₂ < 0 means the parabola opens downward — the log-price increases with log(carat) but the rate of increase slows down (concave). Equivalently, each additional percentage increase in carat yields progressively smaller percentage gains in price beyond the main linear effect."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "An interaction model y ~ x1 * x2 always has lower AIC than the additive model y ~ x1 + x2, because it has more parameters.",
+      "correct": false,
+      "explanation": "Lower AIC means better model, and AIC penalises extra parameters with +2k. Adding an interaction term improves fit (reduces RSS) but also increases k. If the improvement in −2log(L̂) is less than 2 (the penalty per parameter), AIC will be higher for the interaction model — the simpler additive model is preferred."
     }
   ]
 }

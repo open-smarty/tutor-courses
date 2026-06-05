@@ -1,193 +1,173 @@
-# BDAT 624 — Module 4, Lesson 2: The Pure Death Process
-# Exercise: simulate pure death processes, verify Binomial distribution
-#
-# Instructions: fill in every # TODO: marker.
-# Run: npm run check -- bdat-624 module-04 lesson-02
-#
-# Libraries -----------------------------------------------------------------
+# Required packages
 library(ggplot2)
 library(dplyr)
 
-set.seed(42)
+# Scenario: Chemotherapy-induced cancer cell death modelled as a pure death process.
+# N0 = 200 cancer cells; individual death rate mu = 0.5 per cell per day.
+# The pure death process gives N(t) ~ Binomial(N0, exp(-mu*t)).
 
-# Parameters ----------------------------------------------------------------
-mu     <- 0.1    # per-individual death rate
-j      <- 50     # initial population X(0)
-t_end  <- 30     # simulation horizon
-n_sims <- 200    # number of independent trajectories
-t_check <- 10    # time point for distribution check
+N0  <- 200     # initial number of cancer cells
+mu  <- 0.5     # individual death rate per day
 
-# ---------------------------------------------------------------------------
-# Part 1: Simulate n_sims pure death process trajectories
-# Algorithm:
-#   While current time < t_end AND population n > 0:
-#     Next event time: Exp(rate = n * mu)
-#     Advance time, decrease population by 1
-# ---------------------------------------------------------------------------
+# ============================================================
+# Task 1: Theoretical Binomial distribution at specified times
+# ============================================================
+t_obs <- c(1, 3, 5, 8)
 
-simulate_death <- function(mu, j, t_end) {
-  # TODO: initialise t = 0, n = j, and vectors times = c(0), pops = c(j)
-  t     <- 0
-  n     <- j
-  times <- c(0)
-  pops  <- c(j)
+# TODO: For each t in t_obs, compute P_n(t) = C(N0,n)*p^n*(1-p)^(N0-n)
+# where p = exp(-mu*t). Use dbinom() in R.
+# Store in a long-format data frame: columns n, t, prob
 
-  while (t < t_end && n > 0) {
-    # TODO: draw inter-event time from Exp(n * mu)
-    dt <- # TODO
-
-    t <- t + dt
-    if (t >= t_end) break
-
-    # TODO: a death occurs — decrement population
-    n <- # TODO
-
-    times <- c(times, t)
-    pops  <- c(pops, n)
-  }
-  # Append final record at t_end
-  times <- c(times, t_end)
-  pops  <- c(pops, n)
-  data.frame(time = times, population = pops)
-}
-
-# Run all simulations
-all_sims <- bind_rows(
-  lapply(1:n_sims, function(i) {
-    df     <- simulate_death(mu, j, t_end)
-    df$sim <- i
-    df
-  })
-)
-
-# ---------------------------------------------------------------------------
-# Step-function lookup helper (same pattern as Lesson 1)
-# ---------------------------------------------------------------------------
-
-get_pop_at <- function(sim_df, t_query) {
-  # TODO: return the population at time t_query using a step-function lookup
-  # TODO
-}
-
-# ---------------------------------------------------------------------------
-# Part 2: Trajectory plot with theoretical mean
-# ---------------------------------------------------------------------------
-
-t_grid     <- seq(0, t_end, length.out = 200)
-theo_mean  <- j * exp(-mu * t_grid)       # E[X(t)] = j * exp(-mu * t)
-
-# TODO: compute the empirical mean at each t_grid point using get_pop_at
-pop_matrix <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  # TODO: apply get_pop_at over t_grid
-  # TODO
-})
-emp_mean   <- rowMeans(pop_matrix)
-
-mean_df <- data.frame(time = t_grid, emp_mean = emp_mean, theo_mean = theo_mean)
-
-# TODO: produce the trajectory plot
-# - grey step-function lines for all trajectories
-# - red line for empirical mean
-# - blue dashed line for theoretical mean
-p1 <- ggplot() +
-  # TODO: grey trajectories
-  # TODO: red empirical mean
-  # TODO: blue dashed theoretical mean
-  labs(
-    title    = "Pure Death Process: 200 Simulated Trajectories",
-    subtitle = paste0("mu = ", mu, ", X(0) = ", j),
-    x = "Time", y = "Population size"
-  ) +
-  theme_minimal()
-
-print(p1)
-
-# ---------------------------------------------------------------------------
-# Part 3: Distribution of X(t_check) vs Binomial(j, e^{-mu*t_check})
-# ---------------------------------------------------------------------------
-
-x_at_check <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  # TODO: call get_pop_at for t_check
-  # TODO
-})
-
-# Theoretical: X(t_check) ~ Binomial(j, p) where p = exp(-mu * t_check)
-p_binom  <- exp(-mu * t_check)
-x_range  <- 0:j
-# TODO: compute theo_pmf using dbinom(x_range, size = j, prob = p_binom)
-theo_pmf <- # TODO
-
-dist_df  <- data.frame(x = x_at_check)
-theo_df  <- data.frame(x = x_range, pmf = theo_pmf)
-
-# TODO: produce the distribution plot
-# - bar chart of simulated X(t_check) (as proportions)
-# - overlay theoretical Binomial PMF as red points/line
-p2 <- ggplot(dist_df, aes(x = x)) +
-  # TODO: geom_bar (proportions)
-  # TODO: overlay theo_df PMF
-  labs(
-    title    = paste0("Distribution of X(", t_check, ") — ", n_sims, " simulations"),
-    subtitle = paste0("Theoretical: Binomial(j = ", j, ", p = ", round(p_binom, 3), ")"),
-    x = paste0("X(", t_check, ")"), y = "Proportion / Probability"
-  ) +
-  theme_minimal()
-
-print(p2)
-
-# ---------------------------------------------------------------------------
-# Part 4: Half-life — empirical vs analytical
-# ---------------------------------------------------------------------------
-
-# Analytical half-life
-t_half_analytical <- log(2) / mu
-cat(sprintf("\nAnalytical half-life: %.4f time units\n", t_half_analytical))
-
-# Empirical: find the average time at which X(t) first falls to j/2 or below
-half_times <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  # TODO: find the first time that sim_df$population <= j / 2
-  #   Hint: use which() and min(sim_df$time[...])
-  # TODO
-})
-
-# TODO: compute the mean empirical half-life (excluding NA if population never reaches j/2)
-emp_half <- # TODO
-cat(sprintf("Empirical half-life (mean time to X <= j/2): %.4f time units\n", emp_half))
-
-# ---------------------------------------------------------------------------
-# Part 5: Distribution of extinction times for three values of mu
-# ---------------------------------------------------------------------------
-
-mu_vals <- c(0.1, 0.2, 0.5)
-
-ext_times_all <- lapply(mu_vals, function(m) {
-  # TODO: simulate n_sims trajectories with death rate m and t_end = 60
-  # For each simulation, find the time of extinction (first time population = 0)
-  # If extinction does not occur within t_end, record as NA
-  sims <- lapply(1:n_sims, function(i) {
-    # TODO: simulate and extract extinction time
-    # TODO
-  })
+theoretical_df <- lapply(t_obs, function(t) {
+  p_t <- exp(-mu * t)
+  n_range <- 0:N0
   data.frame(
-    mu      = m,
-    ext_time = unlist(sims)
+    n       = n_range,
+    t       = t,
+    prob    = dbinom(n_range, size = N0, prob = p_t),
+    t_label = paste0("t = ", t, " days")
   )
-})
+}) |> bind_rows()
 
-ext_df <- bind_rows(ext_times_all)
-ext_df <- ext_df[!is.na(ext_df$ext_time), ]   # remove non-extinct trajectories
+# TODO: For each t, print: E[N(t)] = N0*p_t and Var[N(t)] = N0*p_t*(1-p_t)
+cat("Theoretical mean and variance:\n")
+for (t in t_obs) {
+  p_t <- exp(-mu * t)
+  cat(sprintf("  t=%d: E[N(t)]=%.2f, Var[N(t)]=%.2f, SD=%.2f\n",
+              t, N0*p_t, N0*p_t*(1-p_t), sqrt(N0*p_t*(1-p_t))))
+}
 
-# TODO: produce a density/histogram plot of extinction times, faceted or coloured by mu
-p3 <- ggplot(ext_df, aes(x = ext_time, fill = factor(mu))) +
-  # TODO: geom_density or geom_histogram
+# TODO: Plot bar charts of the Binomial PMF at each time
+# Facet by t. Only show n-values near the mean (focus: n from 0 to N0).
+ggplot(theoretical_df |> filter(prob > 0.001), aes(x = n, y = prob, fill = factor(t))) +
+  geom_col(alpha = 0.8) +
+  facet_wrap(~ t_label, scales = "free") +
   labs(
-    title = "Distribution of extinction times for three death rates",
-    x = "Time to extinction", y = "Density",
-    fill = "mu"
+    title   = "Pure Death Process: N(t) ~ Binomial(N0, exp(-mu*t))",
+    subtitle = paste0("N0 = ", N0, ", mu = ", mu, " per day"),
+    x = "Surviving cells n", y = "Probability", fill = "Day"
   ) +
   theme_minimal()
 
-print(p3)
+# ============================================================
+# Task 2: Gillespie simulation of the pure death process
+# ============================================================
+simulate_death <- function(N0, mu, T_max) {
+  times <- c(0)
+  pops  <- c(N0)
+  n     <- N0
+  t     <- 0
+  while (n > 0 && t < T_max) {
+    # Rate of next death = n * mu
+    rate <- n * mu
+    wait <- rexp(1, rate = rate)
+    t    <- t + wait
+    if (t > T_max) break
+    n    <- n - 1
+    times <- c(times, t)
+    pops  <- c(pops,  n)
+  }
+  data.frame(time = times, pop = pops)
+}
+
+# TODO: Simulate 5 trajectories up to T_max = 15 days
+set.seed(111)
+T_max  <- 15
+n_traj <- 5
+
+traj_list <- lapply(seq_len(n_traj), function(i) {
+  sim <- simulate_death(N0, mu, T_max)
+  sim$sim_id <- i
+  sim
+})
+traj_all <- bind_rows(traj_list)
+
+# Theoretical mean decay curve
+t_seq   <- seq(0, T_max, by = 0.05)
+mean_df <- data.frame(t = t_seq, mean_pop = N0 * exp(-mu * t_seq))
+
+# TODO: Plot trajectories as step functions with theoretical mean overlaid
+ggplot(traj_all, aes(x = time, y = pop, group = sim_id, color = factor(sim_id))) +
+  geom_step(linewidth = 0.8, alpha = 0.8) +
+  geom_line(data = mean_df, aes(x = t, y = mean_pop),
+            inherit.aes = FALSE, color = "black", linewidth = 1.5, linetype = "dashed") +
+  labs(
+    title    = "Pure Death Process: 5 Trajectories (Gillespie Algorithm)",
+    subtitle = "Dashed black = theoretical mean E[N(t)] = N0 * exp(-mu*t)",
+    x = "Day", y = "Surviving cells N(t)", color = "Simulation"
+  ) +
+  theme_minimal()
+
+# ============================================================
+# Task 3: Compare simulated distribution to Binomial at t=3
+# ============================================================
+set.seed(222)
+n_sim   <- 1000
+t_check <- 3
+
+# TODO: Simulate n_sim death processes and record N(t_check)
+N_at_3 <- replicate(n_sim, tail(simulate_death(N0, mu, t_check)$pop, 1))
+
+# Theoretical Binomial
+p_t3    <- exp(-mu * t_check)
+n_range <- 0:N0
+
+# TODO: Compare empirical frequency vs dbinom()
+emp_freq   <- tabulate(N_at_3 + 1, nbins = N0 + 1) / n_sim  # +1 for 0-indexing
+theo_probs <- dbinom(n_range, size = N0, prob = p_t3)
+
+# Focus on the plausible range
+n_show <- which(theo_probs > 0.001) - 1  # back to 0-indexed
+comp_df <- data.frame(
+  n           = n_show,
+  empirical   = emp_freq[n_show + 1],
+  theoretical = theo_probs[n_show + 1]
+) |>
+  tidyr::pivot_longer(c(empirical, theoretical), names_to = "source", values_to = "prob")
+
+ggplot(comp_df, aes(x = n, y = prob, fill = source)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  scale_fill_manual(values = c(empirical = "#3498db", theoretical = "#e74c3c")) +
+  labs(
+    title  = paste0("N(t=", t_check, "): Simulation vs Binomial(", N0, ", ", round(p_t3,3), ")"),
+    x = "Surviving cells", y = "Probability", fill = "Source"
+  ) +
+  theme_minimal()
+
+# ============================================================
+# Task 4: Extinction time distribution
+# ============================================================
+# Extinction time = time when last cell dies = max of N0 Exp(mu) lifetimes
+# CDF: P(T_ext <= t) = (1 - exp(-mu*t))^N0
+
+# TODO: Simulate 500 complete death processes (run until N=0) and
+# record the extinction time (the last event time before N=0).
+set.seed(333)
+T_ext_sims <- replicate(500, {
+  sim <- simulate_death(N0, mu, T_max = 100)
+  # The extinction time is the last event before N=0
+  tail(sim$time, 1)
+})
+
+# TODO: Plot histogram of extinction times with the theoretical
+# PDF f_T(t) = N0 * mu * exp(-mu*t) * (1-exp(-mu*t))^(N0-1) overlaid
+t_ext_range <- seq(min(T_ext_sims)*0.8, max(T_ext_sims)*1.1, length.out=200)
+f_T_ext <- N0 * mu * exp(-mu * t_ext_range) * (1 - exp(-mu * t_ext_range))^(N0-1)
+f_df    <- data.frame(t=t_ext_range, f=f_T_ext)
+
+ggplot(data.frame(T_ext=T_ext_sims), aes(x=T_ext)) +
+  geom_histogram(aes(y=after_stat(density)), bins=30,
+                 fill="#9b59b6", alpha=0.7, color="white") +
+  geom_line(data=f_df, aes(x=t, y=f), color="#e74c3c", linewidth=1.3) +
+  labs(
+    title    = "Extinction Time Distribution: Simulation vs Theory",
+    subtitle = paste0("N0=", N0, ", mu=", mu, "; red = theoretical PDF"),
+    x = "Extinction time (days)", y = "Density"
+  ) +
+  theme_minimal()
+
+# Theoretical expected extinction time: (1/mu) * H_{N0}
+H_N0 <- sum(1 / (1:N0))
+E_T_ext_theo <- H_N0 / mu
+cat(sprintf("\nExpected extinction time: theoretical = %.4f days, simulated = %.4f days\n",
+            E_T_ext_theo, mean(T_ext_sims)))

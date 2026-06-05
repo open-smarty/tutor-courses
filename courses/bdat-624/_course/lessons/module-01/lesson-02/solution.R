@@ -1,158 +1,111 @@
-# BDAT 624 — Module 1, Lesson 2
-# Solution: Transition Probability Matrices and Patient Health Simulation
-
+# SOLUTION: Module 01 Lesson 02 — Probability Distributions and Transition Probabilities
+library(markovchain)
 library(ggplot2)
 library(dplyr)
-library(tidyr)
-library(markovchain)
-
-set.seed(2024)
 
 # ============================================================
-# PART 1: Build the transition probability matrix
+# Task 1: Transition Probability Matrix
 # ============================================================
-
-states <- c("Healthy", "Sick", "Dead")
-
-# Missing entries:
-#   Row 1 (Healthy): 0.85 + 0.12 + ??? = 1  =>  ??? = 0.03
-#   Row 2 (Sick):    0.40 + ??? + 0.10 = 1  =>  ??? = 0.50
-
 P <- matrix(
-  c(
-    0.85, 0.12, 0.03,
-    0.40, 0.50, 0.10,
-    0.00, 0.00, 1.00
-  ),
+  c(0.70, 0.25, 0.05,   # from Mild
+    0.20, 0.50, 0.30,   # from Moderate
+    0.05, 0.15, 0.80),  # from Severe
   nrow = 3, byrow = TRUE,
-  dimnames = list(states, states)
+  dimnames = list(c("M", "Mod", "Sev"), c("M", "Mod", "Sev"))
 )
 
-# Verify: row sums should all be 1
-cat("Row sums of P:\n")
+cat("Transition Probability Matrix P:\n")
+print(P)
+
+cat("\nRow sums (must all equal 1):\n")
 print(rowSums(P))
 
-# ============================================================
-# PART 2: Create a markovchain object
-# ============================================================
-
-health_mc <- new(
-  "markovchain",
-  states           = states,
-  transitionMatrix = P,
-  name             = "Patient Health Model"
-)
-
-print(health_mc)
+# Comment: The Severe state has the highest self-transition probability
+# (0.80), meaning once a patient is severely ill, they are most likely
+# to remain severely ill the following week. Mild has the second highest
+# (0.70). This reflects the chronic nature of the condition.
 
 # ============================================================
-# PART 3: Multi-step transition probabilities
+# Task 2: Matrix powers
 # ============================================================
+mat_power <- function(M, n) {
+  result <- diag(nrow(M))
+  for (i in seq_len(n)) result <- result %*% M
+  result
+}
 
-# Compute P^6 by repeated matrix multiplication
-P6 <- P %*% P %*% P %*% P %*% P %*% P
-# Equivalently: health_mc^6 returns the same result as a markovchain object
+P1  <- mat_power(P, 1)
+P5  <- mat_power(P, 5)
+P10 <- mat_power(P, 10)
 
-dimnames(P6) <- list(states, states)
+cat("\nP^5:\n")
+print(round(P5, 4))
+cat("\nP^10:\n")
+print(round(P10, 4))
 
-cat("\n6-step transition matrix P^6:\n")
-print(round(P6, 4))
-
-cat("\nP(Dead at month 6 | Healthy at month 0) =",
-    round(P6["Healthy", "Dead"], 4), "\n")
+# Observation: As n increases, the rows of P^n converge toward the same
+# vector — the stationary distribution π. By P^10, the rows are nearly
+# identical, regardless of starting state. This confirms ergodicity.
 
 # ============================================================
-# PART 4: Simulate 200 patients over 12 months
+# Task 3: State distributions over time
 # ============================================================
+pi0 <- c(M = 0.60, Mod = 0.30, Sev = 0.10)
 
-n_patients <- 200
-n_months   <- 12
+weeks_to_check <- c(1, 5, 10, 20)
+distributions <- lapply(weeks_to_check, function(n) {
+  dist_n <- pi0 %*% mat_power(P, n)
+  data.frame(week = n, M = dist_n[1], Mod = dist_n[2], Sev = dist_n[3])
+})
+dist_df <- bind_rows(distributions)
 
-sim <- matrix(NA, nrow = n_patients, ncol = n_months)
+cat("\nState distributions (rounded):\n")
+print(round(dist_df, 4))
 
-for (p in 1:n_patients) {
-  sim[p, ] <- markovchainSequence(
-    n           = n_months,
-    markovchain = health_mc,
-    t0          = "Healthy"
+# By week 20, the distribution is approaching the stationary distribution.
+# Note the Severe fraction grows significantly from the initial 10% —
+# this reflects the asymptotic pull toward the equilibrium.
+
+# ============================================================
+# Task 4: Plot
+# ============================================================
+all_weeks <- c(0, 1, 2, 3, 5, 7, 10, 15, 20)
+plot_data <- lapply(all_weeks, function(n) {
+  dist_n <- pi0 %*% mat_power(P, n)
+  data.frame(
+    week  = n,
+    state = c("M", "Mod", "Sev"),
+    prob  = as.numeric(dist_n)
   )
-}
+}) |> bind_rows()
 
-# ============================================================
-# PART 5: Compute proportion in each state over time
-# ============================================================
-
-prop_list <- vector("list", n_months)
-
-for (t in 1:n_months) {
-  tbl <- table(factor(sim[, t], levels = states))
-  prop_list[[t]] <- data.frame(
-    month      = t,
-    state      = names(tbl),
-    proportion = as.numeric(tbl) / n_patients
-  )
-}
-
-prop_df <- bind_rows(prop_list)
-prop_df$state <- factor(prop_df$state, levels = states)
-
-# ============================================================
-# PART 6: Stacked bar chart
-# ============================================================
-
-state_colours <- c(
-  "Healthy" = "#4dac26",
-  "Sick"    = "#f4a582",
-  "Dead"    = "#ca0020"
-)
-
-p_stack <- ggplot(prop_df, aes(x = month, y = proportion, fill = state)) +
-  geom_col(position = "stack", width = 0.8) +
-  scale_fill_manual(values = state_colours, name = "State") +
-  scale_x_continuous(breaks = 1:n_months) +
-  labs(
-    title    = "Patient State Proportions Over 12 Months (n = 200)",
-    subtitle = "Starting state: all Healthy at month 0",
-    x        = "Month",
-    y        = "Proportion of Patients"
+p <- ggplot(plot_data, aes(x = week, y = prob, color = state, group = state)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  scale_color_manual(
+    values = c("M" = "#2ecc71", "Mod" = "#f39c12", "Sev" = "#e74c3c"),
+    labels = c("M" = "Mild", "Mod" = "Moderate", "Sev" = "Severe")
   ) +
-  theme_minimal(base_size = 12)
-
-print(p_stack)
-
-# ============================================================
-# PART 7: Time-to-death distribution
-# ============================================================
-
-time_to_death <- rep(NA, n_patients)
-
-for (p in 1:n_patients) {
-  first_dead <- which(sim[p, ] == "Dead")[1]
-  if (!is.na(first_dead)) {
-    time_to_death[p] <- first_dead
-  }
-}
-
-ttd_df    <- data.frame(month = time_to_death[!is.na(time_to_death)])
-ttd_median <- median(ttd_df$month, na.rm = TRUE)
-
-n_died    <- sum(!is.na(time_to_death))
-pct_died  <- round(100 * n_died / n_patients, 1)
-
-p_hist <- ggplot(ttd_df, aes(x = month)) +
-  geom_histogram(binwidth = 1, fill = "#ca0020", colour = "white", alpha = 0.8) +
-  geom_vline(xintercept = ttd_median, linetype = "dashed",
-             colour = "black", linewidth = 0.8) +
-  annotate("text", x = ttd_median + 0.4, y = Inf,
-           label = paste0("Median = ", ttd_median),
-           vjust = 1.5, hjust = 0, size = 3.5) +
-  scale_x_continuous(breaks = 1:n_months) +
   labs(
-    title    = "Time-to-Death Distribution (patients who died within 12 months)",
-    subtitle = paste0(n_died, " of ", n_patients, " patients (", pct_died, "%) died"),
-    x        = "Month of Death",
-    y        = "Number of Patients"
+    title    = "Evolution of Disease State Distribution Over Weeks",
+    subtitle = "Initial distribution: 60% Mild, 30% Moderate, 10% Severe",
+    x        = "Week",
+    y        = "Probability",
+    color    = "State"
   ) +
-  theme_minimal(base_size = 12)
+  theme_minimal(base_size = 13)
+print(p)
 
-print(p_hist)
+# ============================================================
+# Task 5: Verify stochastic property
+# ============================================================
+cat("\nRow sums of P^10:\n")
+print(rowSums(P10))
+
+# Biological interpretation of P^10[1, ]:
+# Row 1 of P^10 gives the probability distribution over states for a
+# patient who is currently Mild (state M), after 10 weeks. For example,
+# P^10[1, "Sev"] is the probability that a currently-Mild patient will
+# be in the Severe state 10 weeks from now. This is a 10-step forecast.
+cat("\nFor a Mild patient: probability distribution 10 weeks from now:\n")
+print(round(P10["M", ], 4))

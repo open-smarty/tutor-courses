@@ -1,66 +1,79 @@
 {
   "id": "module-01-lesson-02",
-  "title": "Quiz: CRISP-DM and Dataset Setup",
+  "title": "Quiz: CRISP-DM and Setting Up the Course Dataset",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Which phase of CRISP-DM is NOT present in the original KDD process?",
+      "text": "Which CRISP-DM phase is concerned with translating a business goal into a measurable data mining objective?",
       "options": [
-        "Data Preparation",
-        "Modelling",
+        "Data Understanding",
         "Business Understanding",
-        "Interpretation"
+        "Modelling",
+        "Evaluation"
       ],
-      "correct": 2,
-      "explanation": "CRISP-DM adds Business Understanding (defining the problem from a business perspective) and Deployment phases that are not explicitly in KDD. KDD starts from the data; CRISP-DM starts from the business problem."
+      "correct": 1,
+      "explanation": "Business Understanding (Phase 1) is where you define what the business wants to achieve and then convert that goal into a specific, measurable mining objective — for example, 'build a classifier with recall ≥ 0.70 for churn prediction'."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "What is the primary advantage of CRISP-DM's cyclical structure over a linear pipeline?",
+      "text": "Empirically, which CRISP-DM phase typically consumes the most project time?",
       "options": [
-        "It requires fewer iterations to complete",
-        "It explicitly allows evaluation findings to loop back to earlier phases",
-        "It eliminates the need for data preparation",
-        "It guarantees deployment within a fixed timeframe"
+        "Business Understanding",
+        "Modelling",
+        "Data Preparation",
+        "Deployment"
       ],
-      "correct": 1,
-      "explanation": "CRISP-DM is explicitly cyclical — the Evaluation phase can send the project back to Data Understanding or Data Preparation if model performance reveals data quality issues or missing features."
+      "correct": 2,
+      "explanation": "Data Preparation routinely consumes 60–70% of project time in practice. Cleaning missing values, resolving inconsistencies, encoding categoricals, and engineering features are labour-intensive even with good tooling."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "Which R function provides type-aware summaries including completion rates, percentiles, and inline histograms?",
+      "text": "In sparklyr, what does the collect() function do?",
       "options": [
-        "summary()",
-        "str()",
-        "skimr::skim()",
-        "glimpse()"
+        "Sends R data frames to Spark memory",
+        "Brings a Spark computation result back to an R tibble",
+        "Disconnects from the Spark cluster",
+        "Saves Spark output to a CSV file on HDFS"
       ],
-      "correct": 2,
-      "explanation": "skimr::skim() gives type-aware summaries — completion rate, percentiles for numerics, inline histograms — far more informative than base R summary() for mixed-type data."
+      "correct": 1,
+      "explanation": "collect() materialises a lazy Spark computation and returns the result as a local R tibble. You should only collect() small result sets (summaries, aggregations) — never collect() millions of raw rows unnecessarily."
     },
     {
       "id": "q4",
-      "type": "true-false",
-      "text": "data.table::fread() is faster than readr::read_csv() for reading large CSV files.",
-      "correct": true,
-      "explanation": "fread() from data.table is optimised for maximum speed, using parallel processing and memory-mapped I/O. For very large files it is typically 5–10× faster than read_csv()."
+      "type": "multiple-choice",
+      "text": "A fraud detection model achieves 97% accuracy on the test set. The fraud prevalence in that set is 3%. What is the most likely explanation?",
+      "options": [
+        "The model has learned meaningful patterns in the data",
+        "The model always predicts 'not fraud' and achieves 97% by guessing the majority class",
+        "97% accuracy is too low for a fraud model; the model has failed",
+        "The model is overfitting the training data"
+      ],
+      "correct": 1,
+      "explanation": "When fraud prevalence is 3%, a classifier that always predicts 'not fraud' achieves 97% accuracy without detecting a single fraudulent claim. This is the accuracy paradox. Precision and recall on the minority class are the appropriate metrics."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "In CRISP-DM, once you reach the Deployment phase you do not need to revisit earlier phases.",
+      "correct": false,
+      "explanation": "CRISP-DM is explicitly circular. After deployment, model performance drifts as the world changes, new data quality issues emerge, and business goals evolve — all of which require cycling back to earlier phases."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Claim amounts in the health insurance dataset are right-skewed. Which plot best reveals the shape of the bulk distribution?",
+      "text": "In the simulate_bdat602() dataset, which column is the primary continuous regression target?",
       "options": [
-        "A bar chart of plan_tier counts",
-        "A histogram on a linear x-axis",
-        "A histogram on a log10 x-axis",
-        "A box plot of claim_amount"
+        "churned",
+        "high_risk",
+        "claim_amount",
+        "premium"
       ],
       "correct": 2,
-      "explanation": "A log10 x-axis compresses the long right tail and reveals the shape of the bulk distribution. On a linear axis the large values dominate and the structure of typical claims is invisible."
+      "explanation": "claim_amount is the primary continuous regression target, designed to have strong, interpretable signal from age, chronic conditions, BMI, smoker status, and plan tier. churned and high_risk are binary classification targets."
     }
   ]
 }

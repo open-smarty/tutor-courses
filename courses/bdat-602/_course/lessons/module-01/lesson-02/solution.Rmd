@@ -1,50 +1,103 @@
 ---
-title: "BDAT 602 — Module 1, Lesson 2 Solution"
-subtitle: "CRISP-DM and Setting Up the Course Dataset"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: CRISP-DM and Setting Up the Course Dataset"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Read data from CSV
+## Task 1: Load packages and generate the dataset
 
-```{r task1}
-library(readr)
-
-df <- read_csv("data/raw/health_insurance_small.csv")
-glimpse(df)
+```{r load-packages}
+library(tidyverse)
+library(skimr)
 ```
 
-The dataset has **10,000 rows** and **40 columns**. Logical columns include `dental_cover`, `vision_cover`, `mental_cover`, `maternity_cover`, `smoker`, `auto_pay`, `fraud_flag`, `churned`, `high_risk`, and `weekend_claim`.
+```{r task1-generate}
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
 
-## Task 2 — Histogram of claim amounts
+health_data <- simulate_bdat602(n = 500000, seed = 602)
+dim(health_data)  # should print 500000 40
+```
 
-```{r task2}
-library(ggplot2)
-library(dplyr)
+## Task 2: CRISP-DM Phase 1 — Business Understanding for fraud detection
 
-ggplot(df |> filter(claim_amount > 0), aes(x = claim_amount)) +
+```{r task2-business-understanding}
+# Business problem:
+#   The insurer processes ~50,000 claims per month. An estimated 3% are fraudulent,
+#   costing the company roughly $2M annually. Manual review of all claims is not scalable.
+
+# Mining objective:
+#   Build a binary classifier on fraud_flag using claim_amount, num_claims,
+#   employment_type, weekend_claim, and age to score each new claim.
+
+# Success criterion:
+#   Recall >= 0.75 on the test set (we prefer to investigate genuine fraud even
+#   if it means some false positives). Precision >= 0.40 to keep the investigation
+#   team's workload manageable.
+
+# Data source:
+#   simulate_bdat602() with n = 500,000. fraud_flag prevalence is ~3%.
+
+# Constraints:
+#   Must not use record_id or policyholder_id as features.
+#   Model must be auditable (no black-box approaches without explanation).
+```
+
+## Task 3: Explore the three target variables
+
+```{r task3-targets-skim}
+health_data |>
+  select(churned, high_risk, claim_amount) |>
+  skim()
+```
+
+```{r task3-plot}
+health_data |>
+  filter(claim_amount > 0) |>
+  ggplot(aes(x = claim_amount)) +
   geom_histogram(bins = 60, fill = "steelblue", colour = "white") +
-  scale_x_log10(labels = scales::comma) +
-  labs(title = "Claim Amounts: 10k Sample",
-       x = "Claim Amount (USD, log scale)", y = "Count") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(
+    title = "Distribution of Claim Amounts (non-zero claims only)",
+    x = "Claim Amount (USD)",
+    y = "Count"
+  ) +
   theme_minimal()
+
+# Distribution shape:
+# The distribution is strongly right-skewed: the bulk of claims are below $10,000
+# but a long tail extends to $80,000+. This suggests a log transformation will
+# be needed before regression modelling.
 ```
 
-The distribution is right-skewed with many small claims and a long tail of large ones. Using a log scale reveals the shape of the bulk distribution.
+```{r task3-churn-rate}
+churn_rate    <- mean(health_data$churned,    na.rm = TRUE)
+high_risk_rate <- mean(health_data$high_risk, na.rm = TRUE)
 
-## Task 3 — Missing value map
+cat("Churn rate:    ", round(churn_rate * 100, 1), "%\n")
+cat("High-risk rate:", round(high_risk_rate * 100, 1), "%\n")
 
-```{r task3}
-library(DataExplorer)
-
-plot_missing(df)
+# high_risk has higher prevalence (~40%) than churned (~18%).
+# churned is more imbalanced and will need SMOTE or class weighting (Module 5).
 ```
 
-Columns with missing values: `bmi` (~5%), `income` (~4%), `days_since_last_claim` (records with zero claims), `last_claim_date` (same), `weekend_claim` (same), and `complaint_notes` (~10%).
+## Task 4: Spark connection (eval=FALSE)
+
+```{r task4-spark, eval=FALSE}
+library(sparklyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+health_tbl <- copy_to(sc, health_data, name = "health_insurance", overwrite = TRUE)
+
+plan_counts <- health_tbl |>
+  count(plan_tier) |>
+  collect()
+
+print(plan_counts)
+
+spark_disconnect(sc)
+```

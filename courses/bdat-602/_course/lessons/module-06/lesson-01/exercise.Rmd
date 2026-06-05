@@ -1,60 +1,130 @@
 ---
-title: "BDAT 602 — Module 6, Lesson 1 Exercise"
-subtitle: "Tokenisation and TF-IDF"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Tokenisation and TF-IDF"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Tokenise and count top words
+```{r load-packages}
+library(tidyverse)
+library(tidytext)
 
-Filter to rows where `complaint_notes` is not NA. Tokenise using `unnest_tokens()`, remove stop words with `anti_join(stop_words)`, and print the top 10 words by frequency.
-
-```{r task1}
-# YOUR CODE HERE
-# library(tidytext); library(dplyr)
-# data("stop_words")
-# complaints <- health_small |>
-#   filter(!is.na(complaint_notes)) |>
-#   mutate(doc_id = row_number())
-# tokens_clean <- complaints |>
-#   unnest_tokens(word, complaint_notes) |>
-#   anti_join(stop_words, by = "word") |>
-#   filter(nchar(word) > 2)
-# tokens_clean |> count(word, sort = TRUE) |> slice_head(n = 10)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 100000, seed = 602)
 ```
 
-## Task 2 — TF-IDF by plan tier
+## Task 1: Tokenise complaint notes
 
-Compute TF-IDF treating `plan_tier` as the document. Show the top 3 discriminating words for each tier.
+```{r task1-tokenise}
+# Keep only rows with non-NA complaint_notes
+# Assign a document ID
+# Tokenise to one word per row using unnest_tokens()
+complaints <- health_data |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = row_number())
 
-```{r task2}
-# YOUR CODE HERE
-# tokens_clean |>
-#   count(plan_tier, word) |>
-#   bind_tf_idf(term = word, document = plan_tier, n = n) |>
-#   group_by(plan_tier) |>
-#   slice_max(tf_idf, n = 3) |>
-#   select(plan_tier, word, tf_idf) |>
-#   print(n = 20)
+# TODO: unnest_tokens(word, complaint_notes) on complaints
+words <- complaints |>
+  NULL  # unnest_tokens(word, complaint_notes)
+
+# How many total word tokens are there?
+cat("Total tokens:", nrow(words), "\n")
 ```
 
-## Task 3 — Document-Term Matrix
+```{r task1-top-raw}
+# TODO: count the most frequent words (before stop word removal)
+# Show the top 20
+words |>
+  count(word, sort = TRUE) |>
+  head(20)
+```
 
-Build a DTM using `cast_dtm()` with `doc_id` as the document. Report its dimensions.
+## Task 2: Remove stop words
 
-```{r task3}
-# YOUR CODE HERE
-# dtm <- tokens_clean |>
-#   count(doc_id, word) |>
-#   cast_dtm(document = doc_id, term = word, value = n)
-# dim(dtm)
+```{r task2-stop-words}
+# TODO: use anti_join(stop_words, by = "word") to remove stop words
+words_clean <- words |>
+  NULL  # anti_join(...)
+
+cat("Tokens after stop word removal:", nrow(words_clean), "\n")
+```
+
+```{r task2-top-clean}
+# TODO: show the top 20 most frequent words after stop word removal
+# Plot as a bar chart
+words_clean |>
+  count(word, sort = TRUE) |>
+  head(20) |>
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Top 20 Words in Complaint Notes (after stop word removal)",
+       x = "Word", y = "Count") +
+  theme_minimal()
+```
+
+## Task 3: Compute TF-IDF
+
+```{r task3-tfidf}
+# TODO: count words per document, then apply bind_tf_idf()
+word_counts <- words_clean |>
+  count(NULL, NULL)  # count(doc_id, word)
+
+tfidf_df <- word_counts |>
+  bind_tf_idf(NULL, NULL, NULL)  # bind_tf_idf(word, doc_id, n)
+
+# Show the top 10 rows sorted by tf_idf descending
+tfidf_df |>
+  arrange(desc(tf_idf)) |>
+  head(10)
+```
+
+## Task 4: Top TF-IDF words per complaint category
+
+The complaint templates in the simulator fall into 5 categories:
+billing, claims, coverage, service, positive.
+
+```{r task4-category}
+# Add a category label to each complaint based on keywords in the text
+complaints_cat <- complaints |>
+  mutate(category = case_when(
+    str_detect(complaint_notes, "billing|premium|deductible|charged|payment|balance") ~ "billing",
+    str_detect(complaint_notes, "claim|pending|denied|submitted|approved|documents")  ~ "claims",
+    str_detect(complaint_notes, "covered|coverage|prescription|formulary|dental|mental|physiotherapy|doctor") ~ "coverage",
+    str_detect(complaint_notes, "customer service|app|portal|hold|transferred|emails|phone") ~ "service",
+    TRUE ~ "positive"
+  ))
+
+# TODO: join category back to tfidf_df (join on doc_id)
+tfidf_cat <- tfidf_df |>
+  left_join(complaints_cat |> select(doc_id, category), by = "doc_id")
+```
+
+```{r task4-plot}
+# TODO: for each category, find the top 8 words by mean tf_idf
+# Plot as a faceted bar chart (one panel per category)
+tfidf_cat |>
+  group_by(category, word) |>
+  summarise(mean_tfidf = mean(tf_idf), .groups = "drop") |>
+  group_by(category) |>
+  slice_max(mean_tfidf, n = 8) |>
+  ungroup() |>
+  ggplot(aes(x = reorder_within(word, mean_tfidf, category),
+             y = mean_tfidf, fill = category)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~category, scales = "free_y") +
+  scale_x_reordered() +
+  coord_flip() +
+  labs(title = "Top TF-IDF Words by Complaint Category",
+       x = "Word", y = "Mean TF-IDF") +
+  theme_minimal()
+```
+
+```{r task4-interpret}
+# Do the top words clearly differentiate the complaint categories?
+# Which category has the most distinctive vocabulary?
+# Answer (as a comment):
 ```

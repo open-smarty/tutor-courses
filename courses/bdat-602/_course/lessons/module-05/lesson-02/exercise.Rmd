@@ -1,74 +1,150 @@
 ---
-title: "BDAT 602 — Module 5, Lesson 2 Exercise"
-subtitle: "Handling Class Imbalance"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Handling Class Imbalance"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+```{r load-packages}
+library(tidyverse)
+library(randomForest)
+library(recipes)
+library(themis)
+library(pROC)
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
+```
+
+```{r split-data}
 set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
+idx   <- sample(nrow(health_data), 0.80 * nrow(health_data))
+train <- health_data[idx, ]
+test  <- health_data[-idx, ]
 ```
 
-## Task 1 — Baseline random forest (no correction)
+## Task 1: Document class imbalance and the accuracy paradox
 
-Report the fraud rate in `health_small`. Fit a random forest (ntree = 200) to predict `fraud_flag` using `age`, `income`, `num_claims`, `claim_amount`, and `plan_tier`. Predict on the test set. Report recall (true positive rate for fraud).
-
-```{r task1}
-# YOUR CODE HERE
-# cat("Fraud rate:", round(mean(health_small$fraud_flag)*100, 2), "%\n")
-# library(randomForest)
-# rf_base <- randomForest(
-#   as.factor(fraud_flag) ~ age + income + num_claims + claim_amount + plan_tier,
-#   data = train |> filter(!is.na(income)), ntree = 200
-# )
-# pred <- predict(rf_base, test |> filter(!is.na(income)))
-# actual <- test$fraud_flag[!is.na(test$income)]
-# cm <- table(Predicted = pred, Actual = actual)
-# recall <- cm["1","1"] / sum(cm[,"1"])
-# cat("Recall (no correction):", round(recall, 3), "\n")
+```{r task1-imbalance}
+# TODO: compute and print the churn rate in train and test
+cat("Churn rate (train):", round(mean(train$churned), 3), "\n")
+# cat("Churn rate (test): ", round(mean(test$churned), 3), "\n")
 ```
 
-## Task 2 — Class-weighted random forest
-
-Refit with `classwt = c("0" = 1, "1" = 30)`. Report both recall and precision on the test set.
-
-```{r task2}
-# YOUR CODE HERE
-# rf_wtd <- randomForest(
-#   as.factor(fraud_flag) ~ age + income + num_claims + claim_amount + plan_tier,
-#   data = train |> filter(!is.na(income)),
-#   ntree = 200, classwt = c("0" = 1, "1" = 30)
-# )
-# pred_w  <- predict(rf_wtd, test |> filter(!is.na(income)))
-# cm_w    <- table(Predicted = pred_w, Actual = actual)
-# recall_w  <- cm_w["1","1"] / sum(cm_w[,"1"])
-# precis_w  <- cm_w["1","1"] / sum(cm_w["1",])
-# cat("Recall (weighted): ", round(recall_w, 3), "\n")
-# cat("Precision (weighted):", round(precis_w, 3), "\n")
+```{r task1-naive}
+# TODO: predict "No churn" for every record in the test set
+# Compute and print the accuracy of this naive model
+# Accuracy = fraction of correct predictions
+naive_preds <- rep(0, nrow(test))
+naive_acc   <- mean(naive_preds == test$churned)
+cat("Naive 'always No' accuracy:", round(naive_acc, 3), "\n")
+cat("Recall of naive model:     ", 0, "(catches zero churners)\n")
 ```
 
-## Task 3 — Threshold adjustment
+## Task 2: Class-weighted random forest
 
-Using the class-weighted model, get probability predictions. Adjust the threshold to 0.15. Report recall and precision at this threshold.
+```{r task2-rf-weighted}
+# TODO: train a random forest with classwt = c("0" = 1, "1" = 5)
+# Predictors: age, plan_tier, income, num_claims, support_calls, auto_pay, customer_rating
+set.seed(602)
+rf_wt <- NULL  # randomForest(factor(churned) ~ ..., classwt = c("0"=1,"1"=5), ntree=200)
 
-```{r task3}
-# YOUR CODE HERE
-# prob <- predict(rf_wtd, test |> filter(!is.na(income)), type = "prob")[,"1"]
-# threshold <- 0.15
-# pred_thr  <- as.integer(prob >= threshold)
-# cm_thr    <- table(Predicted = pred_thr, Actual = actual)
-# print(cm_thr)
-# recall_thr  <- cm_thr["1","1"] / sum(cm_thr[,"1"])
-# precis_thr  <- cm_thr["1","1"] / sum(cm_thr["1",])
-# cat("Recall at 0.15: ", round(recall_thr, 3), "\n")
-# cat("Precision:      ", round(precis_thr, 3), "\n")
+# TODO: print the OOB confusion matrix
+print(rf_wt)
+```
+
+```{r task2-compare-recall}
+# Compute recall at threshold 0.5 for the weighted model
+prob_wt   <- predict(rf_wt, test, type = "prob")[, "1"]
+pred_wt   <- factor(ifelse(prob_wt > 0.5, 1, 0), levels = c(0, 1))
+cm_wt     <- table(Predicted = pred_wt, Actual = factor(test$churned))
+recall_wt <- cm_wt["1", "1"] / sum(cm_wt[, "1"])
+
+cat("Weighted RF recall at 0.5 threshold:", round(recall_wt, 3), "\n")
+# Compare to naive recall (0): even at 0.5, the weighted model should find more churners
+```
+
+## Task 3: SMOTE oversampling
+
+```{r task3-smote-recipe}
+# Convert churned to factor first
+train_fac <- train |>
+  mutate(churned = factor(churned, levels = c(0, 1)))
+
+# TODO: build a recipe with:
+# outcome: churned; predictors: age, plan_tier, income, num_claims, support_calls,
+#          auto_pay, customer_rating, deductible
+# Steps: step_impute_median(), step_dummy(all_nominal_predictors()),
+#        step_smote(churned, over_ratio = 1),
+#        step_normalize(all_numeric_predictors())
+rec_smote <- recipe(churned ~ age + plan_tier + income + num_claims + support_calls +
+                              auto_pay + customer_rating + deductible,
+                    data = train_fac) |>
+  NULL  # add steps
+
+# TODO: prep and bake
+train_smote <- NULL
+```
+
+```{r task3-check-balance}
+# TODO: verify that the churned classes are now balanced in train_smote
+# table(train_smote$churned)
+```
+
+## Task 4: Compare models with precision-recall
+
+```{r task4-rf-smote}
+# TODO: train a random forest on train_smote (no class weights needed)
+set.seed(602)
+rf_smote <- NULL  # randomForest(churned ~ ..., data = train_smote, ntree = 200)
+
+# TODO: compute probability predictions on the TEST set (original, not SMOTE)
+test_fac <- test |> mutate(churned = factor(churned, levels = c(0, 1)))
+prob_smote <- NULL  # predict(rf_smote, test_fac, type = "prob")[, "1"]
+```
+
+```{r task4-f1-threshold}
+# Helper to compute F1 at a given threshold
+f1_at <- function(prob, truth, threshold) {
+  pred <- factor(ifelse(prob > threshold, 1, 0), levels = c(0, 1))
+  cm   <- table(pred, truth)
+  TP   <- cm["1", "1"]
+  FP   <- cm["1", "0"]
+  FN   <- cm["0", "1"]
+  P    <- if ((TP + FP) == 0) 0 else TP / (TP + FP)
+  R    <- if ((TP + FN) == 0) 0 else TP / (TP + FN)
+  if ((P + R) == 0) 0 else 2 * P * R / (P + R)
+}
+
+# TODO: compute F1 at thresholds 0.3 and 0.5 for both rf_wt and rf_smote
+# cat("Weighted RF F1 at 0.3:", f1_at(prob_wt, factor(test$churned), 0.3), "\n")
+# cat("SMOTE RF   F1 at 0.3:", f1_at(prob_smote, factor(test$churned), 0.3), "\n")
+```
+
+```{r task4-pr-curve}
+# TODO: plot precision-recall curves for both models
+# Use pROC or PRROC::pr.curve(), or manually compute precision and recall
+# at a sequence of thresholds
+thresholds <- seq(0.1, 0.9, by = 0.05)
+
+# For rf_wt:
+pr_df <- map_dfr(thresholds, function(thr) {
+  pred <- factor(ifelse(prob_wt > thr, 1, 0), levels = c(0, 1))
+  cm   <- table(pred, factor(test$churned))
+  TP   <- cm["1","1"]; FP <- cm["1","0"]; FN <- cm["0","1"]
+  P    <- if ((TP+FP)==0) 0 else TP/(TP+FP)
+  R    <- if ((TP+FN)==0) 0 else TP/(TP+FN)
+  tibble(threshold = thr, precision = P, recall = R, model = "Weighted RF")
+})
+
+ggplot(pr_df, aes(x = recall, y = precision, colour = model)) +
+  geom_line() + geom_point() +
+  labs(title = "Precision-Recall Curve", x = "Recall", y = "Precision") +
+  theme_minimal()
+
+# Which model gives a better trade-off? At what threshold?
+# Answer (as a comment):
 ```

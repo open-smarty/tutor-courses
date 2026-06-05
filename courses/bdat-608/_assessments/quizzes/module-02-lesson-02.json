@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Why does grid search become impractical when the number of model parameters is large?",
+      "text": "A grid search uses 50 points per parameter across 3 parameters. How many loss evaluations are needed?",
       "options": [
-        "Grid search only works for linear models",
-        "The number of grid points grows exponentially with the number of parameters",
-        "Grid search cannot compute RMSE for more than two parameters",
-        "optim() is always faster than grid search regardless of dimensionality"
+        "150",
+        "2,500",
+        "125,000",
+        "50"
       ],
-      "correct": 1,
-      "explanation": "With p parameters and n grid points per parameter, you need n^p evaluations. For p=10 and n=10, that is 10 billion evaluations — the curse of dimensionality."
+      "correct": 2,
+      "explanation": "Grid search is O(nᵏ) where n = points per parameter and k = number of parameters. 50³ = 125,000 evaluations. This grows exponentially — with 10 parameters at 50 points each, you would need 50¹⁰ ≈ 10¹⁷ evaluations, which is computationally infeasible."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "In optim(par = c(0, 0), fn = measure_distance, data = sim1), what does par = c(0, 0) specify?",
-      "options": [
-        "The known true parameters of the model",
-        "The starting values from which the optimiser begins its search",
-        "The upper and lower bounds on the parameters",
-        "The final optimal parameters"
-      ],
-      "correct": 1,
-      "explanation": "par gives the starting point for the iterative optimiser. It does not know the true parameters — it searches from this point toward the minimum of the loss function."
+      "type": "true-false",
+      "text": "In gradient descent, the learning rate α controls the size of the step taken in the direction of the gradient.",
+      "correct": true,
+      "explanation": "The update rule is β ← β − α∇L(β). A large α means large steps (fast convergence but risk of overshooting the minimum). A small α means small steps (slow but stable). Choosing α well is one of the key challenges in gradient descent."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "For RMSE on a standard linear model, optim() is guaranteed to find the global minimum regardless of starting values.",
-      "correct": true,
-      "explanation": "RMSE for a linear model is a convex function — it has a single global minimum with no local minima. So any starting point will converge to the same optimal parameters (though speed may vary)."
+      "type": "multiple-choice",
+      "text": "optim() with method = 'BFGS' returns convergence = 1. What should you do?",
+      "options": [
+        "Accept the result — convergence = 1 means success",
+        "Investigate: convergence ≠ 0 indicates failure; try different starting values or a different method",
+        "Increase the number of random starts",
+        "Switch to grid search"
+      ],
+      "correct": 1,
+      "explanation": "In R's optim(), convergence = 0 means success. Any other code indicates a problem: the algorithm did not converge within the iteration limit, or it hit a boundary. The fix is usually to try different starting values, relax convergence tolerances, or use a different method."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In the RMSE landscape plot (a1 vs a2 coloured by RMSE), the low-RMSE region appears as:",
+      "text": "Why is lm() faster and more accurate than optim() for ordinary linear regression?",
       "options": [
-        "A scattered cloud of random points",
-        "A circular blob in the centre of the plot",
-        "A narrow diagonal valley where both a1 and a2 are near their optimal values",
-        "An evenly distributed gradient across the entire parameter space"
+        "lm() uses a faster computer chip",
+        "lm() uses the closed-form OLS solution via QR decomposition — one matrix computation, no iteration",
+        "lm() uses gradient descent with a very large learning rate",
+        "lm() fits the model on a subset of the data"
       ],
-      "correct": 2,
-      "explanation": "The optimal (intercept, slope) pair lies at the bottom of a narrow elongated valley in the RMSE surface. This reflects the fact that many (a1, a2) pairs that deviate in opposite directions can partially compensate each other."
+      "correct": 1,
+      "explanation": "OLS has the closed-form solution β̂ = (X'X)⁻¹X'y. lm() computes this via QR decomposition in a single pass — no iterations, no starting values, no convergence to check. optim() iterates, so it is always slower and subject to numerical approximation errors."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "purrr::map2_dbl(a1, a2, sim1_dist) applies sim1_dist to each pair of values in a1 and a2. What would happen if you used map_dbl(a1, sim1_dist) instead?",
+      "text": "When should you use optim() instead of lm() for fitting a regression-like model?",
       "options": [
-        "It would work identically, since map_dbl handles two arguments",
-        "It would fail because sim1_dist requires two arguments (a1 and a2)",
-        "It would use a2 = 0 for all calculations",
-        "It would return the RMSE for the full grid search instead"
+        "When the dataset has more than 1,000 rows",
+        "When the loss function is non-standard (e.g., MAE, a custom business loss, or a non-linear model)",
+        "When you want more accurate estimates than lm() provides",
+        "When the predictor is categorical"
       ],
       "correct": 1,
-      "explanation": "map_dbl iterates over a single vector. sim1_dist(a1, a2) needs both arguments, so map2_dbl is required to iterate over both a1 and a2 in parallel."
+      "explanation": "lm() is specifically designed for minimising RSS (squared error). If you need to minimise a different loss — MAE, a weighted loss, a penalised likelihood, or the loss of a non-linear model — there is no closed-form solution and optim() (or specialised functions like rlm(), glm(), nls()) becomes necessary."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "Grid search always finds the exact global minimum of the loss function.",
+      "correct": false,
+      "explanation": "Grid search only evaluates the loss at a finite set of pre-specified points. The true minimum may lie between grid points. Finer grids get closer to the true minimum but at quadratic cost. The closed-form OLS solution and gradient-based methods can find the true minimum exactly or to arbitrary precision."
     }
   ]
 }

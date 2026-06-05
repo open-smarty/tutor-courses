@@ -1,81 +1,67 @@
 ---
-title: "BDAT 608 | Module 2, Lesson 1 — Loss Functions: RMSE and MAE"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Loss Functions — RMSE and MAE"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
 ```
 
----
-
-## Task 1 — Implement Loss Functions
-
-```{r loss-functions}
-# TODO: Implement model1(a, data): returns predicted y = a[1] + a[2]*x
-model1 <- function(a, data) {
-  # your code here
-}
-
-# TODO: Implement measure_distance(mod, data): returns RMSE
-measure_distance <- function(mod, data) {
-  # your code here
-}
-
-# TODO: Implement measure_mae(mod, data): returns MAE
-measure_mae <- function(mod, data) {
-  # your code here
-}
-```
-
----
-
-## Task 2 — Compare Candidates on sim1
-
-```{r compare-candidates}
-candidates <- list(
-  c1 = c(7, 1.5),
-  c2 = c(5, 2.0),
-  c3 = c(4, 2.0)
-)
-
-# TODO: For each candidate, compute RMSE and MAE on sim1.
-# Store results in a data frame and print it.
-# Which candidate has the lowest RMSE?
-```
-
----
-
-## Task 3 — Heavy-Tailed Noise
-
-```{r heavy-tailed}
+```{r sample-data}
 set.seed(42)
-sim1a <- tibble(
-  x = rep(1:10, each = 3),
-  y = x * 1.5 + 6 + rt(length(x), df = 2)
-)
-
-# TODO: Compute RMSE and MAE for the same three candidates on sim1a.
-# Do RMSE and MAE agree on the best candidate?
+d100 <- diamonds |> slice_sample(n = 100)
 ```
 
----
+## Task 1: Implement RMSE and MAE
 
-## Reflection
+```{r task1}
+# TODO: Write rmse_fn(b0, b1, data) that:
+# 1. Computes predictions: pred <- b0 + b1 * data$carat
+# 2. Computes residuals: resid <- data$price - pred
+# 3. Returns sqrt(mean(resid^2))
 
-<!-- In 2–3 sentences: what does it mean that RMSE and MAE can disagree
-     on which candidate is best? What does this say about the link
-     between the loss function and the fitted model? -->
+# TODO: Write mae_fn(b0, b1, data) that returns mean(abs(resid))
+
+```
+
+## Task 2: Evaluate at a candidate parameter pair
+
+```{r task2}
+# TODO: Evaluate both functions at b0 = -2000, b1 = 7000, data = d100.
+# Print both values. Which is larger? (RMSE is always >= MAE for the same data.)
+
+```
+
+## Task 3: Random search over 250 parameter pairs
+
+```{r task3}
+set.seed(7)
+# TODO: Create a tibble with 250 rows:
+#   b0 = runif(250, -5000, 0)
+#   b1 = runif(250,  5000, 12000)
+# Then add a column rmse computed by map2_dbl(b0, b1, rmse_fn, data = d100).
+# Store in `search`.
+
+```
+
+## Task 4: Report the best pair
+
+```{r task4}
+# TODO: Use slice_min(rmse, n = 1) to find the row with lowest RMSE.
+# Print b0, b1, and rmse.
+
+```
+
+## Task 5: Heatmap of the loss surface
+
+```{r task5}
+# TODO: Plot a scatter of b0 (x) vs b1 (y) from search, coloured by rmse.
+# Use scale_colour_viridis_c() so low RMSE is dark and high is bright.
+# Add axis labels and a title.
+
+```

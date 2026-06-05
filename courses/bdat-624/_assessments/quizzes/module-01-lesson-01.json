@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A researcher tracks whether a patient is in remission or relapse every month for two years. What type of stochastic process is this?",
+      "text": "Which of the following BEST describes a stochastic process?",
       "options": [
-        "Continuous time, continuous state",
-        "Discrete time, discrete state",
-        "Continuous time, discrete state",
-        "Discrete time, continuous state"
+        "A single random variable describing one uncertain quantity",
+        "A collection of random variables indexed by time (or another parameter)",
+        "A deterministic function with added noise at one time point",
+        "A probability distribution over a finite set of outcomes"
       ],
       "correct": 1,
-      "explanation": "The parameter space is discrete (monthly checkups — T = {0, 1, 2, ...} months) and the state space is discrete (remission vs relapse — S = {Remission, Relapse}). This makes it a Type I discrete-time, discrete-state process."
+      "explanation": "A stochastic process is an indexed collection {X(t) : t ∈ T} of random variables — it tracks how randomness evolves across an entire index set, not just at one instant."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "In the notation {X(t), t ∈ T}, the parameter space T is:",
-      "options": [
-        "The set of all possible states the process can take",
-        "The index set — usually time — over which the process is defined",
-        "The probability distribution of X at each time point",
-        "The transition probability matrix"
-      ],
-      "correct": 1,
-      "explanation": "T is the parameter space (index set). It is the set of values that the index t ranges over — most often representing time. The set of values X(t) can take is the state space S, not T."
+      "type": "true-false",
+      "text": "The state space S of a stochastic process must always be a finite set.",
+      "correct": false,
+      "explanation": "The state space S can be finite (e.g., {Healthy, Sick, Dead}), countably infinite (e.g., {0, 1, 2, ...}), or uncountably infinite (e.g., ℝ or [0, ∞)). There is no requirement for S to be finite."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "In the notation {X(t), t ∈ T}, the symbol X(t) at a specific time t represents a single fixed number.",
-      "correct": false,
-      "explanation": "X(t) is a random variable, not a fixed number. Before the outcome is observed, X(t) could take any value in the state space S with various probabilities. Only after the process is realised do we observe a specific value x(t) (lowercase). The collection of all realisations is called a sample path."
+      "type": "multiple-choice",
+      "text": "A hospital records the number of patients in the emergency room at the end of each hour. What type of stochastic process is this?",
+      "options": [
+        "Continuous time, continuous state",
+        "Continuous time, discrete state",
+        "Discrete time, continuous state",
+        "Discrete time, discrete state"
+      ],
+      "correct": 3,
+      "explanation": "Observations happen at discrete hourly intervals (T = {0, 1, 2, ...} hours), and the patient count is a non-negative integer (S = {0, 1, 2, ...}). Both index set and state space are discrete."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The number of active COVID-19 cases in a hospital ward, monitored at any point in continuous time, is an example of:",
+      "text": "A patient's clinical status (Healthy / Infected / Recovered) can change at any moment in real time. What type of stochastic process describes this?",
       "options": [
-        "Discrete time, continuous state",
-        "Continuous time, continuous state",
-        "Continuous time, discrete state",
-        "Discrete time, discrete state"
+        "Discrete time, discrete state — because there are only 3 states",
+        "Continuous time, discrete state — because states are discrete but transitions happen in continuous time",
+        "Continuous time, continuous state — because time is continuous",
+        "Discrete time, continuous state — because health is a continuous concept"
       ],
-      "correct": 2,
-      "explanation": "The number of active cases is always an integer (0, 1, 2, ... — a discrete state space), but it can change at any instant in continuous time when a patient is admitted or discharged. This is a Type II continuous-time, discrete-state process."
+      "correct": 1,
+      "explanation": "Time is continuous (T = [0, ∞)) because the patient can change state at any instant. The state space S = {Healthy, Infected, Recovered} is discrete (three distinct labels). This makes it continuous time, discrete state — the type that includes Markov chains and birth-death processes."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "In the notation {X(t) : t ∈ T}, a single observed trajectory of the process (e.g., one run of a simulation) is called:",
+      "options": [
+        "The state space",
+        "The probability measure",
+        "A sample path (or realization)",
+        "The index set"
+      ],
+      "correct": 2,
+      "explanation": "A sample path (also called a realization or trajectory) is one specific sequence of values t ↦ X(t, ω) that results when the random process plays out for a particular ω ∈ Ω. Running the same simulation multiple times produces different sample paths from the same process."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "A deterministic model is always sufficient when we want to predict the long-run average behaviour of a biological system.",
-      "correct": false,
-      "explanation": "A deterministic model can capture the mean trajectory, but it completely misses variability and rare but important events. Near critical thresholds — such as when a population is small and close to extinction — stochastic fluctuations dominate. For instance, a bacterial colony with expected size 2 has a substantial probability of dying out even though the deterministic model predicts stable persistence. Randomness is intrinsic, not just noise."
+      "text": "A stochastic process with discrete time and continuous state can be used to model daily recorded body temperature, where the temperature is a real number.",
+      "correct": true,
+      "explanation": "Daily observations give a discrete index set T = {1, 2, 3, ...}. Body temperature is a real-valued continuous quantity, so S ⊆ ℝ. This is exactly the discrete-time, continuous-state type."
     }
   ]
 }

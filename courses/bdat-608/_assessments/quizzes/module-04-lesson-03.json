@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "What is the key advantage of natural splines over high-degree polynomial models for non-linear relationships?",
+      "text": "What is the key difference between a natural spline ns(x, df) and a polynomial poly(x, df)?",
       "options": [
-        "Natural splines always have lower training RMSE than polynomials",
-        "Natural splines are constrained to be linear in the tails, preventing extreme extrapolation",
-        "Natural splines use fewer parameters than polynomials for the same df",
-        "Natural splines can only be fitted with glm(), not lm()"
+        "Natural splines use fewer knots than polynomials",
+        "Natural splines are linear in the tails, preventing extreme extrapolation outside the training range; polynomials can oscillate wildly outside the data",
+        "Polynomials are always smoother than natural splines",
+        "Natural splines require more data points than polynomials"
       ],
       "correct": 1,
-      "explanation": "Natural splines impose linearity constraints at the boundary knots. This prevents the wild oscillations and extrapolations that high-degree polynomials exhibit outside the training data range."
+      "explanation": "Natural splines impose a linearity constraint in the tails (beyond the outermost knots). This prevents the extreme oscillation that high-degree polynomials exhibit when extrapolating beyond the training data. Inside the data range, both can be equally flexible for the same df."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "In 10-fold cross-validation, the CV-RMSE curve is U-shaped. What does the left (rising) part of the U represent?",
-      "options": [
-        "Overfitting — the model has too many parameters",
-        "Underfitting — too few df means the model cannot capture the pattern (high bias)",
-        "Data leakage between the training and test folds",
-        "Perfect fit on the training data"
-      ],
-      "correct": 1,
-      "explanation": "The left/low-df side of the U-curve is high because too few knots means the spline cannot flex enough to follow the pattern — it underfits. Increasing df reduces this bias."
+      "type": "true-false",
+      "text": "In 10-fold cross-validation, you train on all 10 folds and test on each fold in turn.",
+      "correct": false,
+      "explanation": "In K-fold CV, you train on K−1 folds and test on the remaining 1 fold. For 10-fold CV: train on 9 folds, test on the 10th, repeat 10 times (each fold serves as the test set once). The CV estimate is the mean test error across all 10 rounds."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "na.exclude and na.omit both drop rows with missing values before fitting, but na.exclude inserts NA placeholders in residuals/predictions at the positions of the dropped rows.",
-      "correct": true,
-      "explanation": "Both drop NA rows for fitting. na.exclude then 'pads' the output vectors with NA at the original positions, making it safe to cbind() residuals back onto the original data frame."
+      "type": "multiple-choice",
+      "text": "You run 10-fold CV for df = 1 to 8 on a dataset. The CV-RMSE curve decreases from df=1 to df=4 then increases. What is the optimal df?",
+      "options": [
+        "df = 1, because simpler models generalise better",
+        "df = 8, because training RMSE is lowest",
+        "df = 4, because it minimises the CV-RMSE (out-of-sample error)",
+        "df = 6, because the one-SE rule adds 2 to the minimum"
+      ],
+      "correct": 2,
+      "explanation": "The minimum CV-RMSE is at df = 4. This is the optimal choice — it balances bias (underfitting for df < 4) and variance (overfitting for df > 4). The one-SE rule would choose the smallest df whose CV-RMSE is within one standard error of the minimum at df = 4 — which might be df = 3, not df = 6."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "Why are pooled standard errors from multiple imputation (MI) typically larger than complete-case standard errors?",
+      "text": "What is the practical advantage of na.action = na.exclude over the default na.omit in lm()?",
       "options": [
-        "MI uses fewer observations than complete-case analysis",
-        "MI adds extra parameters to the model",
-        "MI propagates uncertainty due to missingness; complete-case analysis ignores that uncertainty",
-        "MI always uses a different estimation algorithm than lm()"
+        "na.exclude fits the model on more data points",
+        "na.exclude preserves NA positions in residuals and predictions, making it easy to align output with the original data frame",
+        "na.exclude imputes missing values before fitting",
+        "na.exclude treats NA as zero in the response"
       ],
-      "correct": 2,
-      "explanation": "Multiple imputation uses Rubin's rules to combine estimates across m imputed datasets. The pooled SE includes both within-imputation variance and between-imputation variance — the latter reflects the extra uncertainty from not knowing the missing values."
+      "correct": 1,
+      "explanation": "With na.exclude, the residuals and predictions vectors have the same length as the original data frame, with NA at positions where data was missing. This makes it straightforward to merge model output back into the original data. With na.omit (the default), the output is shorter, causing index misalignment."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "The one-SE rule for choosing spline df selects the:",
+      "text": "In multiple imputation with m = 5, Rubin's pooling rule combines 5 sets of coefficient estimates. What does the 'between-imputation variance' capture?",
       "options": [
-        "Df value that minimises CV-RMSE, regardless of model complexity",
-        "Smallest df whose CV-RMSE is within one standard error of the minimum CV-RMSE",
-        "Df that is exactly one greater than the minimum CV-RMSE df",
-        "Df value where the CV curve first becomes flat"
+        "The variance due to random sampling of the training data",
+        "The additional uncertainty due to not knowing the true values of the missing data",
+        "The variance of the response variable across imputed datasets",
+        "The standard deviation of the five imputed datasets"
       ],
       "correct": 1,
-      "explanation": "The one-SE rule is a parsimony rule: prefer the simplest model (fewest df) that is statistically indistinguishable from the best model. 'Indistinguishable' is defined as within one standard error of the minimum CV-RMSE."
+      "explanation": "Between-imputation variance measures how much the coefficient estimates vary across the m imputed datasets. Large variation means the missing data are informative — there is substantial uncertainty about what the true values are. Rubin's rules add this between-imputation component to the within-imputation variance to get the total standard error."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "Standard errors from multiple imputation are always at least as large as those from complete-case analysis (listwise deletion), because MI accounts for additional uncertainty due to missing values.",
+      "correct": true,
+      "explanation": "MI inflates standard errors by adding the between-imputation variance component. Complete-case analysis ignores the uncertainty due to missingness, so its standard errors are too small (overconfident). MI provides the statistically valid estimate of precision under missing data."
     }
   ]
 }

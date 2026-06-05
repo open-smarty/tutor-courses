@@ -1,90 +1,26 @@
-# Task: Module 2, Lesson 2 — Stationary Distribution of Your Biological System
+# Task: Chapman-Kolmogorov Verification and Stationary Distribution
 
-## Overview
+## Objective
 
-Using the 4-state biological system you designed in Module 2, Lesson 1, you will compute its stationary distribution in R, interpret the results biologically, and investigate whether the starting distribution affects the long-run behaviour.
-
----
+Numerically verify the Chapman-Kolmogorov equations, compute the stationary distribution both algebraically and via matrix-power convergence, and visualise how the distribution evolves over time toward equilibrium.
 
 ## Instructions
 
-### Step 1: Compute the stationary distribution in R
+1. **Set up the chain.** Build the TPM from the lesson (H, S, R states). Compute P^1, P^5, and P^50 using `mat_power()`. Print each rounded to 5 decimal places. In a comment, describe what you observe about the rows of P^50.
 
-Using the TPM you designed in the Lesson 1 task, solve for the stationary distribution π in R.
+2. **Verify C-K numerically.** Choose m=3, n=7. Compute P^3, P^7, and P^10 separately. Check that `P^3 %*% P^7` equals `P^10` (up to floating-point rounding). Print the maximum absolute difference — it should be on the order of 1e-16.
 
-Use **both** methods covered in Lesson 2:
+3. **Find the stationary distribution.** Solve the linear system (P - I)^T π = 0 with Σπᵢ = 1 using `solve()`. Print π rounded to 5 decimal places. Verify that π sums to 1 and that `π %*% P` returns π (print the maximum deviation).
 
-**Method A — linear system:**
-Set up the system π(P − I) = 0 together with Σ π_j = 1, and solve using `solve()`.
+4. **Cross-check with markovchain.** Use `steadyStates(mc3)` and confirm it matches your algebraic result. Compute and print the mean return times 1/πᵢ for each state; interpret what the mean return time to state S (Sick) means biologically.
 
-**Method B — eigenvalue decomposition:**
-Find the left eigenvector of P corresponding to eigenvalue 1 using `eigen(t(P))`.
+5. **Convergence plot.** Build a long-format data frame of state probabilities at steps 1, 2, 3, 5, 10, 20, 50, 100 (starting from S). Plot with a log-scale x-axis. Overlay dashed horizontal reference lines at the stationary probabilities for each state. The plot should show the distribution "pulling in" to the stationary values.
 
-Confirm the two methods give the same result (up to numerical precision).
+## Submission
 
----
-
-### Step 2: Verify the result
-
-Check that your stationary vector satisfies:
-
-1. π **P** = π &nbsp;&nbsp;&nbsp;&nbsp;(print the result of `pi_hat %*% P` and compare to `pi_hat`)
-2. All entries are non-negative and sum to 1
-
-Show R output for both checks.
-
----
-
-### Step 3: Biological interpretation
-
-For each state j in your system, write 2–3 sentences interpreting the stationary probability π_j. Address:
-
-- What does it mean that, in the long run, approximately 100·π_j% of the population will be in state j?
-- Does this fraction make biological sense for your chosen system? (You may compare to literature values if you have them, or simply reason from first principles.)
-- Which state has the largest stationary probability, and why is that expected given the structure of your TPM?
-
----
-
-### Step 4: Effect of starting distribution
-
-Choose two very different initial distributions π(0):
-
-- **π(0) = e_j** (the chain starts with certainty in some state j of your choosing)
-- **π(0) = (0.25, 0.25, 0.25, 0.25)** (uniform start — equally likely to be in any state)
-
-For each starting distribution, compute π(0) · P^n for n = 1, 5, 10, 25, 50 steps.
-
-Plot the evolution of each marginal probability π_j(n) over n (use `matplot()` or `ggplot2`). Add horizontal dashed lines at the stationary probabilities.
-
-Answer: does the stationary distribution depend on the starting state? Explain in one paragraph why or why not, connecting your answer to the concepts of irreducibility and the ergodic theorem.
-
----
-
-### Step 5: Biological interpretation of convergence speed
-
-From your plots in Step 4, approximately how many time steps does the chain need before the marginal distribution is within 0.01 of the stationary distribution?
-
-Give a biological interpretation: if one time step represents one month, how long does it take for the disease/ecological system to "forget" its initial state? Is this a fast or slow convergence, and what features of the TPM drive the speed?
-
----
-
-## Submission format
-
-Submit a report (approx. 400–600 words) plus R code as an appendix, containing:
-
-- Your R code for both methods of finding π
-- A table of the stationary distribution with biological interpretation
-- Your convergence plots
-- Written answers to Steps 3, 4, and 5
-
----
-
-## Grading criteria
-
-| Criterion | Marks |
-|---|---|
-| Both methods implemented correctly and agree | 20% |
-| Verification (πP = π and sum = 1) shown | 10% |
-| Biological interpretation of each π_j is specific and reasoned | 30% |
-| Convergence plots are correct and clearly labelled | 20% |
-| Reflection on starting-state independence is connected to theory | 20% |
+Submit your completed `exercise.R`. Requirements:
+- C-K max difference printed (should be < 1e-14)
+- Stationary distribution printed; deviation from πP = π < 1e-14
+- Convergence plot rendered with dashed reference lines
+- At least one interpretive comment on mean return times
+- Pass `npm run check -- bdat-624 module-02 lesson-02`

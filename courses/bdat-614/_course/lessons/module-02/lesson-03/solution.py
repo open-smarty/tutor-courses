@@ -1,58 +1,94 @@
-"""
-Module 2, Lesson 3 — Attribute Control Charts (Solution)
-"""
+"""BDAT 614 — Module 2, Lesson 3
+Solution: Attribute Control Charts — p, np, c, and u Charts"""
+
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
-sample_sizes_p = np.array([150, 160, 145, 155, 150, 165, 148, 152, 158, 150,
-                            153, 147, 161, 156, 149, 154, 160, 151, 157, 155])
-complaints     = np.array([6, 8, 5, 10, 7, 9, 4, 11, 8, 6,
-                           7, 5, 9, 12, 6, 8, 10, 7, 9, 6])
+rng = np.random.default_rng(seed=42)
 
-p_bar = complaints.sum() / sample_sizes_p.sum()
-p_values = complaints / sample_sizes_p
-p_ucl = p_bar + 3 * np.sqrt(p_bar * (1 - p_bar) / sample_sizes_p)
-p_lcl = np.maximum(0, p_bar - 3 * np.sqrt(p_bar * (1 - p_bar) / sample_sizes_p))
+k = 20
+p_true = 0.04
+u_true = 0.018
 
-batches_per_day = np.array([50, 60, 55, 70, 45, 65, 58, 52, 67, 53])
-total_errors    = np.array([12, 14,  8, 21,  9, 16, 13, 10, 20, 11])
+# ── Simulated data ───────────────────────────────────────────────────────────
+n_sizes = rng.integers(350, 601, size=k)
 
-u_bar    = total_errors.sum() / batches_per_day.sum()
-u_values = total_errors / batches_per_day
-u_ucl    = u_bar + 3 * np.sqrt(u_bar / batches_per_day)
-u_lcl    = np.maximum(0, u_bar - 3 * np.sqrt(u_bar / batches_per_day))
+# Defective-item counts (for p chart)
+D_i = rng.binomial(n_sizes, p_true)
+p_i = D_i / n_sizes
 
-print(f"p-Chart: p̄ = {p_bar:.4f}")
-print(f"u-Chart: ū = {u_bar:.4f}")
+# Defect counts (for u chart)
+c_i = rng.poisson(u_true * n_sizes)
+u_i = c_i / n_sizes
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+# ── p Chart ──────────────────────────────────────────────────────────────────
+p_bar = D_i.sum() / n_sizes.sum()
+se_p = np.sqrt(p_bar * (1 - p_bar) / n_sizes)
+ucl_p = p_bar + 3 * se_p
+lcl_p = np.maximum(0, p_bar - 3 * se_p)
 
-days_p = np.arange(1, len(sample_sizes_p) + 1)
-ax1.plot(days_p, p_values, 'b-o', markersize=5, label='pᵢ')
-ax1.axhline(p_bar, color='green', linestyle='-', label=f'p̄={p_bar:.4f}')
-ax1.plot(days_p, p_ucl, 'r--', label='UCL')
-ax1.plot(days_p, p_lcl, 'r--', label='LCL')
-ooc_p = np.where((p_values > p_ucl) | (p_values < p_lcl))[0]
-ax1.plot(days_p[ooc_p], p_values[ooc_p], 'ro', markersize=10, label='OOC')
-ax1.set_title('p-Chart — Call Centre Complaint Proportion')
-ax1.set_xlabel('Day')
-ax1.set_ylabel('Proportion Defective')
-ax1.legend(fontsize=8)
-ax1.grid(True, alpha=0.3)
+oos_p = (p_i > ucl_p) | (p_i < lcl_p)
 
-days_u = np.arange(1, len(batches_per_day) + 1)
-ax2.plot(days_u, u_values, 'b-o', markersize=5, label='uᵢ')
-ax2.axhline(u_bar, color='green', linestyle='-', label=f'ū={u_bar:.4f}')
-ax2.plot(days_u, u_ucl, 'r--', label='UCL')
-ax2.plot(days_u, u_lcl, 'r--', label='LCL')
-ooc_u = np.where((u_values > u_ucl) | (u_values < u_lcl))[0]
-ax2.plot(days_u[ooc_u], u_values[ooc_u], 'ro', markersize=10, label='OOC')
-ax2.set_title('u-Chart — Pipeline Errors per Batch')
-ax2.set_xlabel('Day')
-ax2.set_ylabel('Defects per Unit')
-ax2.legend(fontsize=8)
-ax2.grid(True, alpha=0.3)
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+batches = np.arange(1, k + 1)
+
+ax = axes[0]
+ax.plot(batches, p_i, marker='o', color='steelblue', label='p_i')
+ax.axhline(p_bar, color='green', linestyle='--', linewidth=1.5, label=f'CL = {p_bar:.4f}')
+ax.step(batches, ucl_p, color='red', linestyle='--', linewidth=1.2, where='mid', label='UCL/LCL')
+ax.step(batches, lcl_p, color='red', linestyle='--', linewidth=1.2, where='mid')
+ax.scatter(batches[oos_p], p_i[oos_p], color='red', zorder=5, s=80, label='OOC')
+ax.set_title('p Chart — Proportion Defective (variable n)', fontsize=13)
+ax.set_xlabel('Batch')
+ax.set_ylabel('Proportion Defective (p_i)')
+ax.legend(fontsize=9)
+ax.set_xlim(0.5, k + 0.5)
+ax.grid(alpha=0.3)
+
+print("p Chart Summary")
+print(f"  p-bar = {p_bar:.4f}")
+print(f"  # out-of-control: {oos_p.sum()}")
+
+# ── u Chart ──────────────────────────────────────────────────────────────────
+u_bar = c_i.sum() / n_sizes.sum()
+se_u = np.sqrt(u_bar / n_sizes)
+ucl_u = u_bar + 3 * se_u
+lcl_u = np.maximum(0, u_bar - 3 * se_u)
+
+oos_u = (u_i > ucl_u) | (u_i < lcl_u)
+
+ax = axes[1]
+ax.plot(batches, u_i, marker='s', color='darkorange', label='u_i')
+ax.axhline(u_bar, color='green', linestyle='--', linewidth=1.5, label=f'CL = {u_bar:.4f}')
+ax.step(batches, ucl_u, color='red', linestyle='--', linewidth=1.2, where='mid', label='UCL/LCL')
+ax.step(batches, lcl_u, color='red', linestyle='--', linewidth=1.2, where='mid')
+ax.scatter(batches[oos_u], u_i[oos_u], color='red', zorder=5, s=80, label='OOC')
+ax.set_title('u Chart — Defects per Unit (variable n)', fontsize=13)
+ax.set_xlabel('Batch')
+ax.set_ylabel('Defects per Unit (u_i)')
+ax.legend(fontsize=9)
+ax.set_xlim(0.5, k + 0.5)
+ax.grid(alpha=0.3)
+
+print("\nu Chart Summary")
+print(f"  u-bar = {u_bar:.4f}")
+print(f"  # out-of-control: {oos_u.sum()}")
+
+# Summary table
+df = pd.DataFrame({
+    'Batch': batches,
+    'n_i': n_sizes,
+    'D_i': D_i,
+    'p_i': p_i.round(4),
+    'UCL_p': ucl_p.round(4),
+    'c_i': c_i,
+    'u_i': u_i.round(4),
+    'UCL_u': ucl_u.round(4),
+})
+print("\nData Table (first 5 rows):")
+print(df.head().to_string(index=False))
 
 plt.tight_layout()
-plt.savefig('attribute_charts.png', dpi=100)
+plt.savefig('attribute_charts.png', dpi=150)
 plt.show()

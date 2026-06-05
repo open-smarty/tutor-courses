@@ -2,250 +2,191 @@
 
 ## Goal
 
-By the end of this lesson you will be able to state and interpret the four postulates of the Poisson process, derive the Poisson PMF from those postulates using differential equations, explain the memoryless property of the exponential interarrival times, and connect the waiting time to the n-th event to the Gamma distribution.
+Derive the Poisson distribution from first principles via differential equations, establish the memoryless property of exponential inter-arrival times, and connect n-th event waiting times to the Gamma distribution.
 
 ## Concept
 
-### Why we need a model for random arrivals
+### Motivation: Counting Random Events in Time
 
-Patients arrive at an emergency room. Drug-resistant mutations appear in a tumour. Radio-active atoms decay. In each case, events arrive at random moments in continuous time, with no regularity — you cannot predict when the next one will occur. The Poisson process is the canonical mathematical model for exactly this situation.
+When does the next mutation arise in a dividing cell? When does the next patient arrive at the emergency room? When does the next HIV replication event occur in a treated patient?
 
-Here's the key insight: the Poisson process is not just a formula. It emerges inevitably from four simple, physically motivated assumptions. Understanding those assumptions tells you *when* the model is appropriate — and when it isn't.
+All of these share a common structure: events happen at random moments in continuous time, and we want to count how many occur by time t. The **Poisson process** is the canonical model for such random counting in continuous time. It is the continuous-time analogue of the Binomial distribution — but where the number of trials is replaced by a continuous time interval.
 
----
+### The Three Poisson Postulates
 
-### Notation
+Rather than defining the Poisson process by its distribution, we build it from three biologically natural axioms.
 
-> **Notation:** X(t) — the number of events (arrivals, mutations, emissions) that have occurred in the interval (0, t]. This is a discrete-valued, continuous-time stochastic process. X(0) = 0.
+> **Notation block:**
+> - N(t) — the **counting process**; number of events in the interval [0, t]; read "N of t"
+> - λ — the **rate** (intensity) of the process; number of events per unit time on average; read "lambda"
+> - Δt — a small time increment; read "delta t"
+> - o(Δt) — any function of Δt that goes to zero faster than Δt; formally o(Δt)/Δt → 0 as Δt → 0; read "little-oh of delta t" — this represents negligible terms
 
-> **Notation:** λ — the **rate parameter** (events per unit time). We require λ > 0. It is constant over time — this is the homogeneous Poisson process.
+**Postulate 1 — Stationarity:** The probability of exactly one event in a short interval [t, t+Δt] depends only on the length Δt, not on when it starts:
 
-> **Notation:** o(Δt) — **"little-oh of Δt"**: any term h(Δt) such that lim_{Δt→0} h(Δt)/Δt = 0. These terms vanish so fast compared to Δt that they are negligible as Δt → 0. Think of them as "higher-order corrections" we can ignore in the limit.
+$$P(\text{1 event in } [t, t+\Delta t]) = \lambda \Delta t + o(\Delta t)$$
 
----
+The rate λ > 0 is constant over time. The o(Δt) term captures higher-order corrections that vanish faster than Δt.
 
-### The four postulates
+**Postulate 2 — Independence of disjoint intervals:** For any two non-overlapping intervals [a, b] and [c, d] (with b < c), the counts N(b) - N(a) and N(d) - N(c) are independent random variables.
 
-The homogeneous Poisson process is defined by four conditions. Read each one first in mathematical language, then in plain English.
+In biological terms: what happened in the first hour has no bearing on what happens in the second hour. Events don't "remember" each other.
 
-**Postulate 1 — Independence of non-overlapping intervals:**
+**Postulate 3 — Orderliness (no simultaneous events):** The probability of two or more events in [t, t+Δt] is negligible:
 
-For any 0 ≤ t_1 < t_2 ≤ t_3 < t_4, the counts X(t_2) − X(t_1) and X(t_4) − X(t_3) are independent random variables.
+$$P(\text{2 or more events in } [t, t+\Delta t]) = o(\Delta t)$$
 
-*In plain English:* "What happens in the interval 9–10am has no bearing on what happens in 10–11am." This is the stochastic analogue of saying the arrivals have no memory of each other.
+As Δt → 0, the chance of two events at "the same instant" vanishes.
 
-**Postulate 2 — Proportional probability of one event:**
+### Deriving the Poisson PMF from the Postulates
 
-$$P(\text{exactly 1 event in } (t,\; t + \Delta t]) = \lambda \Delta t + o(\Delta t)$$
+> **Notation block:**
+> - Pₙ(t) = P(N(t) = n) — probability of exactly n events by time t; read "P sub n of t"
+> - Pₙ'(t) = dPₙ/dt — the derivative of Pₙ(t) with respect to t; read "P sub n prime of t"
 
-*In plain English:* "In a tiny window of length Δt, the probability of seeing exactly one arrival is approximately proportional to the window length. Halve the window, halve the probability."
+From the three postulates, we derive a system of **ordinary differential equations (ODEs)** for Pₙ(t).
 
-**Postulate 3 — Complementary probability of zero events:**
+**Setting up the ODE for P₀(t).**
 
-$$P(\text{zero events in } (t,\; t + \Delta t]) = 1 - \lambda \Delta t + o(\Delta t)$$
+P₀(t+Δt) = P(no events in [0, t+Δt]) = P(no events in [0,t]) × P(no events in [t, t+Δt])
 
-*In plain English:* "In a tiny window, nothing happens almost certainly — the probability is close to 1 minus the probability of one arrival."
+> The second equality uses Postulate 2 (independence of disjoint intervals): [0,t] and [t,t+Δt] are disjoint, so the events in them are independent.
 
-**Postulate 4 — Negligible probability of two or more events:**
+P(no events in [t, t+Δt]) = 1 - λΔt + o(Δt)
 
-$$P(\text{two or more events in } (t,\; t + \Delta t]) = o(\Delta t)$$
+> From Postulate 1: P(exactly 1 event) = λΔt + o(Δt), and Postulate 3: P(2+ events) = o(Δt). So P(0 events) = 1 - λΔt - o(Δt) + o(Δt) = 1 - λΔt + o(Δt).
 
-*In plain English:* "Two events cannot happen at exactly the same instant. The probability of a double arrival shrinks faster than the window length — it is negligible compared to Δt."
+Therefore:
 
-Note that Postulates 2, 3, and 4 are consistent: 1 = P(0) + P(1) + P(≥2) ≈ (1 − λΔt) + λΔt + 0. ✓
-
----
-
-### Deriving P_n(t) = P(X(t) = n)
-
-Let's unpack this derivation before we go further. We will derive the distribution of X(t) directly from the postulates using ordinary differential equations. Every step is annotated.
-
-> **Notation:** P_n(t) = P(X(t) = n) — the probability that exactly n events have occurred by time t.
-
-#### Step 1: Differential equation for P_0(t)
-
-Starting from P_0(0) = 1 (no events at time 0):
-
-$$P_0(t + \Delta t) = P_0(t) \cdot [1 - \lambda \Delta t + o(\Delta t)]$$
-
-This says: "no events by time t+Δt" = "no events by time t" AND "no event in the next Δt". We used independence (Postulate 1) and Postulate 3.
+$$P_0(t + \Delta t) = P_0(t) \cdot (1 - \lambda \Delta t + o(\Delta t))$$
 
 Rearranging:
 
-$$P_0(t + \Delta t) - P_0(t) = -\lambda \Delta t \cdot P_0(t) + o(\Delta t)$$
+$$\frac{P_0(t + \Delta t) - P_0(t)}{\Delta t} = -\lambda P_0(t) + \frac{o(\Delta t)}{\Delta t}$$
 
-Dividing both sides by Δt and taking the limit Δt → 0:
+Taking Δt → 0:
 
-$$P_0'(t) = -\lambda P_0(t) \qquad \text{(the } o(\Delta t)/\Delta t \text{ term vanishes by definition)}$$
+$$P_0'(t) = -\lambda P_0(t) \quad \text{with initial condition } P_0(0) = 1$$
 
-This is a first-order linear ODE with constant coefficients. The general solution is P_0(t) = Ce^{-λt}. Applying the initial condition P_0(0) = 1:
+> **Why P₀(0) = 1?** At time 0, no time has elapsed, so no events can have occurred.
 
-$$\boxed{P_0(t) = e^{-\lambda t}}$$
+**Solving P₀(t).** This is a first-order linear ODE with constant coefficient. The solution is:
 
-#### Step 2: Differential equation for P_n(t), n ≥ 1
+$$P_0(t) = e^{-\lambda t}$$
 
-There are exactly two ways to have n events by time t + Δt:
+Verify: P₀'(t) = -λe^{-λt} = -λP₀(t). ✓ And P₀(0) = e⁰ = 1. ✓
 
-| Path | Probability |
-|------|-------------|
-| n−1 events by t, then 1 event in (t, t+Δt] | P_{n-1}(t) · λΔt + o(Δt) |
-| n events by t, then 0 events in (t, t+Δt] | P_n(t) · (1 − λΔt) + o(Δt) |
-| ≥2 events in (t, t+Δt] | o(Δt) (negligible by Postulate 4) |
+**Setting up the ODE for Pₙ(t), n ≥ 1.**
 
-Adding the two main paths:
+For n events by time t+Δt, either:
+- There were n events by time t, and 0 events in [t, t+Δt], OR
+- There were n-1 events by time t, and exactly 1 event in [t, t+Δt]
+- (Postulate 3 makes "2 or more in [t, t+Δt]" negligible)
 
-$$P_n(t + \Delta t) = P_{n-1}(t) \cdot \lambda \Delta t + P_n(t) \cdot (1 - \lambda \Delta t) + o(\Delta t)$$
+$$P_n(t + \Delta t) = P_n(t)(1 - \lambda\Delta t) + P_{n-1}(t)(\lambda\Delta t) + o(\Delta t)$$
 
-Rearranging and dividing by Δt:
+Rearranging and taking Δt → 0:
 
-$$P_n'(t) = \lambda P_{n-1}(t) - \lambda P_n(t), \qquad n \geq 1$$
+$$P_n'(t) = -\lambda P_n(t) + \lambda P_{n-1}(t) \quad \text{for } n \geq 1$$
 
-#### Step 3: Solving the recursive ODE system
+with initial condition Pₙ(0) = 0 for n ≥ 1 (at time 0, there are 0 events, so all n ≥ 1 are impossible).
 
-Let's unpack this notation before we go further. Define Q_n(t) = e^{λt} P_n(t) (an integrating factor substitution). Then:
+**Solving P₁(t) by integrating factor.**
 
-$$Q_n'(t) = \lambda e^{\lambda t} P_n(t) + e^{\lambda t} P_n'(t)$$
+$$P_1'(t) + \lambda P_1(t) = \lambda P_0(t) = \lambda e^{-\lambda t}$$
 
-$$= \lambda Q_n(t) + e^{\lambda t} [\lambda P_{n-1}(t) - \lambda P_n(t)] \qquad \text{(substituting the ODE for } P_n' \text{)}$$
+> **Notation:** Multiplying both sides by the **integrating factor** e^{λt}: this turns the left side into a perfect derivative.
 
-$$= \lambda Q_n(t) + \lambda Q_{n-1}(t) - \lambda Q_n(t) \qquad \text{(since } e^{\lambda t} P_k(t) = Q_k(t) \text{)}$$
+Multiply both sides by e^{λt}:
 
-$$Q_n'(t) = \lambda Q_{n-1}(t)$$
+$$e^{\lambda t} P_1'(t) + \lambda e^{\lambda t} P_1(t) = \lambda$$
 
-Now solve recursively with Q_0(t) = e^{λt} P_0(t) = 1:
+The left side is the derivative of the product e^{λt} P₁(t):
 
-- n = 0: Q_0(t) = 1, so Q_0'(t) = 0 = λ · Q_{-1}... (base case, consistent)
-- n = 1: Q_1'(t) = λ Q_0(t) = λ · 1 = λ. Integrating: Q_1(t) = λt (using Q_1(0) = 0)
-- n = 2: Q_2'(t) = λ Q_1(t) = λ · λt. Integrating: Q_2(t) = (λt)²/2
-- n = k: Q_k'(t) = λ Q_{k-1}(t). By induction: Q_k(t) = (λt)^k / k!
+$$\frac{d}{dt}\!\left[e^{\lambda t} P_1(t)\right] = \lambda$$
 
-Converting back to P_n:
+Integrate both sides from 0 to t:
 
-$$P_n(t) = e^{-\lambda t} Q_n(t) = e^{-\lambda t} \frac{(\lambda t)^n}{n!}$$
+$$e^{\lambda t} P_1(t) - e^0 P_1(0) = \lambda t$$
 
-This is the **Poisson PMF** with parameter λt:
+Since P₁(0) = 0:
 
-$$\boxed{X(t) \sim \text{Poisson}(\lambda t)}$$
+$$e^{\lambda t} P_1(t) = \lambda t$$
 
-The derivation is complete. All four postulates were used; every step was driven by the definitions of the postulates and the integrating-factor technique.
+$$P_1(t) = \lambda t \, e^{-\lambda t}$$
 
----
+**Inductive step: Assume Pₙ₋₁(t) = e^{-λt}(λt)^{n-1}/(n-1)! and derive Pₙ(t).**
 
-### Mean and variance of X(t)
+The ODE for Pₙ is:
 
-Since X(t) ~ Poisson(λt):
+$$P_n'(t) + \lambda P_n(t) = \lambda \cdot \frac{(λt)^{n-1}}{(n-1)!} e^{-\lambda t}$$
 
-$$E(X(t)) = \lambda t \qquad \text{Var}(X(t)) = \lambda t$$
+Multiply by integrating factor e^{λt}:
 
-The expected number of events is proportional to time — doubling the observation window doubles the expected count.
+$$\frac{d}{dt}\!\left[e^{\lambda t} P_n(t)\right] = \lambda \cdot \frac{(\lambda t)^{n-1}}{(n-1)!}$$
 
----
+Integrate from 0 to t (using Pₙ(0) = 0):
 
-### The memoryless property of interarrival times
+$$e^{\lambda t} P_n(t) = \lambda \cdot \frac{1}{(n-1)!} \cdot \frac{t^n}{n} \cdot \lambda^{n-1} = \frac{(\lambda t)^n}{n!}$$
 
-> **Notation:** T_k — the **k-th interarrival time**: the elapsed time between the (k−1)-th and k-th events. T_1 is the waiting time until the first event.
+Therefore:
 
-**Claim:** The interarrival times T_1, T_2, T_3, ... are i.i.d. Exponential(λ) random variables.
+$$P_n(t) = \frac{e^{-\lambda t}(\lambda t)^n}{n!}, \quad n = 0, 1, 2, \ldots \quad \blacksquare$$
 
-**Derivation for T_1:**
+Here's the key insight: N(t) ~ Poisson(λt). The Poisson distribution arises naturally from the three axioms of stationarity, independence, and orderliness. The parameter of the Poisson distribution is λt — the rate times the time elapsed.
 
-$$P(T_1 > t) = P(\text{no events in } (0, t]) = P_0(t) = e^{-\lambda t}$$
+### Inter-Arrival Times and the Exponential Distribution
 
-This is the survival function of the Exponential(λ) distribution. ✓
+Let Tₙ denote the waiting time until the n-th event (measured from time 0). Let W₁ = T₁ (waiting time from 0 to the first event) and Wₙ = Tₙ - Tₙ₋₁ (waiting time between the (n-1)-th and n-th events).
 
-The **memoryless property** of the exponential distribution states: for s, t > 0,
+> **Notation block:**
+> - Tₙ — the time of the n-th event; read "T sub n"
+> - W₁, W₂, ... — inter-arrival times; Wₙ = Tₙ - Tₙ₋₁; read "W sub n"
 
-$$P(T > t + s \mid T > s) = \frac{P(T > t + s)}{P(T > s)} = \frac{e^{-\lambda(t+s)}}{e^{-\lambda s}} = e^{-\lambda t} = P(T > t)$$
+**Claim:** The inter-arrival times W₁, W₂, ... are i.i.d. Exponential(λ) random variables.
 
-*In plain English:* "If you have already been waiting for s time units with no arrival, the additional waiting time has exactly the same distribution as if you had just started. The system has no memory of the past wait."
+**Proof:** P(W₁ > t) = P(N(t) = 0) = e^{-λt}. So W₁ ~ Exp(λ). By independence and stationarity, each subsequent Wₙ also ~ Exp(λ), independent of W₁, ..., Wₙ₋₁.
 
-Here's the key insight: this is the *only* continuous distribution with the memoryless property. The Poisson process is the unique continuous-time process with independent increments and memoryless interarrival times. These are two sides of the same coin.
+**Memoryless property.** The exponential distribution satisfies:
 
----
+$$P(W > s + t \mid W > s) = P(W > t) \quad \text{for all } s, t \geq 0$$
 
-### Waiting times and the Gamma distribution
+**Proof:** 
 
-> **Notation:** T_n (also written S_n in some texts) — the **waiting time to the n-th event**: the total elapsed time from the start until the n-th event occurs.
+$$P(W > s+t \mid W > s) = \frac{P(W > s+t)}{P(W > s)} = \frac{e^{-\lambda(s+t)}}{e^{-\lambda s}} = e^{-\lambda t} = P(W > t) \quad \blacksquare$$
 
-$$T_n = \tau_1 + \tau_2 + \cdots + \tau_n$$
+Biological interpretation: if you have been waiting for the next mutation for s seconds, the distribution of remaining wait is the same as if you had just started waiting. The process has no memory of how long it has waited — which is a strong and sometimes unrealistic assumption for biological events.
 
-where τ_1, τ_2, ..., τ_n are the i.i.d. Exp(λ) interarrival times.
+### n-th Event Time: Gamma Distribution
 
-**Key result:** T_n ~ Gamma(n, λ)
+The n-th event time Tₙ = W₁ + W₂ + ... + Wₙ is the sum of n i.i.d. Exp(λ) variables.
 
-The PDF of T_n is:
+> **Notation block:**
+> - Gamma(n, λ) — the Gamma distribution with shape n (positive integer) and rate λ; also called Erlang(n, λ) when n is an integer
 
-$$f_{T_n}(t) = \frac{\lambda e^{-\lambda t} (\lambda t)^{n-1}}{(n-1)!}, \qquad t > 0$$
+The sum of n i.i.d. Exp(λ) random variables follows a Gamma(n, λ) distribution with PDF:
 
-This is the **n-Erlang distribution** (a special case of the Gamma). The mean and variance are:
+$$f_{T_n}(t) = \frac{\lambda^n t^{n-1} e^{-\lambda t}}{(n-1)!}, \quad t > 0$$
 
-$$E(T_n) = \frac{n}{\lambda} \qquad \text{Var}(T_n) = \frac{n}{\lambda^2}$$
-
-**Connecting counts to waiting times:** There is a beautiful duality:
-
-$$P(T_n \leq t) = P(X(t) \geq n)$$
-
-*Both sides mean the same thing:* "The n-th event has occurred by time t." On the left, we ask about the waiting time; on the right, we ask about the count. They are two perspectives on the same process.
-
-**Derivation sketch:**
-
-$$P(T_n \leq t) = P(\text{at least } n \text{ events in } [0, t]) = \sum_{k=n}^{\infty} P_k(t) = \sum_{k=n}^{\infty} e^{-\lambda t} \frac{(\lambda t)^k}{k!} = P(X(t) \geq n) \qquad \checkmark$$
-
----
-
-### Summary table
-
-| Quantity | Distribution | Mean | Variance |
-|---|---|---|---|
-| X(t) — events in (0, t] | Poisson(λt) | λt | λt |
-| T_k — k-th interarrival time | Exp(λ) | 1/λ | 1/λ² |
-| T_n — time to n-th event | Gamma(n, λ) | n/λ | n/λ² |
-
----
+This makes intuitive sense: to wait for the n-th event, you must wait through n consecutive exponential waiting periods.
 
 ## Example
 
-### Mutations in oncology
+**Modelling emergency room patient arrivals.**
 
-During tumour development, point mutations arise in DNA at a rate λ = 2 mutations per kilobase pair (kb). We model mutation occurrence as a Poisson process along the genome.
+Patients arrive at an emergency room according to a Poisson process with rate λ = 4 patients/hour.
 
-**Question 1:** What is the probability that a 3 kb region contains exactly 4 mutations?
+1. **P(exactly 3 patients in 1 hour):** P₃(1) = e^{-4}×4³/3! = e^{-4}×64/6 ≈ 0.0733×10.67 ≈ 0.1954.
 
-X(3) ~ Poisson(2 × 3) = Poisson(6):
+2. **Expected time until 5th patient:** E[T₅] = n/λ = 5/4 = 1.25 hours.
 
-$$P(X(3) = 4) = \frac{e^{-6} \cdot 6^4}{4!} = \frac{e^{-6} \cdot 1296}{24} = 54 e^{-6} \approx 0.1339$$
+3. **Memoryless check:** If 30 minutes have passed with no patient, the expected additional wait is still 1/λ = 15 minutes — the same as if we had just started. This is the memoryless property.
 
-**Question 2:** What is the expected number of mutations in a 0.5 kb stretch?
-
-$$E(X(0.5)) = \lambda \cdot 0.5 = 2 \times 0.5 = 1 \text{ mutation}$$
-
-**Question 3:** A cancer biologist scans the genome and finds the first 20 coding positions mutation-free. What is the probability the next mutation occurs within the following 10 positions?
-
-By the memoryless property: this is simply P(T_1 ≤ 10) = 1 − e^{−2×10} = 1 − e^{−20} ≈ 1. (The extremely high rate means a 10-position window almost certainly contains a mutation regardless of past history.)
-
-For a lower rate λ = 0.05 mutations/kb: P(T_1 ≤ 0.010 kb | T_1 > 0.020 kb) = P(T_1 ≤ 0.010) = 1 − e^{−0.0005} ≈ 0.0005.
-
-**Question 4:** What is the probability we wait more than 1 kb for the first mutation (λ = 2)?
-
-$$P(T_1 > 1) = e^{-2 \times 1} = e^{-2} \approx 0.135$$
-
-In R:
-
-```r
-pexp(1, rate = 2, lower.tail = FALSE)  # = e^{-2} = 0.1353
-```
-
----
+4. **Simulating in R:** Draw inter-arrival times from Exp(4) using `rexp(n, rate=4)`, cumulate to get event times, and verify that counts in any interval follow Poisson(4×interval length).
 
 ## Task
 
-Open `exercise.R`. You will simulate a Poisson process in continuous time, verify the Poisson PMF against simulated counts, demonstrate the memoryless property empirically, and connect interarrival times to waiting times via the Gamma distribution.
-
-Run:
-
-```
-npm run check -- bdat-624 module-03 lesson-02
-```
+See `exercise.R`. You will simulate a Poisson process using exponential inter-arrival times, verify that inter-arrival times are exponential, verify that N(t) is Poisson(λt), and examine the Gamma waiting time distribution.
 
 ## Check
 
@@ -255,4 +196,4 @@ npm run check -- bdat-624 module-03 lesson-02
 
 ## Reflection
 
-The Poisson process requires a constant rate λ. But in an emergency room, arrivals are much more frequent at 7pm than at 3am. How would you modify the model to handle a time-varying rate λ(t)? (Hint: what would the postulate 2 look like?) This generalisation is called the *non-homogeneous* Poisson process, and its count distribution in (0, t] has parameter Λ(t) = ∫₀ᵗ λ(s) ds. Does the memoryless property still hold for interarrival times in the non-homogeneous case? Why or why not?
+The Poisson process assumes events occur at a constant rate λ over time (Postulate 1: stationarity). In a clinical setting, patient arrivals at a hospital are not constant — they peak on Mondays, they surge during flu season, they increase around full moons (according to some studies). This motivates the **non-homogeneous Poisson process** (NHPP) where λ(t) is a function of time. In an NHPP, how would you modify the ODE for P₀(t)? What function replaces e^{-λt} as the survival function? (Hint: think about the cumulative rate Λ(t) = ∫₀ᵗ λ(u) du and how it generalises the product λt.)

@@ -1,144 +1,117 @@
-# Lesson 1: k-Means Clustering
+# Lesson 8: k-Means Clustering
 
 ## Goal
 
-Explain how k-means assigns observations to clusters, choose the number of clusters k using the elbow and silhouette methods, run `kmeans()` on the health insurance dataset, and profile the resulting segments.
+After this lesson you can state the k-means objective function, trace Lloyd's algorithm step by step, choose k using the elbow and silhouette methods, and profile the resulting clusters in business terms.
 
 ## Concept
 
-### How k-Means Works
+### What k-means does
 
-k-Means partitions $n$ observations into $k$ non-overlapping clusters by minimising the total within-cluster sum of squares (WCSS):
+k-means partitions $n$ observations into $k$ non-overlapping clusters so that points within a cluster are as similar as possible. "Similar" is measured by squared Euclidean distance to the cluster centroid.
 
-$$\text{WCSS} = \sum_{i=1}^{k} \sum_{x \in C_i} \|x - \mu_i\|^2$$
+**Objective** — minimise the Within-Cluster Sum of Squares (WCSS):
 
-The algorithm:
+$$\text{WCSS} = \sum_{k=1}^{K} \sum_{i \in C_k} \|\mathbf{x}_i - \boldsymbol{\mu}_k\|^2$$
 
-1. Randomly initialise $k$ centroids
-2. Assign each observation to its nearest centroid (Euclidean distance)
-3. Recompute centroids as the mean of each cluster
-4. Repeat steps 2–3 until assignments stop changing
+where $\boldsymbol{\mu}_k = \frac{1}{|C_k|} \sum_{i \in C_k} \mathbf{x}_i$ is the centroid of cluster $k$.
 
-k-Means converges to a **local minimum**, not necessarily the global minimum. Always run with multiple random starts (`nstart = 25`) and take the best result.
+**Why squared distances?** The centroid (mean) is the point that minimises the sum of squared distances. Using squared distances makes the optimisation tractable — you can update centroids by a simple mean, with no iterative inner loop.
 
-**Requirements:**
-- Numeric, scaled input — variables on different scales distort distances
-- No missing values — impute before clustering
-- k specified in advance
+### Lloyd's algorithm (the standard k-means procedure)
 
----
+1. **Initialise**: randomly choose $k$ data points as initial centroids $\boldsymbol{\mu}_1, \ldots, \boldsymbol{\mu}_k$.
+2. **Assignment step**: assign each point $\mathbf{x}_i$ to the nearest centroid:
+$$c_i = \arg\min_{k} \|\mathbf{x}_i - \boldsymbol{\mu}_k\|^2$$
+3. **Update step**: recompute each centroid as the mean of its assigned points:
+$$\boldsymbol{\mu}_k \leftarrow \frac{1}{|C_k|} \sum_{i: c_i = k} \mathbf{x}_i$$
+4. **Repeat** steps 2–3 until no assignments change (convergence).
 
-### Choosing k
+**Convergence is guaranteed** because WCSS decreases (or stays the same) at every step. However, Lloyd's algorithm only finds a **local minimum** — the result depends on the initial centroids. Use `nstart = 25` to run the algorithm 25 times with different random starts and keep the solution with the lowest WCSS.
 
-#### Elbow Method
+### Choosing k: the elbow method
 
-Plot WCSS against k. The optimal k is the "elbow" — the point where adding more clusters yields diminishing returns:
+Plot WCSS against $k$ for $k = 1, 2, \ldots, 10$. WCSS always decreases as $k$ increases (in the extreme, $k = n$ gives WCSS = 0). The "elbow" is the value of $k$ where the rate of decrease sharply slows — adding one more cluster beyond this point yields diminishing returns.
 
 ```r
-library(dplyr)
-source("R/simulate_bdat602_data.R")
-source("R/utils.R")
-library(recipes)
-
-health_small <- simulate_bdat602(n = 10000, seed = 602)
-
-# Prepare: impute, scale numeric variables
-clust_vars <- c("age", "bmi", "income", "premium",
-                "num_chronic_conditions", "num_visits",
-                "num_claims", "claim_amount",
-                "app_logins_monthly", "support_calls")
-
-clust_recipe <- recipe(~ ., data = health_small[, clust_vars]) |>
-  step_impute_median(bmi, income) |>
-  step_normalize(all_numeric_predictors())
-
-clust_prep  <- prep(clust_recipe)
-health_clust <- bake(clust_prep, new_data = NULL)
-
-set.seed(602)
 wcss <- sapply(1:10, function(k) {
-  kmeans(health_clust, centers = k, nstart = 10)$tot.withinss
+  kmeans(data_scaled, centers = k, nstart = 25)$tot.withinss
 })
-
-plot(1:10, wcss, type = "b", pch = 19,
-     xlab = "Number of Clusters (k)", ylab = "WCSS",
-     main = "Elbow Plot")
+plot(1:10, wcss, type = "b", pch = 19, xlab = "k", ylab = "WCSS")
 ```
 
-#### Silhouette Score
+### Choosing k: the silhouette score
 
-The silhouette score measures how well each observation fits its own cluster relative to neighbouring clusters. Values range from -1 to +1; higher is better.
+For each point $i$:
+- $a(i)$ = mean distance to all other points **in the same cluster**.
+- $b(i)$ = mean distance to all points in the **nearest other cluster**.
 
-```r
-library(cluster)
+$$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$$
 
-sil_scores <- sapply(2:8, function(k) {
-  km    <- kmeans(health_clust, centers = k, nstart = 10)
-  sil   <- silhouette(km$cluster, dist(health_clust))
-  mean(sil[, 3])
-})
+$s(i) \in [-1, 1]$. A value close to +1 means $i$ is well inside its cluster and far from others (good). A value close to 0 means $i$ is on the boundary. A value close to −1 means $i$ is closer to another cluster than to its own (misclassified).
 
-plot(2:8, sil_scores, type = "b", pch = 19,
-     xlab = "k", ylab = "Average Silhouette Score",
-     main = "Silhouette Scores")
-```
+The **mean silhouette score** across all points is a quality measure: choose $k$ that maximises it.
 
----
+### Cluster profiling
 
-### Fitting k-Means
+After fitting, describe each cluster by summarising the variables that distinguish it:
 
 ```r
-set.seed(602)
-km4 <- kmeans(health_clust, centers = 4, nstart = 25)
-
-cat("Cluster sizes:", km4$size, "\n")
-cat("WCSS:", km4$tot.withinss, "\n")
-```
-
----
-
-### Profiling Clusters
-
-After fitting, join the cluster labels back to the original data and compute per-cluster summaries:
-
-```r
-health_profiled <- health_small |>
-  filter(!is.na(bmi) & !is.na(income)) |>
-  mutate(cluster = as.factor(km4$cluster))
-
-health_profiled |>
+health_data |>
+  mutate(cluster = factor(km$cluster)) |>
   group_by(cluster) |>
-  summarise(
-    n            = n(),
-    avg_age      = round(mean(age), 1),
-    avg_bmi      = round(mean(bmi), 1),
-    avg_income   = round(mean(income), 0),
-    avg_claim    = round(mean(claim_amount), 0),
-    pct_platinum = round(mean(plan_tier == "Platinum") * 100, 1),
-    fraud_rate   = round(mean(fraud_flag) * 100, 2)
-  )
+  summarise(across(c(age, bmi, income, num_claims, claim_amount), mean, na.rm = TRUE))
 ```
+
+Then give each cluster a business label: "Young low-risk", "Elderly high-utilisation", etc.
 
 ## Example
 
-Typical cluster profiles from the health insurance dataset:
+```r
+library(tidyverse)
 
-| Cluster | Profile |
-|---------|---------|
-| Young healthy | Low age, low BMI, few claims, Bronze plan |
-| Middle-aged moderate-risk | Moderate age/BMI, some chronic conditions |
-| High-utilisation | High claims, many hospital admissions, Gold/Platinum |
-| Elderly high-risk | High age, smokers, multiple chronic conditions, high fraud |
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)  # use 50k for speed
+
+# Select and scale features
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  scale()  # Z-score standardise all columns
+
+# Elbow plot
+wcss <- sapply(1:10, function(k) kmeans(clust_data, centers = k, nstart = 25)$tot.withinss)
+
+tibble(k = 1:10, wcss = wcss) |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_line() + geom_point() +
+  labs(title = "Elbow Method", x = "Number of clusters (k)", y = "WCSS") +
+  theme_minimal()
+
+# Fit with k = 4 (assume elbow at k = 4)
+set.seed(602)
+km <- kmeans(clust_data, centers = 4, nstart = 25)
+
+# Profile clusters
+health_data |>
+  drop_na(age, bmi, income, num_claims, num_chronic_conditions) |>
+  mutate(cluster = factor(km$cluster)) |>
+  group_by(cluster) |>
+  summarise(
+    n          = n(),
+    avg_age    = round(mean(age), 1),
+    avg_bmi    = round(mean(bmi), 1),
+    avg_income = round(mean(income), 0),
+    avg_claims = round(mean(num_claims), 2)
+  )
+```
+
+A typical output might show: Cluster 1 (young, low BMI, low claims — "healthy young"), Cluster 2 (middle-aged, higher income, moderate claims), Cluster 3 (elderly, high chronic conditions, high claims), Cluster 4 (all ages, high BMI, smokers).
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Prepare a scaled matrix of 5 clustering variables (`age`, `bmi`, `income`, `num_claims`, `claim_amount`) from `health_small` (impute NAs first). Name it `hc_mat`.
-2. Run `kmeans(hc_mat, centers = 4, nstart = 25)`. Print cluster sizes.
-3. Join cluster labels back to `health_small` and compute average `claim_amount` and `fraud_flag` rate per cluster.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) prepare and scale the clustering features; (2) produce the elbow plot and identify the optimal k; (3) fit k-means with your chosen k and nstart = 25; (4) profile each cluster and assign a descriptive business label.
 
 ## Check
 
@@ -148,4 +121,4 @@ npm run check -- bdat-602 module-04 lesson-01
 
 ## Reflection
 
-k-Means uses Euclidean distance, which requires scaled numeric variables. Explain what would happen to the cluster assignments if you forgot to scale `income` before clustering together with `age`. Which cluster variable would dominate, and why?
+k-means assumes that clusters are spherical (equal variance in all directions) and of similar size. What would happen if you applied k-means to a dataset where one cluster contains 95% of the data and another contains only 5%?

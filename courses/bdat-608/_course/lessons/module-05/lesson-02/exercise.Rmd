@@ -1,91 +1,68 @@
 ---
-title: "BDAT 608 | Module 5, Lesson 2 — Robust Regression and GAMs"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Robust Regression and GAMs"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 8, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
 library(MASS)
 library(mgcv)
-select <- dplyr::select; filter <- dplyr::filter
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-data("sim4", package = "modelr")
-sim1_base <- sim1
+library(broom)
 ```
 
----
-
-## Task 1 — Inject Outliers and Fit Models
-
-```{r robust-fit}
-# TODO: Create sim1_out: add 15 to y for rows 3 and 17.
-# Fit mod_ols (lm) and mod_rob (rlm, method="M").
-sim1_out <- sim1_base |>
-  mutate(
-    y          = ifelse(row_number() %in% c(3, 17), y + 15, y),
-    is_outlier = row_number() %in% c(3, 17)
-  )
+```{r load-data}
+data("sim1",    package = "modelr")
+data("diamonds", package = "ggplot2")
 ```
 
----
+## Task 1: OLS vs robust regression with outliers
 
-## Task 2 — Plot Comparison
+```{r task1}
+# TODO: Create sim1_out by adding 20 to y for rows 5 and 15.
+# Fit:  mod_ols <- lm(y ~ x, data = sim1_out)
+#       mod_rob <- MASS::rlm(y ~ x, method = "M", data = sim1_out)
+# Create a comparison data frame with b0, b1 for each method.
+# Plot sim1_out scatter + two fitted lines (OLS in gold, robust in blue).
+# Note which line is pulled upward by the outliers.
 
-```{r robust-plot}
-# TODO: Plot sim1_out scatter with:
-# - shape = is_outlier (star for outlier points)
-# - geom_abline for OLS line (colour = "#C9A84C")
-# - geom_abline for robust line (colour = "#1B3A6B")
-# Add a legend and title "OLS vs Robust regression with two outliers".
 ```
 
----
+## Task 2: Fit a GAM on diamonds
 
-## Task 3 — Coefficient Comparison
+```{r task2}
+# TODO: Fit:
+# mod_gam <- gam(log(price) ~ s(log(carat)) + s(depth) + cut,
+#               data = diamonds, method = "REML")
+# Print summary(mod_gam). Read the EDF values for s(log(carat)) and s(depth).
 
-```{r coef-compare}
-# TODO: Print coef(mod_ols) and coef(mod_rob) side by side.
-# Which slope is closer to the true value (~2.05)?
 ```
 
----
+## Task 3: Is s(depth) linear or non-linear?
 
-## Task 4 — Fit GAM on sim4
+```{r task3}
+# TODO: From the summary output, look at the EDF for s(depth).
+# EDF ≈ 1 → approximately linear; EDF >> 1 → non-linear.
+# Write a one-line interpretation in a comment.
 
-```{r gam-fit}
-# TODO: Fit mod_gam <- gam(y ~ s(x1) + s(x2), data = sim4, method = "REML")
-# Print summary(mod_gam). Note the edf values for s(x1) and s(x2).
 ```
 
----
+## Task 4: Visualise the smooths
 
-## Task 5 — GAM Smooth Plots and Heatmap
+```{r task4, fig.width=10, fig.height=4}
+# TODO: Call plot(mod_gam, pages = 1, shade = TRUE).
+# Describe what each smooth looks like in a comment.
 
-```{r gam-plots}
-# TODO: plot(mod_gam, shade = TRUE, col = "#1B3A6B", shade.col = "#C9A84C40")
 ```
 
-```{r gam-heatmap}
-# TODO: Generate a 40x40 prediction grid from sim4 and plot as a heatmap.
-# Use add_predictions(mod_gam) and scale_fill_viridis_c().
+## Task 5: AIC comparison — GAM vs linear model
+
+```{r task5}
+# TODO: Fit mod_lm <- lm(log(price) ~ log(carat) + depth + cut, data = diamonds).
+# Compare AIC(mod_lm, mod_gam). Which wins and why?
+
 ```
-
----
-
-## Reflection
-
-<!-- edf ≈ 1.02 for s(x1). What does this tell you?
-     Would you simplify the model? (2–3 sentences) -->

@@ -1,34 +1,80 @@
 """
-Module 1, Lesson 1 — What is Quality? (Solution)
+BDAT 614 — Module 1, Lesson 1
+Solution: Garvin's 8 Dimensions of Quality — ETL Pipeline Audit
 """
+import numpy as np
+import matplotlib.pyplot as plt
 
-scenarios = [
-    {"description": "A car engine that meets the manufacturer's horsepower specification exactly.", "dimension": "Conformance"},
-    {"description": "A smartphone that looks premium and has an elegant design.", "dimension": "Aesthetics"},
-    {"description": "A washing machine that still works reliably after 10 years.", "dimension": "Durability"},
-    {"description": "A printer that can be repaired cheaply and quickly by any technician.", "dimension": "Serviceability"},
-    {"description": "A laptop that rarely crashes or freezes during normal use.", "dimension": "Reliability"},
-    {"description": "A coffee maker that also has a built-in grinder and milk frother.", "dimension": "Features"},
-    {"description": "A brand-name medication that customers trust more than the generic version.", "dimension": "Perceived Quality"},
-    {"description": "A sensor that accurately measures temperature within ±0.1°C as specified.", "dimension": "Performance"},
-]
-
-data_quality_checks = {
-    "Completeness": 1,
-    "Accuracy": 0,
-    "Consistency": 1,
-    "Timeliness": 1,
-    "Validity": 0,
+# ============================================================
+# Task 1: Quality audit dictionary
+# ============================================================
+audit = {
+    "Performance":       4,
+    "Features":          3,
+    "Reliability":       2,
+    "Conformance":       5,
+    "Durability":        3,
+    "Serviceability":    3,
+    "Aesthetics":        4,
+    "Perceived Quality": 3,
 }
 
-quality_score = sum(data_quality_checks.values()) / len(data_quality_checks) * 100
+# ============================================================
+# Task 2: Overall quality score
+# ============================================================
+overall_score = np.mean(list(audit.values()))
+print(f"Overall quality score: {overall_score:.2f} / 5.00")
+print("\nDimension breakdown:")
+for dim, score in audit.items():
+    bar = "█" * score + "░" * (5 - score)
+    print(f"  {dim:<20} {bar}  {score}/5")
 
-print("=== Part 1: Quality Dimensions ===")
-for s in scenarios:
-    print(f"  {s['dimension']:20s} — {s['description']}")
+# ============================================================
+# Task 3: Radar chart
+# ============================================================
+dimensions = list(audit.keys())
+scores = list(audit.values())
+N = len(dimensions)
 
-print(f"\n=== Part 2: Data Quality Score ===")
-for criterion, result in data_quality_checks.items():
-    status = "PASS" if result else "FAIL"
-    print(f"  {criterion:15s}: {status}")
-print(f"\n  Overall Data Quality Score: {quality_score:.1f}%")
+# Compute equally spaced angles; wrap around by appending the first
+angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+scores_plot = scores + [scores[0]]
+angles_plot = angles + [angles[0]]
+
+fig, ax = plt.subplots(figsize=(7, 7), subplot_kw=dict(polar=True))
+
+# Plot polygon and fill
+ax.plot(angles_plot, scores_plot, color="steelblue", linewidth=2, linestyle="solid")
+ax.fill(angles_plot, scores_plot, color="steelblue", alpha=0.25)
+
+# Axis labels
+ax.set_xticks(angles)
+ax.set_xticklabels(dimensions, fontsize=10)
+
+# Score grid
+ax.set_yticks([1, 2, 3, 4, 5])
+ax.set_yticklabels(["1", "2", "3", "4", "5"], fontsize=8, color="grey")
+ax.set_ylim(0, 5)
+
+# Add score annotations at each vertex
+for angle, score, dim in zip(angles, scores, dimensions):
+    ax.annotate(
+        str(score),
+        xy=(angle, score),
+        xytext=(angle, score + 0.3),
+        ha="center",
+        fontsize=9,
+        fontweight="bold",
+        color="steelblue",
+    )
+
+ax.set_title(
+    f"ETL Pipeline Quality Audit\nOverall Score: {overall_score:.2f}/5.00",
+    size=13,
+    pad=20,
+)
+
+plt.tight_layout()
+plt.savefig("module-01-lesson-01-radar.png", dpi=150, bbox_inches="tight")
+plt.show()
+print("\nChart saved as module-01-lesson-01-radar.png")

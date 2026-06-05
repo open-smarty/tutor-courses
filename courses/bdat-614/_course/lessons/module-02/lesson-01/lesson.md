@@ -1,80 +1,82 @@
 # Lesson 3: Variables Control Charts — Xbar-R and Xbar-S
 
 ## Goal
-Construct Xbar-R and Xbar-S control charts from subgroup data, compute control limits using the correct constants, and identify out-of-control signals.
+
+Construct and interpret Xbar-R and Xbar-S control charts for continuous measurement data.
 
 ## Concept
 
-A **control chart** is a time-series plot with three horizontal lines:
-- **Center Line (CL):** the process average
-- **Upper Control Limit (UCL):** CL + 3 standard deviations
-- **Lower Control Limit (LCL):** CL − 3 standard deviations
+A **control chart** is a time-series plot of process measurements with three horizontal reference lines:
+- **CL** (Center Line) — the process average
+- **UCL** (Upper Control Limit) — 3 standard deviations above the center
+- **LCL** (Lower Control Limit) — 3 standard deviations below the center
 
-Points outside the UCL or LCL signal that the process is out of control — a special cause is likely present.
+**Why 3-sigma limits?**
 
-Control charts for **variables data** (measurements like weight, temperature, time) use subgroups — small samples taken at regular intervals. Two charts are always plotted together: one for the **location** (average) and one for the **spread** (range or standard deviation).
+If the process follows a normal distribution and is in statistical control, the probability of any single observation falling outside μ ± 3σ is:
 
-### Xbar-R Chart (subgroup size n = 2 to 10)
+P(|Z| > 3) = 2 × P(Z > 3) = 2 × 0.00135 = **0.0027**
 
-Used when subgroups are small (n ≤ 10). "R" is the range within each subgroup (max − min).
+Only 0.27% of points will fall outside the limits by chance — a false alarm rate of roughly 1 in 370 observations. This is low enough to treat an out-of-control signal as meaningful.
 
-**Step 1:** Collect k subgroups, each of size n. Compute the subgroup means (x̄ᵢ) and ranges (Rᵢ).
+**Xbar-R Charts** (for subgroups of size n = 3 to 9)
 
-**Step 2:** Compute the grand mean and average range:
-- x̄̄ = mean of all x̄ᵢ
-- R̄ = mean of all Rᵢ
+We collect measurements in subgroups of size n. Let x̄ᵢ be the mean of subgroup i, and Rᵢ = x_max − x_min be the range of subgroup i.
 
-**Step 3:** Apply control chart constants (from the standard table, based on n):
+Notation before formulas:
+- x̄̄ = grand mean (mean of all subgroup means)
+- R̄ = average range (mean of all subgroup ranges)
+- A₂, D₃, D₄ = control chart constants that depend on subgroup size n (from standard tables)
 
-| n | A₂ | D₃ | D₄ |
-|---|----|----|-----|
-| 2 | 1.880 | 0 | 3.267 |
-| 3 | 1.023 | 0 | 2.574 |
-| 4 | 0.729 | 0 | 2.282 |
-| 5 | 0.577 | 0 | 2.114 |
+**Xbar chart formulas:**
 
-- **Xbar chart:** UCL = x̄̄ + A₂·R̄, LCL = x̄̄ − A₂·R̄
-- **R chart:** UCL = D₄·R̄, LCL = D₃·R̄
+CL = x̄̄,   UCL = x̄̄ + A₂ × R̄,   LCL = x̄̄ − A₂ × R̄
 
-### Xbar-S Chart (subgroup size n > 10)
+**R chart formulas:**
 
-For larger subgroups, use the within-subgroup standard deviation S instead of R. The constants A₃, B₃, B₄ replace A₂, D₃, D₄.
+CL = R̄,   UCL = D₄ × R̄,   LCL = D₃ × R̄
 
-### Western Electric Rules (Out-of-Control Signals)
+For n = 5: A₂ = 0.577, D₃ = 0, D₄ = 2.114. These constants are derived from the expected value of the range for normal samples of size n.
 
-A chart signals out of control when:
-1. One point beyond 3σ limits (most common)
-2. Two of three consecutive points beyond 2σ on the same side
-3. Four of five consecutive points beyond 1σ on the same side
-4. Eight consecutive points on the same side of the centre line
+**Why plot R chart first?**
+
+The R chart monitors variability. If variability is out of control (R chart signals), the Xbar chart limits are unreliable — always check the R chart before interpreting the Xbar chart.
+
+**Xbar-S Charts** (for n ≥ 10)
+
+For larger subgroups, the sample standard deviation S is a more efficient estimator of process variability than the range R. Replace R̄ with S̄ and use constants A₃, B₃, B₄ (tabulated for each n).
+
+**Western Electric Rules for detecting out-of-control signals:**
+
+Beyond the basic "1 point outside ±3σ" rule, these patterns also signal a special cause:
+1. 1 point beyond 3σ
+2. 2 of 3 consecutive points beyond 2σ (same side)
+3. 4 of 5 consecutive points beyond 1σ (same side)
+4. 8 consecutive points on the same side of the center line
 
 ## Example
 
-Bottle filling line. Subgroup size n = 5. We take 6 subgroups:
+A bottling machine fills containers with a target of 500g. We collect 25 subgroups of n = 5 fill weights.
 
-| Subgroup | x̄ᵢ (ml) | Rᵢ (ml) |
-|---|---|---|
-| 1 | 500.2 | 2.1 |
-| 2 | 499.8 | 1.9 |
-| 3 | 500.5 | 2.3 |
-| 4 | 499.6 | 2.0 |
-| 5 | 500.1 | 1.8 |
-| 6 | 500.3 | 2.2 |
+After collecting all 25 subgroups: x̄̄ = 500.2g, R̄ = 3.8g.
 
-x̄̄ = 500.08, R̄ = 2.05. For n=5: A₂=0.577, D₃=0, D₄=2.114.
+For n = 5: A₂ = 0.577, D₃ = 0, D₄ = 2.114.
 
-- Xbar UCL = 500.08 + 0.577 × 2.05 = 501.26
-- Xbar LCL = 500.08 − 0.577 × 2.05 = 498.90
-- R UCL = 2.114 × 2.05 = 4.33, R LCL = 0
+**Xbar chart:**
+- CL = 500.2
+- UCL = 500.2 + 0.577 × 3.8 = 500.2 + 2.19 = **502.4 g**
+- LCL = 500.2 − 2.19 = **498.0 g**
 
-All points are within limits — the process is in control.
+**R chart:**
+- CL = 3.8
+- UCL = 2.114 × 3.8 = **8.0 g**
+- LCL = 0 × 3.8 = **0 g**
+
+Interpretation: if subgroup 15 has x̄ = 503.1 > UCL = 502.4, we signal out of control — investigate immediately (check for hopper blockage, worn fill nozzle, or calibration drift).
 
 ## Task
 
-Open `exercise.py`. You are given subgroup data from a manufacturing process. Compute the Xbar-R control chart limits and plot both charts using matplotlib. Identify any out-of-control points.
-
-Run the check when done:
-`npm run check -- bdat-614 module-02 lesson-01`
+In `exercise.py`, simulate 25 subgroups of n = 5 fill weight measurements (mean=500, sd=1.5). Compute x̄̄ and R̄. Calculate UCL and LCL for both the Xbar chart and the R chart using the n = 5 constants. Plot both charts side by side with UCL, CL, and LCL drawn as horizontal lines. Mark any out-of-control points in red.
 
 ## Check
 
@@ -84,4 +86,4 @@ npm run check -- bdat-614 module-02 lesson-01
 
 ## Reflection
 
-Your Xbar chart shows no out-of-control points, but the R chart shows one point above the UCL. The process average looks stable. Should you be concerned? What does an out-of-control R chart tell you about the process that an in-control Xbar chart cannot?
+Why do we always plot the Xbar chart and the R chart together, and in which order should you check them when diagnosing an out-of-control situation?

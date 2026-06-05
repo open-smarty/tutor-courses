@@ -1,130 +1,94 @@
-# Lesson 1: Diagnosing and Handling Missing Values
+# Lesson 3: Diagnosing and Handling Missing Values
 
 ## Goal
 
-Classify missing values by mechanism (MCAR, MAR, MNAR), count and visualise NAs in the health insurance dataset, and apply three imputation strategies — median, mode, and kNN — using base R and the `recipes` package.
+After this lesson you can classify missing data as MCAR, MAR, or MNAR, choose the right imputation strategy for each mechanism, and implement median, mode, and kNN imputation inside a `recipes` pipeline.
 
 ## Concept
 
-### Why Missingness Matters
+### Why missingness matters
 
-Before deciding *how* to handle missing data you must understand *why* it is missing. The mechanism determines the safe remedy:
+Ignoring missing values or handling them carelessly can silently bias your model. Before you impute, you must understand *why* the data is missing — the mechanism determines which imputation method is safe.
 
-| Mechanism | Definition | Safe remedy |
-|-----------|-----------|-------------|
-| **MCAR** — Missing Completely At Random | Missingness is unrelated to any variable | Deletion or imputation both acceptable |
-| **MAR** — Missing At Random | Missingness depends on *observed* variables | Imputation (kNN, model-based) |
-| **MNAR** — Missing Not At Random | Missingness depends on the *missing value itself* | Flag + domain knowledge required |
+### Three missing data mechanisms
 
-In our dataset:
-- `bmi` (~5 % missing) — likely **MAR**: patients who never visit a GP may not have a recorded BMI
-- `income` (~4 % missing) — likely **MNAR**: people who refuse to disclose income tend to have unusual incomes
-- `complaint_notes` (~10 % missing) — **MNAR by design**: only policyholders who complained have a value
+Think of a GP who doesn't always record a patient's BMI. The reason could be:
 
----
+1. **MCAR — Missing Completely At Random**
+   The probability that a value is missing is the same for every record, regardless of any observed or unobserved variable:
 
-### Counting and Visualising NAs
+   $$P(\text{missing} \mid X_{\text{obs}}, X_{\text{miss}}) = P(\text{missing})$$
 
-```r
-# Count NAs per column, sorted
-colSums(is.na(health_small)) |>
-  sort(decreasing = TRUE) |>
-  (\(x) x[x > 0])()
+   Example: a software bug randomly drops 2% of `income` values. Missing rows are a random sample of all rows. *Safe to impute with the mean/median* — the imputed dataset is still an unbiased representation of the full dataset.
 
-# As a percentage
-round(colMeans(is.na(health_small)) * 100, 2) |>
-  sort(decreasing = TRUE) |>
-  (\(x) x[x > 0])()
+2. **MAR — Missing At Random**
+   The probability of missingness depends on *observed* variables but not on the missing value itself:
 
-# Visual map
-library(DataExplorer)
-plot_missing(health_small)
-```
+   $$P(\text{missing} \mid X_{\text{obs}}, X_{\text{miss}}) = P(\text{missing} \mid X_{\text{obs}})$$
 
----
+   Example: patients under 30 are less likely to have BMI recorded because they skip routine check-ups. BMI is missing more often for young people, but for a given age the missingness is random. *Imputation conditioned on observed variables* (e.g., kNN using age and sex) is appropriate.
 
-### Simple Imputation — Median, Mode, and Flags
+3. **MNAR — Missing Not At Random**
+   The probability of missingness depends on the missing value itself:
 
-Always add a **binary missingness indicator** alongside any imputed numeric variable so downstream models can learn from the pattern of missingness:
+   $$P(\text{missing} \mid X_{\text{obs}}, X_{\text{miss}}) \neq P(\text{missing} \mid X_{\text{obs}})$$
 
-```r
-library(dplyr)
+   Example: very high earners refuse to disclose income. The higher the income, the more likely it is missing. *Simple imputation is biased* — you will systematically underestimate average income because the highest incomes are absent. Correcting for MNAR requires domain knowledge or specialised models.
 
-bmi_median    <- median(health_small$bmi,    na.rm = TRUE)
-income_median <- median(health_small$income, na.rm = TRUE)
+### Imputation methods
 
-health_clean <- health_small |>
-  mutate(
-    bmi_missing    = as.integer(is.na(bmi)),
-    income_missing = as.integer(is.na(income)),
-    bmi            = if_else(is.na(bmi),    bmi_median,    bmi),
-    income         = if_else(is.na(income), income_median, income)
-  )
+| Method | Function (recipes) | Best for |
+|---|---|---|
+| Median imputation | `step_impute_median()` | Numeric, MCAR/MAR, skewed data |
+| Mode imputation | `step_impute_mode()` | Categorical, MCAR/MAR |
+| kNN imputation | `step_impute_knn(neighbors=5)` | MAR — uses k=5 nearest complete cases as donors |
 
-# Categorical → mode (helper from R/utils.R)
-source("R/utils.R")
-health_clean <- health_clean |>
-  mutate(
-    employment_type = if_else(
-      is.na(employment_type),
-      get_mode(employment_type),
-      employment_type
-    )
-  )
-```
+**kNN imputation step-by-step**: for a record with missing BMI, (1) find the 5 records with the smallest Euclidean distance in the space of *complete* features (age, sex, region); (2) compute the mean BMI of those 5 donors; (3) assign that mean as the imputed value. This preserves correlations between variables — if young males tend to have lower BMI, the imputation respects that.
 
-Why median (not mean) for numeric variables? Median is robust to skew and outliers. Income is right-skewed — the mean is pulled upward by a few very large values.
-
----
-
-### kNN Imputation with recipes
-
-Median imputation gives every missing value the *same* number regardless of context. **kNN imputation** finds the *k* most similar complete records and averages their values — far more accurate when data is MAR.
-
-**Critical rule:** always use `recipes` so the *k* neighbours are identified from training data only. Fitting on the whole dataset causes data leakage.
+### Visualising missingness with naniar
 
 ```r
-library(recipes)
-
-impute_recipe <- recipe(claim_amount ~ ., data = health_small) |>
-  step_impute_knn(
-    bmi,
-    neighbors   = 5,
-    impute_with = imp_vars(age, sex, region, employment_type, plan_tier)
-  ) |>
-  step_impute_median(income)
-
-impute_prep    <- prep(impute_recipe, training = health_small)
-health_imputed <- bake(impute_prep, new_data = health_small)
-
-summary(health_imputed$bmi)
+library(naniar)
+vis_miss(health_data |> select(bmi, income, complaint_notes, days_since_last_claim))
 ```
 
-The `recipe()` → `prep()` → `bake()` workflow:
-- `recipe()` — define the blueprint (no computation yet)
-- `prep()` — learn parameters from training data (e.g. the 5 nearest neighbours for each NA)
-- `bake()` — apply to training set, test set, or new data
+`vis_miss()` draws a grid where each cell is coloured black if missing and grey if observed. It also shows the overall proportion missing for each column. `gg_miss_upset()` shows co-occurrence patterns: which columns tend to be missing together.
 
 ## Example
 
 ```r
-library(dplyr)
+library(tidyverse)
+library(naniar)
+library(tidymodels)
 
-# Verify imputation succeeded
-colSums(is.na(health_clean[, c("bmi", "income")]))
-# bmi    income
-#   0         0
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
+
+# Step 1: visualise missingness
+vis_miss(health_data |> select(bmi, income, complaint_notes, days_since_last_claim))
+
+# Step 2: what proportion of records have at least one missing value?
+n_miss(health_data)           # total missing cells
+pct_miss(health_data)         # overall % missing
+
+# Step 3: build an imputation recipe
+rec <- recipe(churned ~ age + bmi + income + plan_tier + num_claims, data = health_data) |>
+  step_impute_median(income) |>          # income: MCAR/MAR, numeric
+  step_impute_knn(bmi, neighbors = 5)    # bmi: MAR (younger policyholders)
+
+rec_prepped <- prep(rec, training = health_data)  # fit imputers on training data only
+health_imputed <- bake(rec_prepped, new_data = health_data)
+
+# Verify: no missing values in bmi or income
+health_imputed |> summarise(miss_bmi = sum(is.na(bmi)), miss_income = sum(is.na(income)))
 ```
+
+After imputation, `miss_bmi` and `miss_income` are both 0. Note: `complaint_notes` is not imputed here — text imputation is handled in Module 6 by simply excluding NA rows.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Count the number of NAs in `bmi`, `income`, and `complaint_notes` using `colSums(is.na(...))`.
-2. Impute `bmi` with the median and add a `bmi_missing` indicator column. Verify with `colSums(is.na(...))`.
-3. Build a `recipes` pipeline that applies `step_impute_median()` to `income`. `prep()` and `bake()` it on `health_small`. Confirm no NAs remain in `income`.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) generate the dataset and visualise missingness with `naniar`, (2) classify each missing variable as MCAR, MAR, or MNAR and justify your reasoning, (3) build a `recipes` pipeline that applies appropriate imputation to `bmi` and `income`, (4) verify imputation success and report remaining missingness.
 
 ## Check
 
@@ -134,4 +98,4 @@ npm run check -- bdat-602 module-02 lesson-01
 
 ## Reflection
 
-Your colleague proposes to impute missing income values with the mean income across all policyholders. Identify two problems with this approach and explain which alternative you would recommend.
+kNN imputation preserves correlations between variables and is appropriate for MAR data, but it is computationally expensive for 500,000 rows. What practical strategies would you use to make kNN imputation feasible at this scale?

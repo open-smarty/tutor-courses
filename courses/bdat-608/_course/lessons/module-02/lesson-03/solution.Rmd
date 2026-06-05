@@ -1,68 +1,101 @@
 ---
-title: "BDAT 608 | Module 2, Lesson 3 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Closed-Form OLS with lm()"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
+library(broom)
 ```
 
-## Task 1 — Fit the Model
+## Task 1: Fit the linear model and decode summary()
 
-```{r fit-model}
-sim1_mod <- lm(y ~ x, data = sim1)
-coef(sim1_mod)
-summary(sim1_mod)
+```{r task1}
+data("diamonds", package = "ggplot2")
+
+mod_linear <- lm(price ~ carat, data = diamonds)
+summary(mod_linear)
+
+# From the output:
+# Intercept: -2,256.4
+# Slope (carat): 7,756.4
+# Residual standard error: 1,549 (on 53,938 df)
+# R²: 0.8493
+# F-statistic: 3.041e+05 on 1 and 53,938 df, p-value: < 2.2e-16
 ```
 
-## Task 2 — Interpret R²
+## Task 2: Interpret the slope
 
-```{r r-squared}
-r2 <- summary(sim1_mod)$r.squared
-cat("R-squared:", round(r2, 4), "\n")
-# Interpretation: the linear model explains about 86% of the variance in y
-# using x as the sole predictor.
+```{r task2}
+slope <- coef(mod_linear)["carat"]
+cat("Slope:", round(slope, 2), "\n")
+
+# Interpretation:
+# A 1-carat increase in diamond weight is associated with a $7,756 increase
+# in price, on average. This is the marginal price of one additional carat,
+# not controlling for any other quality attributes.
 ```
 
-## Task 3 — Compare with optim()
+## Task 3: Fit the log-log model
 
-```{r compare-optim}
-model1 <- function(a, data) a[1] + data$x * a[2]
-measure_distance <- function(mod, data) sqrt(mean((data$y - model1(mod, data))^2))
+```{r task3}
+mod_loglog <- lm(log(price) ~ log(carat), data = diamonds)
+summary(mod_loglog)
 
-best_optim <- optim(c(0, 0), measure_distance, data = sim1)
-
-comparison <- tibble(
-  method    = c("lm()", "optim()"),
-  intercept = c(coef(sim1_mod)[1], best_optim$par[1]),
-  slope     = c(coef(sim1_mod)[2], best_optim$par[2])
-)
-print(comparison)
+# From the output:
+# Intercept: 8.449
+# Slope (log(carat)): 1.676
+# Residual standard error: 0.2956 (in log-USD units)
+# R²: 0.9330
 ```
 
-The two methods give virtually identical coefficients. Any tiny difference is due to the finite convergence tolerance of the Nelder-Mead algorithm.
+## Task 4: Interpret the log-log slope (price elasticity)
 
-## Task 4 — Confidence Interval
+```{r task4}
+elasticity <- coef(mod_loglog)["log(carat)"]
+cat("Price elasticity of carat:", round(elasticity, 3), "\n")
 
-```{r confint}
-confint(sim1_mod, level = 0.95)
+# Interpretation:
+# A 1% increase in carat weight is associated with a 1.676% increase in
+# diamond price. Since elasticity > 1, price grows faster than weight —
+# doubling carat more than doubles price. This is consistent with the
+# economic scarcity of large gem-quality stones.
 ```
 
-**Interpretation:** We are 95% confident that the true slope lies between approximately 1.86 and 2.24. Because the entire interval is positive, we can conclude that `x` has a statistically significant positive association with `y`.
+## Task 5: Compare models
 
-## Reflection
+```{r task5}
+r2_linear <- summary(mod_linear)$r.squared
+r2_loglog <- summary(mod_loglog)$r.squared
 
-`lm()` is preferred because it provides the full statistical inference table: standard errors, t-statistics, p-values, confidence intervals, and R². `optim()` returns only the parameter estimates and the minimum loss value — it tells you *where* the minimum is but not *how reliable* the estimates are. In practice, you need standard errors to test hypotheses about the coefficients and to build confidence intervals. `lm()` computes all of this analytically (via the QR decomposition) in a single call.
+cat("Linear model R²:", round(r2_linear, 4), "\n")
+cat("Log-log model R²:", round(r2_loglog, 4), "\n")
+
+# The log-log model explains 93.3% of variance in log(price) vs 84.9% for
+# the linear model on raw price. The improvement has two sources:
+# (1) The price-carat relationship is a power law, which is linear on the
+#     log scale but curved on the raw scale — the log transformation
+#     corrects for model misspecification.
+# (2) The log transformation stabilises variance: the raw price residuals
+#     fan outward (larger errors for more expensive diamonds), while
+#     log-price residuals have more constant spread.
+```
+
+## Task 6: Tidy the log-log model with broom
+
+```{r task6}
+tidy(mod_loglog)
+glance(mod_loglog)
+
+# The log(carat) coefficient has by far the largest t-value (>> 100),
+# meaning we can reject H₀: β₁ = 0 with overwhelming certainty.
+# This confirms that carat weight is an extremely strong predictor of
+# log(price) — removing it would catastrophically worsen the model.
+# The intercept t-value is also very large: the baseline log-price
+# (at carat = 1, i.e., log(carat) = 0) is precisely estimated.
+```

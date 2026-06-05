@@ -6,50 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "After loading the MASS package, which line should you run immediately to avoid broken dplyr pipelines?",
+      "text": "Which chunk option suppresses package loading messages without hiding the code?",
       "options": [
-        "detach('package:MASS')",
-        "select <- dplyr::select; filter <- dplyr::filter",
-        "library(tidyverse, mask = TRUE)",
-        "options(conflicts.policy = 'depends.ok')"
+        "echo = FALSE",
+        "eval = FALSE",
+        "message = FALSE",
+        "include = FALSE"
       ],
-      "correct": 1,
-      "explanation": "MASS exports select() and filter() which overwrite dplyr's versions. Reassigning select <- dplyr::select and filter <- dplyr::filter restores the tidyverse functions."
+      "correct": 2,
+      "explanation": "message = FALSE suppresses informational messages (like those printed when loading tidyverse) while still showing the code (echo = TRUE by default) and still running it. include = FALSE hides both code and output; eval = FALSE shows code but does not run it."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "The splines package must be installed separately using install.packages('splines') before you can use ns().",
+      "text": "You should put install.packages() inside a chunk with eval = TRUE so the packages are reinstalled each time you knit.",
       "correct": false,
-      "explanation": "splines ships with base R — it is always available. You only need to call library(splines) to make ns() accessible; no install.packages() step is needed."
+      "explanation": "install.packages() should be in a chunk with eval = FALSE. It only needs to run once per machine. Reinstalling on every knit wastes time and can break reproducibility if package versions change."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "What is the purpose of setting options(na.action = na.warn)?",
+      "text": "What does diamonds |> filter(carat > 1) |> summarise(m = mean(price)) compute?",
       "options": [
-        "It causes lm() to stop with an error if any NA values are present",
-        "It replaces all NA values with the column mean before fitting",
-        "It prints a warning whenever modelling functions silently drop rows with missing values",
-        "It removes the NA values from the dataset permanently"
+        "The mean price of all diamonds",
+        "The mean price of diamonds weighing more than 1 carat",
+        "The number of diamonds with carat > 1",
+        "The median carat among expensive diamonds"
       ],
-      "correct": 2,
-      "explanation": "na.warn issues a message when rows are dropped due to NA, making the data loss visible. Without it, rows are silently omitted, which can cause subtle bugs in downstream analysis."
+      "correct": 1,
+      "explanation": "The pipe chains operations left to right: start with diamonds, keep only rows where carat > 1, then compute the mean of price. The result is a single number — the mean price among heavy diamonds."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "Which modelr dataset has a categorical predictor x?",
-      "options": ["sim1", "sim2", "sim3", "sim4"],
-      "correct": 1,
-      "explanation": "sim2 has a categorical x variable, making it the right dataset for exploring dummy coding and categorical predictors in Module 4."
+      "text": "In the diamonds dataset, the mean price ($3,933) is higher than the median price ($2,401). What does this tell you about the price distribution?",
+      "options": [
+        "Price is approximately normally distributed",
+        "Price is left-skewed — most diamonds are expensive",
+        "Price is right-skewed — a small number of very expensive diamonds pull the mean up",
+        "The mean and median should always be equal"
+      ],
+      "correct": 2,
+      "explanation": "When mean > median, the distribution is right-skewed. There are many affordable diamonds and a small tail of very expensive ones. Those high-priced outliers pull the mean above the median, but the median is unaffected — it only depends on rank order."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "You run ggplot(diamonds, aes(carat, price, colour = cut)) + geom_smooth(method = 'lm', se = FALSE). How many fitted lines appear?",
+      "options": [
+        "One line for the entire dataset",
+        "One line per row of diamonds",
+        "One line per cut level (5 lines total)",
+        "One line per carat value"
+      ],
+      "correct": 2,
+      "explanation": "When colour = cut is mapped, geom_smooth() fits a separate model within each group defined by cut. Since cut has 5 levels (Fair, Good, Very Good, Premium, Ideal), five lines appear, one per level."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "Putting install.packages() inside a chunk with eval=FALSE ensures the packages are reinstalled every time the document is knitted.",
+      "text": "In the diamonds dataset, 'Ideal' cut diamonds always have a higher mean price than 'Fair' cut diamonds, even before controlling for carat.",
       "correct": false,
-      "explanation": "eval=FALSE means the chunk is shown in the output but NOT executed when knitting. The packages are not reinstalled — they are only installed when the user manually runs that specific chunk."
+      "explanation": "Counterintuitively, 'Fair' cut diamonds have a higher raw mean price than 'Ideal' diamonds. This is because cut is confounded with carat size: lower-quality cuts are applied to larger rough stones, so they are heavier and more expensive on raw price. Only after controlling for carat in a regression model does the quality premium for Ideal cuts become visible."
     }
   ]
 }

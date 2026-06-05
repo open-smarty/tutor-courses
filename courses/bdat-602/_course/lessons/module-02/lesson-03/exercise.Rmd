@@ -1,56 +1,110 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 3 Exercise"
-subtitle: "Scaling, Encoding, and the recipes Pipeline"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Scaling, Encoding, and the recipes Pipeline"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Full preprocessing pipeline
+```{r load-packages}
+library(tidyverse)
+library(tidymodels)
 
-Build a `recipes` pipeline that:
-- imputes `bmi` and `income` with their medians (`step_impute_median`)
-- dummy-encodes `sex` and `region` (one_hot = FALSE)
-- Z-score normalises all numeric predictors (`step_normalize`)
-
-`prep()` on `health_small`, then `bake()` to get `health_processed`. Verify:
-- zero NAs in `bmi` and `income`
-- `mean(health_processed$bmi)` is approximately 0
-
-```{r task1}
-# YOUR CODE HERE
-# library(recipes)
-# pp_rec <- recipe(claim_amount ~ ., data = health_small) |>
-#   step_impute_median(bmi, income) |>
-#   step_dummy(sex, region, one_hot = FALSE) |>
-#   step_normalize(all_numeric_predictors())
-# pp_prep       <- prep(pp_rec, training = health_small)
-# health_processed <- bake(pp_prep, new_data = health_small)
-# sum(is.na(health_processed$bmi))
-# round(mean(health_processed$bmi), 4)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 2 — Column count before and after step_nzv
+## Task 1: Manual scaling of age
 
-Report how many columns `health_processed` has (from Task 1). Then add `step_nzv(all_predictors())` to the pipeline and report the new column count. Which columns (if any) were dropped?
+```{r task1-zscore}
+# TODO: compute Z-score scaled age
+# age_z = (age - mean(age)) / sd(age)
+age_z <- NULL  # replace with calculation
 
-```{r task2}
-# YOUR CODE HERE
-# ncol(health_processed)
-# pp_rec2 <- recipe(claim_amount ~ ., data = health_small) |>
-#   step_impute_median(bmi, income) |>
-#   step_dummy(sex, region, one_hot = FALSE) |>
-#   step_normalize(all_numeric_predictors()) |>
-#   step_nzv(all_predictors())
-# pp_prep2  <- prep(pp_rec2, training = health_small)
-# health_p2 <- bake(pp_prep2, new_data = health_small)
-# ncol(health_p2)
+# TODO: verify mean ≈ 0 and sd ≈ 1
+cat("Mean of age_z:", round(mean(age_z, na.rm = TRUE), 4), "\n")
+cat("SD of age_z:  ", round(sd(age_z, na.rm = TRUE), 4), "\n")
+```
+
+```{r task1-minmax}
+# TODO: compute Min-Max scaled age: age_mm = (age - min) / (max - min)
+age_mm <- NULL  # replace with calculation
+
+# TODO: verify min = 0, max = 1
+cat("Min of age_mm:", round(min(age_mm, na.rm = TRUE), 4), "\n")
+cat("Max of age_mm:", round(max(age_mm, na.rm = TRUE), 4), "\n")
+```
+
+## Task 2: Dummy encoding for plan_tier
+
+```{r task2-dummy-recipe}
+# TODO: build a minimal recipe with only step_dummy(plan_tier)
+# Use any simple outcome (e.g. churned ~ plan_tier)
+rec_dummy <- recipe(churned ~ plan_tier, data = health_data) |>
+  NULL  # add step_dummy()
+
+# TODO: prep and bake
+rec_dummy_prepped <- NULL  # prep(...)
+dummy_result      <- NULL  # bake(..., new_data = health_data)
+
+# TODO: print the column names of dummy_result
+# How many columns? Which level was dropped?
+names(dummy_result)
+```
+
+## Task 3: Full preprocessing pipeline
+
+```{r task3-split}
+set.seed(602)
+split <- initial_split(health_data, prop = 0.80, strata = churned)
+train <- training(split)
+test  <- testing(split)
+```
+
+```{r task3-recipe}
+# TODO: build a recipe for:
+# churned ~ age + bmi + income + plan_tier + education + num_claims + num_chronic_conditions
+#
+# Steps (in order):
+#   1. step_impute_median() for income and bmi
+#   2. step_impute_mode() for plan_tier and education
+#   3. step_dummy(all_nominal_predictors())
+#   4. step_normalize(all_numeric_predictors())
+
+rec_full <- NULL  # replace with your recipe
+```
+
+```{r task3-prep-bake}
+# TODO: prep on train, bake both train and test
+rec_full_prepped <- NULL
+train_baked      <- NULL
+test_baked       <- NULL
+```
+
+## Task 4: Verify the baked dataset
+
+```{r task4-check-missing}
+# TODO: confirm zero missing values in train_baked
+total_missing <- sum(is.na(train_baked))
+cat("Missing values in baked training set:", total_missing, "\n")
+```
+
+```{r task4-check-scale}
+# TODO: compute mean and sd of age and income in train_baked
+# They should both be approximately 0 and 1 respectively
+train_baked |>
+  summarise(
+    age_mean   = mean(age),
+    age_sd     = sd(age),
+    income_mean = mean(income),
+    income_sd   = sd(income)
+  )
+```
+
+```{r task4-check-dummies}
+# TODO: list the column names in train_baked that start with "plan_tier"
+# How many dummy columns were created? Which level was the reference?
+names(train_baked)[grepl("plan_tier", names(train_baked))]
 ```

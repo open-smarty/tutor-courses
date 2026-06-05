@@ -1,54 +1,82 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 1 Exercise"
-subtitle: "Diagnosing and Handling Missing Values"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Diagnosing and Handling Missing Values"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Count NAs
+```{r load-packages}
+library(tidyverse)
+library(naniar)
+library(tidymodels)
 
-Count the number of missing values in `bmi`, `income`, and `complaint_notes`.
-
-```{r task1}
-# YOUR CODE HERE
-# colSums(is.na(health_small[, c("bmi", "income", "complaint_notes")]))
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 2 — Median imputation with indicator
+## Task 1: Visualise missingness
 
-Impute `bmi` with its median. Add a `bmi_missing` indicator column (1 if originally missing, 0 otherwise). Store the result in `health_clean`. Verify that `bmi` has zero NAs after imputation.
-
-```{r task2}
-# YOUR CODE HERE
-# library(dplyr)
-# bmi_median <- median(health_small$bmi, na.rm = TRUE)
-# health_clean <- health_small |>
-#   mutate(
-#     bmi_missing = as.integer(is.na(bmi)),
-#     bmi         = if_else(is.na(bmi), bmi_median, bmi)
-#   )
-# colSums(is.na(health_clean[, c("bmi", "bmi_missing")]))
+```{r task1-vis-miss}
+# TODO: use vis_miss() on a selection of columns that have missing values
+# Include at least: bmi, income, complaint_notes, days_since_last_claim
 ```
 
-## Task 3 — recipes imputation
+```{r task1-summary}
+# TODO: use n_miss() and pct_miss() to report total missing cells and overall %
+```
 
-Build a `recipes` pipeline that applies `step_impute_median()` to `income`. Call `prep()` and `bake()` on `health_small`. Confirm `income` has zero NAs in the baked result.
+## Task 2: Classify each missing variable
 
-```{r task3}
-# YOUR CODE HERE
-# library(recipes)
-# impute_rec  <- recipe(claim_amount ~ ., data = health_small) |>
-#   step_impute_median(income)
-# impute_prep <- prep(impute_rec, training = health_small)
-# health_imp  <- bake(impute_prep, new_data = health_small)
-# sum(is.na(health_imp$income))
+For each variable, state whether the missingness is MCAR, MAR, or MNAR and give a one-sentence justification. Write your answers as comments.
+
+```{r task2-classify}
+# bmi:                  MCAR / MAR / MNAR  — because:
+# income:               MCAR / MAR / MNAR  — because:
+# complaint_notes:      MCAR / MAR / MNAR  — because:
+# days_since_last_claim: MCAR / MAR / MNAR — because:
+```
+
+## Task 3: Build an imputation pipeline with recipes
+
+```{r task3-split}
+# TODO: split health_data into training (80%) and test (20%) using initial_split()
+set.seed(602)
+split <- NULL  # replace
+train <- NULL  # replace
+test  <- NULL  # replace
+```
+
+```{r task3-recipe}
+# TODO: build a recipe for churned ~ age + bmi + income + plan_tier + num_claims
+# Apply:
+#   - step_impute_median() to income
+#   - step_impute_knn(neighbors = 5) to bmi
+rec <- NULL  # replace NULL with your recipe
+```
+
+```{r task3-prep-bake}
+# TODO: prep() the recipe on the training set, then bake() it on both train and test
+rec_prepped    <- NULL  # replace
+train_imputed  <- NULL  # replace
+test_imputed   <- NULL  # replace
+```
+
+## Task 4: Verify imputation success
+
+```{r task4-verify}
+# TODO: use summarise() to count remaining NA values in bmi and income
+# in both train_imputed and test_imputed
+```
+
+```{r task4-compare}
+# TODO: compare the median of bmi before and after imputation
+# (they should be very close if imputation is reasonable)
+before_median <- median(health_data$bmi, na.rm = TRUE)
+# after_median  <- median of bmi in train_imputed — TODO
+
+cat("BMI median before:", before_median, "\n")
+# cat("BMI median after: ", after_median, "\n")
 ```

@@ -1,21 +1,21 @@
-# Task: PCA Interpretation and Dimensionality Reduction Decision
+# Task: PCA for Visualisation and Cluster Validation
 
 ## Objective
 
-Determine how many PCs to retain for downstream modelling and interpret their meaning.
+Apply PCA to the scaled insurance features, interpret the scree plot and biplot, and visualise k-means cluster assignments in the principal component space.
 
 ## Instructions
 
-1. **Fit PCA** — Use 10 numeric variables: `age`, `bmi`, `income`, `premium`, `deductible`, `num_chronic_conditions`, `num_visits`, `num_claims`, `avg_past_claim`, `claim_amount`. Impute medians. Normalise. Apply `step_pca(..., num_comp = 8)`.
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-2. **Scree plot** — Plot % variance explained per PC. Add a cumulative line. Annotate the point where cumulative variance crosses 80%.
+2. **Task 1 — PCA**: Generate 50,000 rows. Select and scale the five clustering features. Run `prcomp(clust_data, scale. = FALSE)` and print the `summary()`.
 
-3. **Loadings heatmap** — Use `tidy(pca_prep, number = ..., type = "coef")` to extract loadings for PC1–PC4. Create a heatmap using `ggplot2` with `geom_tile()`: rows = original variables, columns = PCs, fill = loading value.
+3. **Task 2 — Scree plot**: Compute PVE for each component as `pca$sdev^2 / sum(pca$sdev^2)`. Plot both the per-component PVE (bar chart) and cumulative PVE (red line) on the same axes. State how many PCs explain at least 80% of variance.
 
-4. **Interpret** — For each of PC1–PC3, write 1–2 sentences naming what business dimension the PC captures, based on its top loading variables.
+4. **Task 3 — Biplot**: Create a biplot with `biplot(pca, scale = 0, cex = 0.5)`. Print the loadings for PC1 and PC2 (`pca$rotation[, 1:2]`). In comments, identify: (a) which variables most strongly drive PC1; (b) which variables most strongly drive PC2; (c) what real-world interpretation you would give each component.
 
-5. **Decision** — How many PCs would you retain before a downstream k-means clustering? Justify using the cumulative variance plot and the Kaiser rule (eigenvalue > 1, equivalent to % variance > 100/p for p variables).
+5. **Task 4 — Clusters in PCA space**: Fit k-means with k = 4 on the scaled data. Scatter-plot the PC1 vs. PC2 scores, coloured by cluster. In a comment, discuss: (a) how well-separated the clusters appear; (b) whether overlap in 2D implies the clustering has failed; (c) what additional diagnostics you would run to validate the clusters.
 
 ## Submission
 
-Knit your Rmd with the scree plot, loadings heatmap, interpretation text, and retention decision visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. All interpretations (Tasks 3 and 4) must be written as R comments inside their respective code chunks.

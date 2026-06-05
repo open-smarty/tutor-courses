@@ -1,39 +1,20 @@
-# Task: Module 5, Lesson 3 — Elastic Net and Variable Selection
+# Task: Penalised Regression and Decision Trees
 
 ## Objective
 
-Compare LASSO and Elastic Net for variable selection on a noisy dataset.
+Apply Ridge and LASSO regression to a high-dimensional dataset to observe variable selection, and fit a decision tree to diamonds to understand piecewise-constant modelling.
 
 ## Instructions
 
-Simulate data with correlated predictors (a setting where LASSO can struggle):
-
-```r
-set.seed(123)
-n <- 150; p <- 40
-rho <- 0.6  # correlation between adjacent predictors
-Sigma <- outer(1:p, 1:p, function(i,j) rho^abs(i-j))
-X <- MASS::mvrnorm(n, mu = rep(0,p), Sigma = Sigma)
-y_corr <- 3*X[,1] + 3*X[,2] - 2*X[,3] + rnorm(n)
-```
-
-Only X[,1], X[,2], X[,3] are true predictors.
-
-1. Fit three models:
-   - LASSO (`alpha = 1`)
-   - Elastic net (`alpha = 0.5`)
-   - Ridge (`alpha = 0`)
-   
-   For each, use `cv.glmnet()` with `nfolds = 10`.
-
-2. For each model, print the coefficients at `lambda.min`. How many non-zero coefficients does each have?
-
-3. Plot the CV curves for all three models side-by-side (use `par(mfrow=c(1,3))`).
-
-4. Compute the test RMSE for each model on 50 new simulated observations (use the same `Sigma`). Which model generalises best?
-
-5. Given the correlation structure, explain in 3–4 sentences why Elastic Net might outperform LASSO here.
+1. Generate the synthetic dataset: `set.seed(2024)`, $n = 200$, $p = 50$ predictors, true signal only in `V1` (coefficient +2) and `V2` (coefficient −1.5).
+2. Fit `cv.glmnet(X, y, alpha = 1, nfolds = 10)` for LASSO. Plot the CV curve. Report `lambda.min` and `lambda.1se`.
+3. Extract and print coefficients at `lambda.1se`. Count how many are non-zero. Does LASSO correctly identify `V1` and `V2`?
+4. Fit `cv.glmnet(X, y, alpha = 0, nfolds = 10)` for Ridge. Extract coefficients at `lambda.1se`. Are any exactly zero?
+5. Plot the LASSO coefficient path using `glmnet(X, y, alpha = 1)`. Add a vertical dashed line at `log(lambda.1se)`.
+6. Fit `rpart(price ~ carat + cut + color + clarity, data = diamonds, control = rpart.control(maxdepth = 4, cp = 0.001))`. Visualise with `rpart.plot()`. Report the first split.
+7. Compute tree RMSE and compare to OLS log-log model RMSE. Which is lower and why?
+8. In two sentences, describe a business scenario where a decision tree is preferable to the OLS log-log model despite its higher RMSE.
 
 ## Submission
 
-Submit the knitted HTML with coefficient counts, plots, and your written comparison.
+Knit to HTML. Required: the LASSO CV curve, the coefficient table (non-zero coefficients only), the LASSO path plot, the decision tree plot, and the RMSE comparison.

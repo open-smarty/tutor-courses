@@ -1,146 +1,130 @@
-# BDAT 624 — Module 1, Lesson 2
-# Exercise: Transition Probability Matrices and Patient Health Simulation
-#
-# Instructions: Complete each TODO section below.
-# After finishing, run: npm run check -- bdat-624 module-01 lesson-02
-
+# Required packages
+library(markovchain)
 library(ggplot2)
 library(dplyr)
-library(tidyr)
-library(markovchain)
 
-set.seed(2024)  # do not change
+# Scenario: A cohort of 1000 patients with a chronic condition is tracked
+# weekly. Each patient is classified as: Mild (M), Moderate (Mod), or
+# Severe (Sev). Transitions between states happen each week.
 
 # ============================================================
-# PART 1: Build the transition probability matrix
+# Task 1: Construct the Transition Probability Matrix
 # ============================================================
+# Use the following clinically-derived weekly transition probabilities:
+#   From Mild:     70% stay Mild, 25% progress to Moderate, 5% progress to Severe
+#   From Moderate: 20% improve to Mild, 50% stay Moderate, 30% progress to Severe
+#   From Severe:   5% improve to Mild, 15% improve to Moderate, 80% stay Severe
 
-# States: 1 = Healthy, 2 = Sick, 3 = Dead
-# One-month transition probabilities (partially filled — you complete it):
-#
-#           To:  H     S     D
-# From H:       0.85  0.12  ???    <- row must sum to 1
-# From S:       0.40  ???   0.10   <- row must sum to 1
-# From D:       0.00  0.00  1.00   <- absorbing state (already complete)
-
-# TODO 1: Fill in the two missing entries (marked ???) so that each row sums to 1.
-# Then construct the matrix P using matrix(), nrow=3, byrow=TRUE.
-# Use the state labels: states <- c("Healthy", "Sick", "Dead")
-
-states <- c("Healthy", "Sick", "Dead")
+# TODO: Build the 3x3 TPM as a numeric matrix.
+# Rows = current state, Columns = next state. States in order: M, Mod, Sev
 
 P <- matrix(
-  c(
-    0.85, 0.12, ???,   # row 1: Healthy -> Healthy, Sick, Dead
-    0.40, ???,  0.10,  # row 2: Sick -> Healthy, Sick, Dead
-    0.00, 0.00, 1.00   # row 3: Dead -> Healthy, Sick, Dead (absorbing)
+  c(# M      Mod    Sev
+    NA,     NA,    NA,   # from M
+    NA,     NA,    NA,   # from Mod
+    NA,     NA,    NA    # from Sev
   ),
   nrow = 3, byrow = TRUE,
-  dimnames = list(states, states)
+  dimnames = list(c("M", "Mod", "Sev"), c("M", "Mod", "Sev"))
 )
 
-# TODO 2: Verify that P is a stochastic matrix.
-# Print the row sums of P. They should all equal 1.
-# Hint: rowSums(P)
+# TODO: Verify that every row sums to 1.
+rowSums(P)
 
-# --- your code here ---
-
-# ============================================================
-# PART 2: Create a markovchain object
-# ============================================================
-
-# TODO 3: Create a markovchain object called `health_mc`.
-# Use: health_mc <- new("markovchain", states = states, transitionMatrix = P,
-#                        name = "Patient Health Model")
-# Then print it to see its summary.
-
-health_mc <- NULL  # replace NULL
-# --- your code here ---
+# TODO: Write a comment identifying which state (if any) has the highest
+# probability of self-transition (staying in the same state).
 
 # ============================================================
-# PART 3: Compute multi-step transition probabilities
+# Task 2: Compute matrix powers P^1, P^5, P^10
 # ============================================================
+# We want to see how the probability distribution evolves over steps.
 
-# TODO 4: Compute the 6-step transition matrix (P^6) using matrix multiplication.
-# Name the result P6.
-# Hint: in R, matrix multiplication uses %*%. Multiply P by itself 6 times,
-#       OR use the markovchain method: health_mc^6
+# Helper function: raise a matrix to an integer power
+mat_power <- function(M, n) {
+  result <- diag(nrow(M))  # identity matrix (M^0)
+  for (i in seq_len(n)) result <- result %*% M
+  result
+}
 
-P6 <- NULL  # replace NULL
-# --- your code here ---
+# TODO: Compute P^1 (trivially P itself), P^5, and P^10 using mat_power
+P1  <- mat_power(P, 1)
+P5  <- mat_power(P, 5)
+P10 <- mat_power(P, 10)
 
-# Print P6 and answer: what is P(Dead at month 6 | Healthy at month 0)?
-# (That is the [1, 3] entry of P6)
-cat("P(Dead at month 6 | Healthy at month 0) =",
-    round(P6["Healthy", "Dead"], 4), "\n")
+# TODO: Print P^5 rounded to 4 decimal places
+cat("P^5:\n")
+print(round(P5, 4))
 
-# ============================================================
-# PART 4: Simulate 200 patients over 12 months
-# ============================================================
+# TODO: Print P^10 rounded to 4 decimal places
+cat("\nP^10:\n")
+print(round(P10, 4))
 
-n_patients <- 200
-n_months   <- 12
-
-# All patients start Healthy
-# TODO 5: Simulate each patient's trajectory using markovchainSequence().
-# - For each patient p in 1:n_patients:
-#     Use markovchainSequence(n = n_months, markovchain = health_mc, t0 = "Healthy")
-#     This returns a character vector of length n_months (states visited AFTER t0).
-#     Store results in a matrix `sim` of size n_patients x n_months.
-#     Each row is one patient's trajectory (months 1 through 12).
-#
-# Hint: sim <- matrix(NA, nrow=n_patients, ncol=n_months)
-#       for(p in 1:n_patients) { sim[p, ] <- markovchainSequence(...) }
-
-sim <- matrix(NA, nrow = n_patients, ncol = n_months)
-# --- your code here ---
+# TODO: Comment on what you observe as n increases. Do the rows of P^n
+# appear to be converging to the same distribution?
 
 # ============================================================
-# PART 5: Compute proportion in each state over time
+# Task 3: Compute state distributions over time
 # ============================================================
+# Suppose at week 0: 60% of patients are Mild, 30% Moderate, 10% Severe
+pi0 <- c(M = 0.60, Mod = 0.30, Sev = 0.10)
 
-# TODO 6: For each month t in 1:n_months, compute the proportion of patients
-# in each state. Store results in a data frame `prop_df` with columns:
-#   month, state, proportion
-#
-# Hint: use table(sim[, t]) / n_patients to get the proportions at month t.
-# You will need to combine results across all months.
-# Consider building a list of data frames, one per month, then using bind_rows().
+# TODO: Compute the distribution at weeks 1, 5, 10, 20 using:
+#   pi_n = pi0 %*% P^n
+# Store results in a list or matrix.
+weeks_to_check <- c(1, 5, 10, 20)
 
-prop_df <- NULL  # replace NULL
-# --- your code here ---
+distributions <- lapply(weeks_to_check, function(n) {
+  dist_n <- pi0 %*% mat_power(P, n)
+  data.frame(week = n,
+             M    = dist_n[1],
+             Mod  = dist_n[2],
+             Sev  = dist_n[3])
+})
 
-# ============================================================
-# PART 6: Plot — stacked bar chart of state proportions over time
-# ============================================================
-
-# TODO 7: Create a stacked bar chart using ggplot2.
-# - x-axis: month (1 to 12)
-# - y-axis: proportion (0 to 1)
-# - fill: state (Healthy, Sick, Dead)
-# - Use geom_col() with position = "stack"
-# - Colour manually: Healthy = "#4dac26", Sick = "#f4a582", Dead = "#ca0020"
-# - Add a title: "Patient State Proportions Over 12 Months (n=200)"
-# - x-label: "Month", y-label: "Proportion of Patients"
-# - theme_minimal()
-
-# --- your code here ---
+dist_df <- bind_rows(distributions)
+cat("\nState distributions over time:\n")
+print(round(dist_df, 4))
 
 # ============================================================
-# PART 7: Time-to-death distribution
+# Task 4: Visualise the evolution of state probabilities
 # ============================================================
+# TODO: Create a long-format data frame for plotting:
+#   columns: week, state, probability
+# Compute distributions at weeks 0, 1, 2, 3, 5, 7, 10, 15, 20
 
-# TODO 8: For each patient, find the first month they entered the Dead state.
-# - Create a vector `time_to_death` of length n_patients.
-# - For patient p, find the minimum t such that sim[p, t] == "Dead".
-#   If the patient never died within 12 months, record NA.
-# Hint: use which(sim[p, ] == "Dead")[1]
+all_weeks <- c(0, 1, 2, 3, 5, 7, 10, 15, 20)
 
-time_to_death <- rep(NA, n_patients)
-# --- your code here ---
+# TODO: Fill in this lapply to build a long-format data frame
+plot_data <- lapply(all_weeks, function(n) {
+  dist_n <- pi0 %*% mat_power(P, n)
+  data.frame(
+    week  = n,
+    state = c("M", "Mod", "Sev"),
+    prob  = as.numeric(dist_n)
+  )
+}) |> bind_rows()
 
-# Plot: histogram of time-to-death (exclude NAs)
-# Add a vertical dashed line at the median (ignoring NAs)
-# Title: "Time-to-Death Distribution (patients who died within 12 months)"
+# TODO: Plot using ggplot2: week on x-axis, probability on y-axis,
+# one line per state (colour by state). Add geom_point().
+ggplot(plot_data, aes(x = week, y = prob, color = state, group = state)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title  = "Evolution of Disease State Distribution Over Weeks",
+    x      = "Week",
+    y      = "Probability",
+    color  = "State"
+  ) +
+  theme_minimal()
 
-# --- your code here ---
+# ============================================================
+# Task 5: Verify the stochastic matrix property at P^10
+# ============================================================
+# TODO: Confirm that each row of P^10 still sums to 1.
+# (This should always be true for a valid TPM raised to any power.)
+cat("\nRow sums of P^10 (should all equal 1):\n")
+print(rowSums(P10))
+
+# TODO: Write one sentence interpreting what the rows of P^10 represent
+# biologically. (Hint: what does P^10[1, ] tell you about a patient
+# currently in Mild state?)

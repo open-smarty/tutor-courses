@@ -1,76 +1,55 @@
 ---
-title: "BDAT 608 | Module 4, Lesson 1 — Formula Notation, Model Matrix, and Categorical Predictors"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Formula Notation, Model Matrix, and Categorical Predictors"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
+library(broom)
 ```
 
----
+## Task 1: Inspect the model matrix for cut
 
-## Task 1 — model_matrix() Exploration
+```{r task1}
+data("diamonds", package = "ggplot2")
 
-```{r model-matrix}
-df <- tribble(
-  ~y, ~x1, ~x2,
-  4,   2,   5,
-  5,   1,   6
-)
+# TODO: Run model.matrix(~ cut, data = diamonds |> slice_head(n = 10)).
+# Print the result.
+# In comments: which level is the reference? What does each column mean?
 
-# TODO: Run model_matrix() for these three formulas and inspect the output:
-# (a) y ~ x1
-# (b) y ~ x1 - 1
-# (c) y ~ x1 + x2
 ```
 
----
+## Task 2: Fit cut-only model
 
-## Task 2 — Categorical Predictor on sim2
+```{r task2}
+# TODO: Fit lm(log(price) ~ cut, data = diamonds). Store as mod_cut.
+# Print coef(mod_cut) and exp(coef(mod_cut)).
+# Interpret the intercept and the cutIdeal coefficient in plain English.
 
-```{r categorical-model}
-data("sim2", package = "modelr")
-
-# TODO: Fit mod2 <- lm(y ~ x, data = sim2)
-# Print the first 8 rows of the model matrix.
-# Print coef(mod2).
 ```
 
----
+## Task 3: Change the reference level
 
-## Task 3 — Group Predictions
+```{r task3}
+# TODO: Create a copy of diamonds with cut releveled to "Ideal" as the reference:
+#   diamonds2 <- diamonds |> mutate(cut = relevel(cut, ref = "Ideal"))
+# Re-fit: mod_cut2 <- lm(log(price) ~ cut, data = diamonds2).
+# Compare coef(mod_cut2) to coef(mod_cut).
+# Does R² change? (Compare summary(mod_cut)$r.squared vs summary(mod_cut2)$r.squared)
 
-```{r group-predictions}
-# TODO: Use data_grid(x) and add_predictions(mod2) to get predicted values
-# for each level of x. Print the result.
 ```
 
----
+## Task 4: Add log(carat) to control for size
 
-## Task 4 — Plot
+```{r task4}
+# TODO: Fit lm(log(price) ~ log(carat) + cut, data = diamonds). Store as mod_carat_cut.
+# Print and exponentiate the coefficients.
+# Compare the cut coefficients to those in mod_cut (Task 2).
+# Explain in a comment: why do the signs change once we control for carat?
 
-```{r cat-plot}
-# TODO: Plot sim2 data as jittered points (grey).
-# Overlay the predicted values from Task 3 as gold diamonds (shape = 18, size = 4).
-# Add a title "sim2: OLS predictions = group means".
 ```
-
----
-
-## Reflection
-
-<!-- The coefficient for xb is 6.15.
-     What does it actually represent? Is it the mean of group b?
-     Write your answer in 2–3 sentences. -->

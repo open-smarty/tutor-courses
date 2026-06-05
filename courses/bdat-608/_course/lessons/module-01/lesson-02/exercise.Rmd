@@ -1,84 +1,58 @@
 ---
-title: "BDAT 608 | Module 1, Lesson 2 — Setting Up the R Modelling Environment"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Setting Up the R Modelling Environment"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Install Packages (run once only)
-
-```{r install, eval=FALSE}
-# TODO: Uncomment and run this ONCE if packages are not installed.
-# Keep eval=FALSE so it does not re-run every time you knit.
-# install.packages(c(
-#   "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
-#   "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
-#   "glmnet", "broom", "hexbin"
-# ))
+```{r install-packages, eval=FALSE}
+# Run this chunk ONCE in the console. Keep eval=FALSE so it does not
+# run automatically each time you knit.
+install.packages(c("tidyverse", "modelr", "broom"))
 ```
 
----
-
-## Task 2 — Load Libraries
-
-```{r libraries}
-# TODO: Load the following packages:
-# tidyverse, modelr, splines, ggfortify, caret, mice, cvAUC,
-# mgcv, rpart, rpart.plot, nycflights13, MASS, glmnet, broom
-
-# TODO: After loading MASS, restore dplyr's select and filter
-# select <- dplyr::select
-# filter <- dplyr::filter
+```{r load-packages}
+library(tidyverse)
+library(modelr)
+library(broom)
 ```
 
----
+## Task 1: Inspect diamonds
 
-## Task 3 — Global Option
+```{r task1}
+data("diamonds", package = "ggplot2")
 
-```{r global-option}
-# TODO: Set options(na.action = na.warn)
+# TODO: Run glimpse() and summary() on diamonds.
+# After running, answer in a comment:
+# How many rows? How many columns? What is the median price?
+
 ```
 
----
+## Task 2: Scatter plot with geom_smooth
 
-## Task 4 — Package Check
+```{r task2}
+# TODO: Create a scatter plot of price (y) vs carat (x), coloured by cut.
+# Use alpha = 0.3 on geom_point() and add geom_smooth(method = "lm", se = FALSE).
+# Add an informative title and use theme_minimal().
 
-```{r package-check}
-# TODO: Run the package check below (fill in the vector of package names)
-required_packages <- c(
-  # paste the package names here
-)
-package_check <- sapply(required_packages, requireNamespace, quietly = TRUE)
-print(package_check)
-# All entries should be TRUE
 ```
 
----
+## Task 3: Filter with the pipe
 
-## Task 5 — Explore sim1
+```{r task3}
+# TODO: Use the pipe |> to filter diamonds where carat > 2.
+# Store the result in large_diamonds.
+# Print nrow(large_diamonds) to see how many diamonds remain.
 
-```{r explore-sim1}
-# TODO: Load sim1 and call glimpse()
 ```
 
-```{r first-plot}
-# TODO: Create a scatter plot of sim1 with:
-#   - geom_point(size = 3, colour = "#1B3A6B")
-#   - title "sim1: Ready to model"
-#   - theme_minimal()
+## Task 4: Summarise by cut
+
+```{r task4}
+# TODO: Use the pipe to group diamonds by cut and compute
+# the mean and median price for each cut level.
+# Which cut has the highest mean price?
+
 ```
-
----
-
-## Reflection
-
-<!-- Why is options(na.action = na.warn) important?
-     Give a concrete example of the mistake it prevents. (2–3 sentences) -->

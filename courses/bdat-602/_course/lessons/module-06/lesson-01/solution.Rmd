@@ -1,64 +1,124 @@
 ---
-title: "BDAT 602 — Module 6, Lesson 1 Solution"
-subtitle: "Tokenisation and TF-IDF"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Tokenisation and TF-IDF"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Tokenise and count top words
-
-```{r task1}
+```{r load-packages}
+library(tidyverse)
 library(tidytext)
-library(dplyr)
 
-data("stop_words")
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 100000, seed = 602)
+```
 
-complaints <- health_small |>
+## Task 1: Tokenise complaint notes
+
+```{r task1-tokenise}
+complaints <- health_data |>
   filter(!is.na(complaint_notes)) |>
   mutate(doc_id = row_number())
 
-tokens_clean <- complaints |>
-  unnest_tokens(word, complaint_notes) |>
-  anti_join(stop_words, by = "word") |>
-  filter(nchar(word) > 2)
+words <- complaints |>
+  unnest_tokens(word, complaint_notes)
 
-tokens_clean |>
+cat("Total tokens:", nrow(words), "\n")
+```
+
+```{r task1-top-raw}
+words |>
   count(word, sort = TRUE) |>
-  slice_head(n = 10)
+  head(20)
+# Most frequent raw tokens are stop words: "I", "my", "the", "and", "is"
 ```
 
-The most frequent words reflect the templated complaint categories: "claim", "premium", "coverage", "billing", "service".
+## Task 2: Remove stop words
 
-## Task 2 — TF-IDF by plan tier
+```{r task2-stop-words}
+words_clean <- words |>
+  anti_join(stop_words, by = "word")
 
-```{r task2}
-tokens_clean |>
-  count(plan_tier, word) |>
-  bind_tf_idf(term = word, document = plan_tier, n = n) |>
-  group_by(plan_tier) |>
-  slice_max(tf_idf, n = 3) |>
-  select(plan_tier, word, tf_idf)
+cat("Tokens after stop word removal:", nrow(words_clean), "\n")
 ```
 
-Since the complaint templates are shared across plan tiers, TF-IDF discriminating words tend to be the less common complaint phrases that appear more in one tier than another.
-
-## Task 3 — Document-Term Matrix
-
-```{r task3}
-dtm <- tokens_clean |>
-  count(doc_id, word) |>
-  cast_dtm(document = doc_id, term = word, value = n)
-
-dim(dtm)
+```{r task2-top-clean}
+words_clean |>
+  count(word, sort = TRUE) |>
+  head(20) |>
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Top 20 Words in Complaint Notes (after stop word removal)",
+       x = "Word", y = "Count") +
+  theme_minimal()
+# After removal, insurance domain words dominate: "claim", "premium", "dental", "billing"
 ```
 
-The DTM has ~9,000 rows (complaints) and several hundred unique terms after stop word removal. It is very sparse — most complaints use only a small subset of the vocabulary.
+## Task 3: Compute TF-IDF
+
+```{r task3-tfidf}
+word_counts <- words_clean |>
+  count(doc_id, word)
+
+tfidf_df <- word_counts |>
+  bind_tf_idf(word, doc_id, n)
+
+tfidf_df |>
+  arrange(desc(tf_idf)) |>
+  head(10)
+# High-TF-IDF terms tend to be very specific complaint-level words that appear
+# in only one document's template — the simulator uses fixed templates,
+# so each term has moderate-to-high TF-IDF across the whole corpus.
+```
+
+## Task 4: Top TF-IDF words per complaint category
+
+```{r task4-category}
+complaints_cat <- complaints |>
+  mutate(category = case_when(
+    str_detect(complaint_notes, "billing|premium|deductible|charged|payment|balance") ~ "billing",
+    str_detect(complaint_notes, "claim|pending|denied|submitted|approved|documents")  ~ "claims",
+    str_detect(complaint_notes, "covered|coverage|prescription|formulary|dental|mental|physiotherapy|doctor") ~ "coverage",
+    str_detect(complaint_notes, "customer service|app|portal|hold|transferred|emails|phone") ~ "service",
+    TRUE ~ "positive"
+  ))
+
+tfidf_cat <- tfidf_df |>
+  left_join(complaints_cat |> select(doc_id, category), by = "doc_id")
+```
+
+```{r task4-plot}
+tfidf_cat |>
+  group_by(category, word) |>
+  summarise(mean_tfidf = mean(tf_idf), .groups = "drop") |>
+  group_by(category) |>
+  slice_max(mean_tfidf, n = 8) |>
+  ungroup() |>
+  ggplot(aes(x = reorder_within(word, mean_tfidf, category),
+             y = mean_tfidf, fill = category)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~category, scales = "free_y") +
+  scale_x_reordered() +
+  coord_flip() +
+  labs(title = "Top TF-IDF Words by Complaint Category",
+       x = "Word", y = "Mean TF-IDF") +
+  theme_minimal()
+```
+
+```{r task4-interpret}
+# The TF-IDF facet plot clearly differentiates the five categories:
+# - Billing: "charged", "statement", "premium", "outstanding", "balance"
+# - Claims: "claim", "pending", "denied", "documents", "processing"
+# - Coverage: "covered", "dental", "prescription", "formulary", "reimbursed"
+# - Service: "app", "crashes", "hold", "transferred", "portal"
+# - Positive: "satisfied", "professionally", "promptly", "renewed", "clear"
+#
+# Coverage has the most distinctive vocabulary because it contains very specific
+# medical and product terms (formulary, physiotherapy) that do not appear in
+# other categories. Billing and claims share some overlap ("claim" is common
+# in both contexts), but the top terms still separate them well.
+```

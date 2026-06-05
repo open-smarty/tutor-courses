@@ -1,0 +1,12 @@
+{
+  "taskResults": {
+    "module-01-lesson-01": {
+      "completed": true,
+      "completedAt": "2026-06-03T14:12:54.171Z"
+    }
+  },
+  "lastActiveAt": "2026-06-03T14:12:54.171Z",
+  "completedLessons": [
+    "lesson-01"
+  ]
+}

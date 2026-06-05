@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "After tokenising with unnest_tokens(), anti_join(stop_words) is applied. What does this step remove?",
+      "text": "A complaint of 30 words contains the word 'denied' 3 times. What is tf('denied', this document)?",
       "options": [
-        "Words with fewer than 3 characters",
-        "Common, high-frequency words that carry little meaning (e.g. 'the', 'and', 'is')",
-        "Words that appear in only one document",
-        "All punctuation from the text"
+        "3",
+        "0.10",
+        "0.33",
+        "Depends on the number of documents"
       ],
       "correct": 1,
-      "explanation": "Stop words are high-frequency function words (the, and, is, of, etc.) that appear in virtually every document and thus carry no discriminating information. Removing them improves the signal-to-noise ratio in downstream analyses."
+      "explanation": "tf(t, d) = count(t, d) / total words in d = 3 / 30 = 0.10. Term frequency is always normalised by document length so that long and short documents are on a comparable scale."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "TF-IDF gives a high score to a word that:",
+      "text": "The word 'insurance' appears in 490,000 of 500,000 documents. What is its idf?",
       "options": [
-        "Appears in every document in the corpus",
-        "Appears frequently in a specific document but rarely across all documents",
-        "Is a stop word",
-        "Appears exactly once in the entire corpus"
+        "log(500000 / 490000) ≈ 0.020",
+        "log(490000 / 500000) ≈ -0.020",
+        "490000 / 500000 = 0.98",
+        "500000 / 490000 ≈ 1.020"
       ],
-      "correct": 1,
-      "explanation": "TF-IDF = TF × IDF. High TF means the word is frequent in the document. High IDF means it is rare across documents. The product is highest for words that are characteristic of a specific document or group."
+      "correct": 0,
+      "explanation": "idf(t) = log(N / df(t)) = log(500000 / 490000) = log(1.0204) ≈ 0.020. This very low idf means 'insurance' is nearly useless for distinguishing documents — it carries almost no information."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "A word that appears equally in all plan tiers will have a high TF-IDF score when plan_tier is used as the document.",
-      "correct": false,
-      "explanation": "If a word appears in all documents (plan tiers) with similar frequency, its IDF will be close to 0 (DF ≈ N), making TF-IDF ≈ 0. TF-IDF rewards words that are distinctive, not ubiquitous."
+      "type": "multiple-choice",
+      "text": "Why do we use the logarithm in the idf formula?",
+      "options": [
+        "To ensure idf values are always between 0 and 1",
+        "To compress the range of N/df(t) so that very rare terms do not overwhelm very common terms",
+        "Because the natural logarithm converts word counts to probabilities",
+        "To make idf values negative for very common words"
+      ],
+      "correct": 1,
+      "explanation": "Without the log, N/df(t) can be enormous for rare terms, dominating TF-IDF. The log compresses the scale: log(1) = 0 (term in every doc), log(N) ≈ constant (term in only one doc). This gives a reasonable range and preserves relative ordering."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The Document-Term Matrix (DTM) produced by cast_dtm() is described as 'sparse'. This means:",
+      "text": "You use unnest_tokens(word, complaint_notes) followed by anti_join(stop_words). What does anti_join do here?",
       "options": [
-        "It contains many missing (NA) values",
-        "Most entries are 0 because most documents do not contain most terms",
-        "It has fewer rows than columns",
-        "It is stored as a dense numeric matrix"
+        "Joins the word frequency table with a dictionary of important words",
+        "Keeps only words that DO NOT appear in the stop_words lexicon",
+        "Removes rows from stop_words that appear in the complaint notes",
+        "Adds a sentiment score to each word"
       ],
       "correct": 1,
-      "explanation": "A sparse matrix has mostly zero entries. In a DTM, most documents use only a small fraction of the total vocabulary, so most (document, term) entries are 0. Sparse storage formats save memory by recording only non-zero entries."
+      "explanation": "anti_join(words, stop_words, by = 'word') returns all rows from 'words' that do NOT match any word in the stop_words table. This efficiently removes common non-discriminating words like 'the', 'a', 'is'."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "A bigram tokenisation of 'not covered' produces one token ('not_covered') rather than two ('not', 'covered'), which is advantageous when negations matter.",
+      "correct": true,
+      "explanation": "Unigrams lose negation: 'not covered' and 'covered' both contribute the token 'covered' equally. Bigram tokenisation keeps 'not_covered' as a single token, preserving the negation. This is especially useful for sentiment analysis and complaint classification."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "bind_tf_idf() in tidytext requires three arguments. Which are they?",
+      "text": "The document-term matrix is described as 'very sparse'. What does this mean?",
       "options": [
-        "document, term, n (count per document-term pair)",
-        "word, corpus, model",
-        "text, language, encoding",
-        "token, frequency, weight"
+        "Most documents are very short (fewer than 20 words)",
+        "Most cells contain very small (near-zero) TF-IDF values",
+        "Most cells contain zeros because most terms appear in only a small fraction of documents",
+        "The matrix has more rows than columns"
       ],
-      "correct": 0,
-      "explanation": "bind_tf_idf(term, document, n) takes the term column name, the document column name, and the count column (n = occurrences of the term in that document). It adds tf, idf, and tf_idf columns."
+      "correct": 2,
+      "explanation": "With thousands of unique terms and tens of thousands of documents, most (term, document) combinations have count = 0 because each document uses only a small fraction of the total vocabulary. In practice, 95-99% of DTM cells are zero. Sparse matrix formats (as used by topicmodels) exploit this structure to save memory."
     }
   ]
 }

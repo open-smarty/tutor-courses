@@ -1,149 +1,93 @@
-# Lesson 3: Scaling, Encoding, and the recipes Pipeline
+# Lesson 5: Scaling, Encoding, and the recipes Pipeline
 
 ## Goal
 
-Apply Z-score, Min-Max, and Robust scaling to numeric variables, encode categorical variables as dummy or ordinal integers, and assemble all preprocessing steps into a single leak-proof `recipes` pipeline.
+After this lesson you can choose and implement the right scaling method for a given variable, encode categorical variables without introducing data leakage, and assemble a complete `recipes` preprocessing pipeline.
 
 ## Concept
 
-### Why Scaling Matters
+### Why scaling matters
 
-Distance-based algorithms (k-means, kNN, PCA, SVM, Ridge/LASSO) are sensitive to variable scale. Age ranges from 18 to 85; income from a few thousand to millions. Without scaling, income completely dominates any Euclidean distance calculation and age becomes irrelevant.
+Many algorithms — k-means clustering, kNN, PCA, regularised regression — compute distances or inner products between feature vectors. If `income` ranges from 0 to 200,000 while `age` ranges from 18 to 85, the income dimension will dominate the distance calculation simply because its scale is larger. Scaling puts variables on a common footing.
 
-Algorithms **not** affected by scale: decision trees, random forests, naïve Bayes, association rules.
+### Three scaling methods
 
-| Method | Formula | Range | Robust to outliers? |
-|--------|---------|-------|-------------------|
-| **Z-score** | $(x - \bar{x}) / s$ | $(-\infty, +\infty)$ | No |
-| **Min-Max** | $(x - x_{\min}) / (x_{\max} - x_{\min})$ | $[0, 1]$ | No |
-| **Robust** | $(x - \text{median}) / \text{IQR}$ | $(-\infty, +\infty)$ | Yes |
+**Z-score standardisation** (most common):
 
-Use Robust scaling when the variable has not been winsorised.
+$$z = \frac{x - \mu}{\sigma}$$
 
-```r
-library(recipes)
+After this transformation every variable has mean 0 and standard deviation 1. It preserves the shape of the distribution (skew, outliers) but changes the location and scale. In `recipes`: `step_normalize()`.
 
-num_vars <- c("age", "bmi", "income", "premium", "deductible",
-              "coverage_amount", "policy_age_months",
-              "num_chronic_conditions", "num_visits",
-              "num_prescriptions", "num_hospital_admissions",
-              "num_claims", "avg_past_claim", "claim_amount",
-              "app_logins_monthly", "support_calls")
+**Numeric example**: suppose `income` has $\mu = 42{,}000$ and $\sigma = 28{,}000$. An income of $70{,}000$ becomes $z = (70000 - 42000) / 28000 = 1.0$. An income of $14{,}000$ becomes $z = (14000 - 42000) / 28000 = -1.0$.
 
-scale_rec   <- recipe(~ ., data = health_small) |>
-  step_normalize(all_of(num_vars))  # Z-score
+**Min-Max scaling**:
 
-scale_prep   <- prep(scale_rec, training = health_small)
-health_scaled <- bake(scale_prep, new_data = health_small)
+$$x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}}$$
 
-# Verify: mean ≈ 0, sd ≈ 1
-health_scaled |>
-  select(age, bmi, income) |>
-  summarise(across(everything(), list(mean = mean, sd = sd)))
+Result is always in $[0, 1]$. Preserves the relative distances between points. *Sensitive to outliers*: if one BMI value is 200 (a data entry error), $x_{\max} = 200$ and all genuine BMI values get compressed into a narrow band near 0. In `recipes`: `step_range()`.
+
+**Robust scaling**:
+
+$$x' = \frac{x - \text{median}}{\text{IQR}}$$
+
+Uses the median (not the mean) and the IQR (not the standard deviation), so it is resistant to outliers. Good default when you have not yet cleaned outliers. No direct step in `recipes`; implement with `step_mutate()`.
+
+### Encoding categorical variables
+
+**One-hot / dummy encoding**: convert a categorical variable with $k$ categories into $k-1$ binary columns (drop one to avoid perfect multicollinearity — the "dummy variable trap"). Example: `plan_tier` has 4 levels (Bronze, Silver, Gold, Platinum) → 3 binary columns: `plan_tier_Silver`, `plan_tier_Gold`, `plan_tier_Platinum`. "Bronze" is the reference level, coded as all zeros. In `recipes`: `step_dummy(all_nominal_predictors())`.
+
+**Why $k-1$ and not $k$?** If you include all $k$ columns, they sum to 1 in every row (exactly one category is active). This introduces perfect multicollinearity (the rank of the design matrix drops by 1), making OLS coefficients non-unique. Dropping one column breaks this linear dependence.
+
+**Ordinal encoding**: when a categorical variable has a natural order — e.g., `education` = None < Primary < Secondary < Tertiary < Postgraduate — you can map it to integers 1, 2, 3, 4, 5. Use `step_ordinalscore()` or `step_mutate()`. Do not use this for unordered variables like `region` (it implies Europe > Africa, which is meaningless).
+
+### The recipe workflow: why order matters
+
+```
+recipe(outcome ~ predictors, data = training_data) |>
+  step_impute_median(all_numeric_predictors()) |>   # 1. fix NAs first
+  step_impute_mode(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>           # 2. encode (now all numeric)
+  step_normalize(all_numeric_predictors())          # 3. scale
 ```
 
----
+**Rule**: impute before encoding, encode before scaling. If you scale before encoding, your new dummy variables get incorrectly scaled (they are 0/1 — do not need scaling, but `step_normalize()` would change them).
 
-### Encoding Categorical Variables
-
-Most algorithms require numeric input. Assigning integers (1, 2, 3, …) to nominal variables implies a false ordering.
-
-| Variable type | Encoding | `recipes` step |
-|--------------|---------|---------------|
-| Nominal (sex, region) | One-hot / dummy (k-1 columns) | `step_dummy()` |
-| Ordinal (education, plan_tier) | Integer preserving order | `step_integer()` |
-| High-cardinality nominal | Target encoding | `step_lencode_*()` |
-
-```r
-encode_rec <- recipe(claim_amount ~ ., data = health_small) |>
-  step_dummy(sex, region, payment_method, employment_type,
-             one_hot = FALSE) |>    # k-1 columns (avoids dummy trap)
-  step_mutate(
-    education = factor(education,
-                       levels = c("None", "Primary", "Secondary",
-                                   "Tertiary", "Postgraduate"),
-                       ordered = TRUE),
-    plan_tier = factor(plan_tier,
-                       levels = c("Bronze", "Silver", "Gold", "Platinum"),
-                       ordered = TRUE)
-  ) |>
-  step_integer(education, plan_tier) |>
-  step_nzv(all_predictors())   # drop near-zero variance columns
-```
-
----
-
-### The Complete Preprocessing Pipeline
-
-Ad-hoc preprocessing causes **data leakage** (imputing using whole-dataset mean before splitting), is hard to reproduce, and cannot be applied to new data. The `recipes` pipeline solves all three problems.
-
-```r
-library(tidymodels)
-
-set.seed(602)
-split      <- initial_split(health_small, prop = 0.75, strata = plan_tier)
-train_data <- training(split)
-test_data  <- testing(split)
-
-prep_recipe <- recipe(claim_amount ~ ., data = train_data) |>
-  # 1. Imputation
-  step_impute_median(bmi, income) |>
-  step_mutate(bmi_missing    = as.integer(is.na(bmi)),
-              income_missing = as.integer(is.na(income))) |>
-  # 2. Outlier treatment
-  step_mutate(
-    bmi    = pmax(10, pmin(60, bmi)),
-    income = pmax(quantile(income, 0.01, na.rm = TRUE),
-                  pmin(quantile(income, 0.99, na.rm = TRUE), income))
-  ) |>
-  # 3. Log-transform skewed variables
-  step_log(income, claim_amount, base = 10, offset = 1) |>
-  # 4. Encode categoricals
-  step_dummy(sex, region, payment_method, employment_type) |>
-  step_mutate(
-    education = factor(education,
-                       levels = c("None","Primary","Secondary",
-                                   "Tertiary","Postgraduate"),
-                       ordered = TRUE),
-    plan_tier = factor(plan_tier,
-                       levels = c("Bronze","Silver","Gold","Platinum"),
-                       ordered = TRUE)
-  ) |>
-  step_integer(education, plan_tier) |>
-  # 5. Scale
-  step_normalize(all_numeric_predictors()) |>
-  # 6. Remove redundancy
-  step_nzv(all_predictors()) |>
-  step_corr(all_numeric_predictors(), threshold = 0.95)
-
-prep_fit        <- prep(prep_recipe, training = train_data)
-train_processed <- bake(prep_fit, new_data = NULL)
-test_processed  <- bake(prep_fit, new_data = test_data)
-```
-
-The `test_processed` object uses the exact same transformations as `train_processed` (same medians, same dummy levels, same scale factors) — derived only from training data.
+`prep(rec, training = train)` fits every step on the training data and records the learned statistics (means, standard deviations, quantiles, dummy levels). `bake(rec_prepped, new_data = test)` applies those *training-set statistics* to the test set. This is what prevents data leakage.
 
 ## Example
 
 ```r
-cat("Columns after pipeline:", ncol(train_processed), "\n")
-cat("NAs remaining:", sum(colSums(is.na(train_processed))), "\n")
+library(tidyverse)
+library(tidymodels)
 
-# Means ≈ 0, SDs ≈ 1 for scaled columns
-train_processed |>
-  select(where(is.numeric)) |>
-  select(1:3) |>
-  summarise(across(everything(), list(mean = mean, sd = sd)))
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
+
+set.seed(602)
+split <- initial_split(health_data, prop = 0.80, strata = churned)
+train <- training(split)
+test  <- testing(split)
+
+rec <- recipe(churned ~ age + bmi + income + plan_tier + education + num_claims, data = train) |>
+  step_impute_median(income, bmi) |>
+  step_impute_mode(plan_tier, education) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_normalize(all_numeric_predictors())
+
+rec_prepped  <- prep(rec, training = train)
+train_baked  <- bake(rec_prepped, new_data = train)
+test_baked   <- bake(rec_prepped, new_data = test)
+
+# Inspect: all numeric, no NAs, dummy columns present
+glimpse(train_baked)
 ```
+
+After baking, `plan_tier` is gone and replaced by `plan_tier_Silver`, `plan_tier_Gold`, `plan_tier_Platinum`. All numeric predictors have mean ≈ 0 and sd ≈ 1.
 
 ## Task
 
-Open `exercise.Rmd` and complete the two marked chunks:
-
-1. Build a `recipes` pipeline on `health_small` that: (a) imputes `bmi` and `income` with their medians, (b) dummy-encodes `sex` and `region`, (c) Z-score normalises all numeric predictors. `prep()` and `bake()` it. Confirm the result has no NAs and that `mean(bmi) ≈ 0`.
-2. Check how many columns the pipeline produces. Report any columns dropped by `step_nzv()` if you add it.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) manually compute Z-score and Min-Max scaled versions of `age`; (2) create dummy variables for `plan_tier` using `step_dummy()` and verify the number of new columns; (3) build a full pipeline with imputation, encoding, and normalisation; (4) confirm the baked training set has no missing values and all numeric predictors are scaled.
 
 ## Check
 
@@ -153,4 +97,4 @@ npm run check -- bdat-602 module-02 lesson-03
 
 ## Reflection
 
-Why must `step_normalize()` come *after* `step_impute_median()` in the pipeline — not before? What would happen to the imputed values if the order were reversed?
+The `recipes` framework separates *specification* (the recipe) from *fitting* (prep) and *application* (bake). Why is this three-step separation important for cross-validation, where the same preprocessing must be applied independently across each fold?

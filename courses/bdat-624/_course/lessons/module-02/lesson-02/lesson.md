@@ -2,196 +2,175 @@
 
 ## Goal
 
-By the end of this lesson you will be able to derive n-step transition probabilities via the Chapman-Kolmogorov equations, prove that P^(n) = P^n, compute the marginal state distribution at any time step, and find the stationary distribution of a regular Markov chain.
+Prove the Chapman-Kolmogorov equations step by step, use them to compute n-step transition probabilities via matrix powers, derive the stationary distribution, and find it numerically for a biological chain.
 
 ## Concept
 
-### Motivation: beyond one step
+### Setting the Stage
 
-The TPM **P** tells us where the process goes in *one* step. But we often want to know: "What is the probability of being in state j after 12 months, starting from state i today?" That requires n-step transition probabilities.
+In Lesson 1 we established that the n-step transition probability P⁽ⁿ⁾ᵢⱼ tells us the probability of moving from state i to state j in exactly n steps. A natural question: can we build P⁽ᵐ⁺ⁿ⁾ from P⁽ᵐ⁾ and P⁽ⁿ⁾ without computing the full matrix power directly? Yes — this is the Chapman-Kolmogorov equation.
 
-Here's the key insight: the clever trick is that you can get from i to j in n steps by first going from i to some intermediate state k, and then going from k to j. If you sum over all possible intermediate states k, you recover the n-step probability. This is the Chapman-Kolmogorov equation — and it turns out to be equivalent to *matrix multiplication*.
+> **Notation block:**
+> - P⁽ⁿ⁾ᵢⱼ — n-step transition probability from state i to j; read "P superscript n, subscript i j"
+> - P⁽ᵐ⁺ⁿ⁾ᵢⱼ — (m+n)-step transition probability from state i to j
+> - Σₖ — sum over all states k in the state space S; k is the "relay" state at the intermediate time m
+> - [P^m × P^n]ᵢⱼ — entry (i,j) of the matrix product P^m times P^n
 
----
+### Theorem: Chapman-Kolmogorov Equations
 
-### N-step transition probabilities
+**Statement.** For any m, n ≥ 0 and all states i, j ∈ S:
 
-> **Notation:** *P_{ij}^{(n)}* — the probability of moving from state i to state j in exactly n steps. Read: "n-step transition probability from i to j." The superscript is in parentheses to distinguish it from P raised to the power n (though we will soon show they are the same thing).
+$$P^{(m+n)}_{ij} = \sum_{k \in S} P^{(m)}_{ik} \cdot P^{(n)}_{kj}$$
 
-> **Notation:** *P^{(n)}* — the m × m matrix whose (i,j) entry is P_{ij}^{(n)}. This is the matrix of all n-step transition probabilities.
+Equivalently, in matrix form: P⁽ᵐ⁺ⁿ⁾ = P^m × P^n (matrix multiplication).
 
-Note that $P^{(1)} = \mathbf{P}$ (the ordinary TPM) and $P^{(0)} = \mathbf{I}$ (the identity matrix — the "zero-step" probability of going from i to i is 1).
+**Proof (annotated step by step).**
 
----
+**Step 1. Expand the definition.**
 
-### The Chapman-Kolmogorov equations
+> **Notation:** P(X_{m+n} = j | X_0 = i) — the probability of being in state j at time m+n, given the process starts in state i at time 0.
 
-Let $m < r < n$. The Chapman-Kolmogorov (CK) equation is:
+$$P^{(m+n)}_{ij} = P(X_{m+n} = j \mid X_0 = i)$$
 
-$$P_{ij}^{(m,n)} = \sum_{k \in S} P_{ik}^{(m,r)} \cdot P_{kj}^{(r,n)}$$
+This is simply the definition of the (m+n)-step transition probability.
 
-In plain English: "To go from state i at step m to state j at step n, you must pass through *some* state k at the intermediate step r. Sum the probability of each possible path $i \to k \to j$ over all states k."
+**Step 2. Condition on the intermediate state at time m.**
 
-For a **time-homogeneous** chain, $P_{ij}^{(m,n)}$ depends only on $n - m$ (the number of steps, not the starting time), so we write $P_{ij}^{(n-m)}$. The CK equation becomes:
+We use the **law of total probability**: partition the event {X_{m+n} = j} according to which state the process is in at the intermediate time m.
 
-$$P_{ij}^{(m+r)} = \sum_{k \in S} P_{ik}^{(m)} \cdot P_{kj}^{(r)}$$
+> **Notation:** k — a generic state in S; we sum over all possible values of Xₘ.
 
-This is exactly the rule for multiplying two matrices. That means the left-hand side is the $(i,j)$ entry of $P^{(m)} \cdot P^{(r)}$.
+$$P(X_{m+n} = j \mid X_0 = i) = \sum_{k \in S} P(X_{m+n} = j, \; X_m = k \mid X_0 = i)$$
 
----
+Here we've split the single event into cases: the process is in some state k at time m, and then reaches j by time m+n.
 
-### Key theorem: P^(n) = P^n
+**Step 3. Factorise using conditional probability.**
 
-This is the central computational fact for Markov chains.
+For each term in the sum, apply the definition of conditional probability:
 
-**Theorem.** For a time-homogeneous Markov chain, $P^{(n)} = \mathbf{P}^n$ (the ordinary matrix **P** multiplied by itself n times).
+$$P(X_{m+n} = j, \; X_m = k \mid X_0 = i) = P(X_{m+n} = j \mid X_m = k, \; X_0 = i) \cdot P(X_m = k \mid X_0 = i)$$
 
-**Proof by induction.**
+This is the chain rule of probability: P(A,B|C) = P(A|B,C)·P(B|C).
 
-*Base case (n = 1).* $P^{(1)} = \mathbf{P} = \mathbf{P}^1$. ✓
+**Step 4. Apply the Markov property to the first factor.**
 
-*Inductive step.* Assume $P^{(r)} = \mathbf{P}^r$ for all $r = 1, 2, \ldots, n-1$. We want to show $P^{(n)} = \mathbf{P}^n$.
+> **Notation:** X_0 = i is the "old history" that becomes irrelevant once we know X_m = k. The Markov property says: given the present (X_m = k), the past (X_0 = i) is irrelevant for the future.
 
-By the CK equation with m = n-1, r = 1:
+$$P(X_{m+n} = j \mid X_m = k, \; X_0 = i) = P(X_{m+n} = j \mid X_m = k)$$
 
-$$P_{ij}^{(n)} = \sum_{k \in S} P_{ik}^{(n-1)} \cdot P_{kj}^{(1)}
-\quad \leftarrow \text{by CK equation}$$
+The condition X_0 = i drops out completely — this is precisely the Markov property in action.
 
-By the inductive hypothesis, $P^{(n-1)} = \mathbf{P}^{n-1}$, so $P_{ik}^{(n-1)}$ is the $(i,k)$ entry of $\mathbf{P}^{n-1}$. And $P_{kj}^{(1)} = P_{kj}$ is the $(k,j)$ entry of **P**.
+**Step 5. Apply time-homogeneity.**
 
-Therefore the sum $\sum_k P_{ik}^{(n-1)} \cdot P_{kj}$ is the $(i,j)$ entry of the matrix product $\mathbf{P}^{n-1} \cdot \mathbf{P}$:
+Because the chain is time-homogeneous, the n-step transition probability from k to j does not depend on the starting time m:
 
-$$P_{ij}^{(n)} = \left[\mathbf{P}^{n-1} \cdot \mathbf{P}\right]_{ij} = \left[\mathbf{P}^n\right]_{ij}
-\quad \leftarrow \text{by matrix multiplication}$$
+$$P(X_{m+n} = j \mid X_m = k) = P(X_n = j \mid X_0 = k) = P^{(n)}_{kj}$$
 
-Since this holds for all i and j, $P^{(n)} = \mathbf{P}^n$. $\blacksquare$
+> **Notation:** P⁽ⁿ⁾ₖⱼ — the n-step probability from k to j, starting from time 0 (time-homogeneity lets us shift the origin to 0).
 
-**What this means practically:** to find the probability of being in state j after 12 steps starting from state i, compute the (i, j) entry of $\mathbf{P}^{12}$ in R using matrix exponentiation.
+**Step 6. Identify the second factor.**
 
----
+$$P(X_m = k \mid X_0 = i) = P^{(m)}_{ik}$$
 
-### The marginal (unconditional) state distribution
+This is simply the m-step probability from i to k.
 
-We often want to know the probability of being in each state at time n, *without conditioning on a specific starting state* — especially when we have a population of patients with different starting conditions.
+**Step 7. Assemble the result.**
 
-> **Notation:** *π(n)* — the row vector $[\pi_1(n), \pi_2(n), \ldots, \pi_m(n)]$ where $\pi_j(n) = P(X_n = j)$. This is the **marginal distribution** at time n: the probability of being in state j at step n, integrated over the starting distribution.
+Substituting Steps 4–6 back into the sum from Step 2:
 
-> **Notation:** *π(0)* — the **initial distribution**: a row vector giving the probability of starting in each state. If you know the process starts in state i with certainty, then $\pi(0) = e_i$ (a unit vector with a 1 in position i).
+$$P^{(m+n)}_{ij} = \sum_{k \in S} P^{(m)}_{ik} \cdot P^{(n)}_{kj}$$
 
-The marginal distribution at step n is:
+But this is exactly the definition of matrix multiplication! The (i,j) entry of the product P^m × P^n is Σₖ [P^m]ᵢₖ × [P^n]ₖⱼ. Therefore:
 
-$$\pi(n) = \pi(0) \cdot \mathbf{P}^n$$
+$$P^{(m+n)} = P^m \times P^n \quad \blacksquare$$
 
-This is a simple matrix-vector product. To get $\pi_j(n)$, take the dot product of the initial distribution $\pi(0)$ with the j-th column of $\mathbf{P}^n$.
+Here's the key insight: the Chapman-Kolmogorov equations say that "going m+n steps is the same as going m steps, then going n steps — regardless of how we split the journey." This lets us compute any P^n by repeated squaring, which is computationally efficient. It also means P⁽ⁿ⁾ = Pⁿ (n-th matrix power of the one-step TPM).
 
----
+### Corollary: P^n by Induction
 
-### The stationary distribution
+Setting m=1 and applying C-K repeatedly: P^(1+1) = P^1 × P^1 = P², P^(2+1) = P² × P = P³, ..., by induction P^n = Pⁿ for all n ≥ 1. The n-step TPM is the n-th matrix power of the one-step TPM.
 
-As n → ∞, does the marginal distribution settle down? For many chains it does.
+### Stationary Distribution
 
-> **Notation:** *π = (π₁, π₂, ..., πₘ)* — the **stationary (long-run) distribution**. $\pi_j = \lim_{n \to \infty} P(X_n = j)$ when this limit exists. Also called the **steady-state distribution** or **equilibrium distribution**.
+As we compute Pⁿ for larger and larger n, something remarkable happens: the rows often converge to a common vector π = (π₁, π₂, ..., π|S|), independent of the starting state i. This vector π is called the **stationary distribution** (or **invariant distribution** or **equilibrium distribution**).
 
-A distribution π is stationary if and only if it satisfies two conditions simultaneously:
+> **Notation block:**
+> - π — the stationary distribution; a row vector with |S| entries; read "pi"
+> - πⱼ — the j-th entry of π; the long-run probability of being in state j; read "pi sub j"
+> - πP — matrix-vector multiplication: a row vector π multiplied on the right by the TPM P; the result is a new row vector
 
-1. $\pi \mathbf{P} = \pi$ &nbsp;&nbsp;&nbsp;&nbsp;(matrix equation — the distribution is unchanged by one step of the chain)
-2. $\sum_j \pi_j = 1$ &nbsp;&nbsp;&nbsp;&nbsp;(it is a valid probability distribution)
+**Definition.** A probability row vector π = (π₁, ..., π|S|) is a **stationary distribution** for the Markov chain with TPM P if:
 
-Let's unpack condition 1. If the chain is currently in steady state (each state j occupied with probability $\pi_j$), then after one step the probability of being in state j is $\sum_i \pi_i P_{ij}$ — which must equal $\pi_j$ again. This is precisely $\pi \mathbf{P} = \pi$.
+$$\pi P = \pi \quad \text{with} \quad \sum_{j \in S} \pi_j = 1 \quad \text{and} \quad \pi_j \geq 0 \; \forall j$$
 
-**How to solve for π.** Rearranging condition 1:
+**Interpretation.** If the chain starts in distribution π₀ = π, then after one step the distribution is still π. The chain is in equilibrium — applying P doesn't change the distribution. π gives the **long-run fraction of time** spent in each state.
 
-$$\pi \mathbf{P} = \pi \;\Longrightarrow\; \pi (\mathbf{P} - \mathbf{I}) = \mathbf{0}$$
+Let's unpack this notation: "πP = π" means that if you take the row vector π and multiply it by the matrix P (on the right), you get π back. It is analogous to an eigenvector equation: π is a left eigenvector of P with eigenvalue 1.
 
-This is a homogeneous linear system. We solve it together with $\sum_j \pi_j = 1$ (to pin down the unique solution). In practice:
+### How to Find the Stationary Distribution
 
-- Replace one equation in $\pi(\mathbf{P} - \mathbf{I}) = \mathbf{0}$ with $\sum_j \pi_j = 1$.
-- Solve the resulting square linear system using `solve()` in R.
-- Alternatively, use the left eigenvector corresponding to eigenvalue 1 of **P**.
+**Method.** The equation πP = π can be rewritten as:
 
----
+$$\pi (P - I) = 0$$
 
-### Worked example: finding the stationary distribution
+where I is the identity matrix. This is a homogeneous linear system. Combined with the normalisation constraint Σⱼ πⱼ = 1, we get a uniquely solvable system (for irreducible, aperiodic chains).
 
-Let (from Dr. Asiedu's notes, p. 15–16):
+**Practical approach in R:**
+1. Form the matrix (P - I)
+2. Add the constraint row [1, 1, 1, ..., 1] = 1 (or equivalently, solve the augmented system)
+3. Solve for π using `solve()` or by finding the left null vector of (P - I)
 
-$$\mathbf{P} = \begin{pmatrix} 0 & 2/3 & 1/3 \\ 3/8 & 1/8 & 1/2 \\ 1/2 & 1/2 & 0 \end{pmatrix}$$
+Alternatively, compute Pⁿ for large n and read off any row (they converge to π).
 
-First, verify it's a stochastic matrix:
+### Ergodic Theorem
 
-- Row 0: $0 + 2/3 + 1/3 = 1$ ✓
-- Row 1: $3/8 + 1/8 + 4/8 = 1$ ✓
-- Row 2: $1/2 + 1/2 + 0 = 1$ ✓
+> **Notation block:**
+> - T_i(n) — number of visits to state i in n steps; T_i(n)/n — long-run fraction of time in state i
+> - E[return time to i] — expected number of steps to first return to state i, starting from i
 
-Now solve $(\pi_0, \pi_1, \pi_2) \mathbf{P} = (\pi_0, \pi_1, \pi_2)$ with $\pi_0 + \pi_1 + \pi_2 = 1$.
+**Ergodic theorem.** For an **ergodic** (irreducible + aperiodic + positive recurrent) Markov chain:
 
-Writing out the three equations from $\pi \mathbf{P} = \pi$:
+$$\pi_i = \frac{1}{E[\text{return time to state } i]}$$
 
-$$\pi_0 = 0\cdot\pi_0 + \frac{3}{8}\pi_1 + \frac{1}{2}\pi_2 \quad \cdots (1)$$
-$$\pi_1 = \frac{2}{3}\pi_0 + \frac{1}{8}\pi_1 + \frac{1}{2}\pi_2 \quad \cdots (2)$$
-$$\pi_2 = \frac{1}{3}\pi_0 + \frac{1}{2}\pi_1 + 0\cdot\pi_2 \quad \cdots (3)$$
-
-Plus the normalisation constraint: $\pi_0 + \pi_1 + \pi_2 = 1$.
-
-After solving this system (see `solution.R` for the full R calculation):
-
-$$\boxed{\pi = (0.3,\; 0.4,\; 0.3)}$$
-
-You can verify: $(0.3, 0.4, 0.3) \cdot \mathbf{P} = (0.3, 0.4, 0.3)$ ✓
-
----
-
-### Stationary vs. limiting distribution — an important distinction
-
-A **stationary distribution** is one where *if you start there, you stay there* (in distribution). It is defined by $\pi \mathbf{P} = \pi$.
-
-A **limiting distribution** is the distribution the chain *converges to* as $n \to \infty$, regardless of starting state.
-
-These are not always the same! A chain can have a stationary distribution but no limiting distribution (we will see an example in Lesson 3 — the alternating chain). However:
-
-**Key theorem.** If a finite Markov chain is *irreducible* (all states communicate) and *aperiodic* (no periodic oscillations), the stationary and limiting distributions coincide. Every such chain has a unique stationary distribution, and $\pi(n) \to \pi$ from any starting distribution $\pi(0)$.
-
----
-
-### The stable matrix
-
-When $P^n$ converges, it converges to a matrix $\tilde{\pi}$ called the **stable matrix**, where every row is identical and equal to the stationary distribution:
-
-$$\lim_{n \to \infty} \mathbf{P}^n = \tilde{\pi} = \begin{pmatrix} \pi_0 & \pi_1 & \cdots & \pi_{m-1} \\ \pi_0 & \pi_1 & \cdots & \pi_{m-1} \\ \vdots & \vdots & \ddots & \vdots \\ \pi_0 & \pi_1 & \cdots & \pi_{m-1} \end{pmatrix}$$
-
-Here's the key insight: the rows all being identical means that after a long time, it does not matter where you started. The long-run fraction of time spent in state j is $\pi_j$, regardless of initial state.
-
----
+The stationary probability of state i equals the reciprocal of the mean return time to i. Intuitively: if you return to state i on average every 10 steps, you're "in state i" about 1/10 of the time in the long run.
 
 ## Example
 
-### Computing the probability of being sick after 12 months
+**Stationary distribution of a 3-state health chain.**
 
-Using the 3-state health model from Lesson 1 (states: 0 = Healthy, 1 = Sick, 2 = Dead) with
+Consider the chain with states {Healthy (H), Sick (S), Recovered (R)} and TPM:
 
-$$\mathbf{P} = \begin{pmatrix} 0.7 & 0.2 & 0.1 \\ 0.1 & 0.5 & 0.4 \\ 0 & 0 & 1 \end{pmatrix}$$
+$$P = \begin{pmatrix} 0.85 & 0.15 & 0.00 \\ 0.10 & 0.40 & 0.50 \\ 0.30 & 0.00 & 0.70 \end{pmatrix}$$
 
-Suppose a patient starts healthy (state 0). What is the probability they are sick (state 1) after 12 months?
+**Step 1: Write out the system πP = π.**
 
-We need $\left[\mathbf{P}^{12}\right]_{01}$ — the (0, 1) entry of $\mathbf{P}^{12}$.
+> **Notation:** π = (π_H, π_S, π_R); each equation comes from one column of πP = π.
 
-In R: `P %^% 12` (using the `expm` package) gives us the matrix. Reading off the (row 1, column 2) entry (1-indexed) gives approximately 0.012.
+Column H: 0.85π_H + 0.10π_S + 0.30π_R = π_H → -0.15π_H + 0.10π_S + 0.30π_R = 0
 
-Interpretation: a patient who starts healthy has only about a 1.2% chance of being alive and sick at month 12. Most paths have led to death by that point (the absorbing state absorbs them over time).
+Column S: 0.15π_H + 0.40π_S + 0.00π_R = π_S → 0.15π_H - 0.60π_S + 0.00π_R = 0
 
-Notice: because state 2 (Dead) is absorbing, the chain does *not* have a proper limiting distribution in the sense of all states. The long-run probability of being in state 2 is 1. This is characteristic of chains with absorbing states.
+Column R: 0.00π_H + 0.50π_S + 0.70π_R = π_R → 0.00π_H + 0.50π_S - 0.30π_R = 0
 
----
+Normalisation: π_H + π_S + π_R = 1
+
+**Step 2: Solve the system.** From equation (3): 0.50π_S = 0.30π_R → π_R = (5/3)π_S.
+
+From equation (2): 0.15π_H = 0.60π_S → π_H = 4π_S.
+
+Normalisation: 4π_S + π_S + (5/3)π_S = 1 → π_S(4 + 1 + 5/3) = 1 → π_S(12/3 + 3/3 + 5/3) = 1 → π_S(20/3) = 1 → π_S = 3/20 = 0.15.
+
+Then π_H = 4 × 0.15 = 0.60, π_R = (5/3) × 0.15 = 0.25.
+
+**Step 3: Verify.** π_H + π_S + π_R = 0.60 + 0.15 + 0.25 = 1.00. ✓
+
+Check πP row: 0.60×0.85 + 0.15×0.10 + 0.25×0.30 = 0.510 + 0.015 + 0.075 = 0.600 = π_H. ✓
+
+**Interpretation:** In the long run, a patient following this chain spends 60% of their time Healthy, 15% Sick, and 25% Recovered. These are the long-run population fractions. The average return time to Healthy is 1/0.60 ≈ 1.67 weeks.
 
 ## Task
 
-Open `exercise.R`. You will define the 3×3 TPM from the worked example, compute matrix powers, find the stationary distribution by two methods (linear solve and eigenvalues), verify convergence, and plot the evolution of state probabilities from different starting distributions.
-
-Run the check when done:
-
-```
-npm run check -- bdat-624 module-02 lesson-02
-```
+See `exercise.R`. You will compute P¹, P⁵, P⁵⁰ for a 3-state health chain, observe convergence to π, and verify the stationary distribution by solving the linear system πP = π.
 
 ## Check
 
@@ -201,4 +180,4 @@ npm run check -- bdat-624 module-02 lesson-02
 
 ## Reflection
 
-The stationary distribution satisfies $\pi \mathbf{P} = \pi$. A student says: "This means if I start in the stationary distribution, nothing changes — so the stationary distribution is boring and uninformative." Explain why this is wrong. What does the stationary distribution actually tell you about a chain's long-run behaviour? And why does the *starting* distribution become irrelevant after many steps (for a regular chain)?
+The Chapman-Kolmogorov equations assume time-homogeneity — the same TPM applies at every step. In a longitudinal clinical study, is this realistic? Consider a patient's probability of moving from Mild to Severe illness: might this depend on the time of year (flu season), the patient's age as the study progresses, or treatment protocols that change over the study period? Design a simple extension of the framework — a **time-inhomogeneous Markov chain** — where the TPM changes over time: Pₙ ≠ Pₘ for n ≠ m. In this case, is P^n still valid? What replaces it?

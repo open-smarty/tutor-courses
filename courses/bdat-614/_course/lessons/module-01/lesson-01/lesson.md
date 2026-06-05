@@ -1,51 +1,65 @@
 # Lesson 1: What is Quality? Definitions and Dimensions
 
 ## Goal
-Explain what quality means in production and service contexts, identify its eight dimensions, and distinguish between Quality Control (QC) and Quality Assurance (QA).
+
+Explain Garvin's 8 dimensions of quality and distinguish Quality Control from Quality Assurance.
 
 ## Concept
 
-**Quality** is not a single thing. Different people define it differently:
+Quality means different things to different people. A patient values accurate diagnosis. A hospital administrator values efficient throughput. A data engineer values clean, timely records. Without a common framework, "improve quality" is meaningless. David Garvin gave us one.
 
-- **Conformance to requirements** (Crosby) — quality means meeting a specification exactly.
-- **Fitness for use** (Juran) — quality means the product does what the customer needs it to do.
-- **Loss to society** (Taguchi) — quality is the degree to which a product avoids causing loss to the customer or society after delivery.
+**Garvin's 8 Dimensions of Quality**
 
-No single definition covers every situation, which is why Garvin proposed **eight dimensions of quality** that together give a complete picture:
+Each dimension captures a distinct aspect of what makes something "good":
 
-| Dimension | Meaning |
-|---|---|
-| Performance | Does it do the primary job? |
-| Features | Does it have extra capabilities? |
-| Reliability | Does it work consistently over time? |
-| Conformance | Does it meet the specification? |
-| Durability | How long does it last? |
-| Serviceability | How easy is it to fix? |
-| Aesthetics | How does it look/feel/sound? |
-| Perceived quality | What do customers believe about it? |
+1. **Performance** — does it do its primary job? For a claims processing system: does it calculate the correct benefit amount?
+2. **Features** — capabilities beyond the minimum. For claims: automated fraud scoring, real-time eligibility checks.
+3. **Reliability** — how often does it fail? For lab equipment: mean time between failures (MTBF).
+4. **Conformance** — does it meet the specification? For a data feed: are all required fields present and within valid ranges?
+5. **Durability** — how long before replacement is needed? For a database system: how many years until the architecture is obsolete?
+6. **Serviceability** — how easily can it be repaired or patched? For a pipeline: is the SLA for bug fixes 2 hours or 2 weeks?
+7. **Aesthetics** — look, feel, user experience. For a reporting portal: is the interface intuitive and visually clear?
+8. **Perceived Quality** — reputation and brand trust. For a health insurer: do policyholders trust the company to pay claims fairly?
 
-**Quality Control (QC)** is about detecting and correcting defects — it is reactive. QC happens during or after production: inspect the output, find the defects, remove or fix them.
+**Quality Control vs Quality Assurance**
 
-**Quality Assurance (QA)** is about preventing defects — it is proactive. QA builds the system, processes, and standards so that defects are unlikely to occur in the first place. ISO 9001 is a globally recognised QA standard.
+These two terms are often confused but describe fundamentally different activities:
 
-In Big Data analytics, "quality" applies to data itself. A dataset that is accurate, complete, consistent, timely, and valid is a *high-quality* dataset. Poor data quality leads to incorrect analysis — "garbage in, garbage out."
+- **Quality Control (QC)** = detecting defects *after* they occur — inspecting the output of a process. Example: auditing 5% of processed claims for errors.
+- **Quality Assurance (QA)** = preventing defects from occurring — improving the process itself. Example: redesigning the claims intake form so required fields cannot be left blank.
+
+The key insight: QC is reactive; QA is proactive. An organisation that only does QC is paying to find problems. An organisation that invests in QA reduces the frequency of problems in the first place.
+
+**Conformance Quality vs Performance Quality**
+
+These two concepts are orthogonal. A system has:
+- **Conformance quality**: it meets its written specifications exactly.
+- **Performance quality**: those specifications are the right ones — the product actually does the job well.
+
+A claims system could conform perfectly to its spec (all fields valid, all calculations correct per the formula) while still failing to pay the right amount because the formula itself was designed incorrectly. High conformance, low performance.
+
+**ISO 9001** is an internationally recognised standard for quality management systems. It specifies requirements for consistent, customer-focused processes — documentation, management review, continual improvement. It does not prescribe specific tools but requires evidence that processes are defined and monitored.
 
 ## Example
 
-A company manufactures USB drives.
+Apply all 8 dimensions to an ETL (Extract, Transform, Load) pipeline for health insurance claims:
 
-- **Conformance quality:** each drive must store exactly 64 GB and read at ≥ 400 MB/s. Any drive below spec is a defect.
-- **Fitness for use:** the drive must be reliable enough that a user trusts it with important files. A drive that meets the speed spec but fails after 3 months has poor quality.
-- **Perceived quality:** if the packaging looks cheap, customers may rate it poorly even if it performs perfectly.
+| Dimension | ETL Pipeline Assessment |
+|---|---|
+| Performance | Correctly transforms raw claim codes to standardised ICD-10 format |
+| Features | Includes automated duplicate detection and fraud score enrichment |
+| Reliability | 99.5% uptime; fails fewer than 4 hours per month |
+| Conformance | All output records match the data contract schema |
+| Durability | Architecture supports 5× current volume without redesign |
+| Serviceability | Mean time to repair a failed job: 45 minutes |
+| Aesthetics | Monitoring dashboard shows pipeline status with clear colour coding |
+| Perceived Quality | Business analysts trust the data; no shadow datasets maintained |
 
-Which dimension matters most? It depends on the customer and context — that is exactly why all eight dimensions exist.
+Overall audit: score each dimension 1 (very poor) to 5 (excellent). A score of 3 on Reliability signals that improving uptime is the priority.
 
 ## Task
 
-Open `exercise.py`. You will find a list of eight product scenarios. For each one, identify the most relevant Garvin dimension and write your answer as a string in the provided list. Then compute a simple "quality score" for a data pipeline using the provided checklist.
-
-Run the check when done:
-`npm run check -- bdat-614 module-01 lesson-01`
+In `exercise.py`, create a Python dictionary representing a quality audit of an ETL pipeline across all 8 Garvin dimensions. Score each dimension from 1 (poor) to 5 (excellent). Compute the overall quality score as the mean. Plot a radar (spider) chart showing all 8 dimension scores.
 
 ## Check
 
@@ -55,4 +69,4 @@ npm run check -- bdat-614 module-01 lesson-01
 
 ## Reflection
 
-A data pipeline runs on time and produces results, but 5% of records contain null values that downstream models silently treat as zero. Which quality dimensions are violated, and is this a QC problem, a QA problem, or both? Explain your reasoning.
+Can a product have high conformance quality but low performance quality? Give a specific example from healthcare analytics — where a system meets every written specification yet still fails the user.

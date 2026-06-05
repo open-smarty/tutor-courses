@@ -2,167 +2,141 @@
 
 ## Goal
 
-By the end of this lesson you will be able to state the Markov property precisely, construct a transition probability matrix (TPM) from verbal descriptions of a biological system, verify that it is a stochastic matrix, and identify absorbing states.
+State and understand the Markov property precisely, explain why it is a powerful simplification, and build a clinically realistic Transition Probability Matrix for a four-state patient health model.
 
 ## Concept
 
-### Motivation: does history matter?
+### The Full Conditional and Why It Is Intractable
 
-Imagine a patient whose disease status is recorded every month. At each observation they are classified as:
+Imagine tracking a patient's health status — Healthy, Mildly Ill, Severely Ill, or Dead — each day over a two-year hospital stay (about 730 days). To predict tomorrow's state using the full history, we would in principle need to know:
+- The state on day 1, day 2, ..., day 729 (today)
+- And compute a conditional probability given all 729 observations
 
-- **State 0:** Healthy
-- **State 1:** Mildly ill
-- **State 2:** Severely ill
-- **State 3:** Deceased
+This is computationally and statistically impossible for long histories. The data requirement grows exponentially with the history length.
 
-To forecast next month's status, do we need the patient's full medical history — every state they passed through — or is knowing their status *right now* enough?
+### The Markov Postulate
 
-Here's the key insight: a Markov chain is a process where the future depends only on the present, not on how you got here. Knowing that a patient is currently "Severely ill" tells you everything there is to know about their future — it does not matter whether they were healthy last month or have been sick for years.
+The **Markov property** (or **Markov postulate**) is the simplifying assumption that slashes this complexity:
 
-That is not just a convenient modelling assumption. For many biological processes it is a reasonable approximation of reality, and it has enormous mathematical consequences: it lets us summarise an entire process with a single matrix.
+> **"The future depends ONLY on the present, not on the past."**
 
----
+Formally:
 
-### The Markov property — formal statement
+> **Notation block:**
+> - X₀, X₁, ..., Xₙ — the history of the process up to step n; read "the states at steps 0, 1, ..., n"
+> - i₀, i₁, ..., iₙ — specific values the process takes at each step; each is an element of S
+> - j — the state at step n+1 (the future)
+> - P(Xₙ₊₁ = j | X₀ = i₀, X₁ = i₁, ..., Xₙ = iₙ) — the conditional probability of the future state given the *entire* past history
 
-Let's unpack this notation before we go further.
+**Markov property:** For all n ≥ 0 and all states i₀, i₁, ..., iₙ, j ∈ S:
 
-> **Notation:** *{X(t), t ∈ T}* — a stochastic process. X(t) is the state at time t. When time is discrete we write *X_n* for the state at step n. T is the parameter space (time index set).
+$$P(X_{n+1} = j \mid X_0 = i_0, X_1 = i_1, \ldots, X_n = i_n) = P(X_{n+1} = j \mid X_n = i_n)$$
 
-**Continuous-time version.** For a process with continuous time t:
+The right-hand side conditions only on the current state Xₙ = iₙ — the entire history X₀, ..., Xₙ₋₁ drops out.
 
-$$P[X(t) \leq x \mid X(t_n) = x_n,\; X(t_{n-1}) = x_{n-1},\; \ldots,\; X(t_0) = x_0]
-= P[X(t) \leq x \mid X(t_n) = x_n]$$
+Here's the key insight: instead of tracking 729 days of history, we only need to know where the patient is *today*. The current state is a **sufficient statistic** for predicting the future — it captures all past information that is relevant to tomorrow.
 
-**Discrete-time version.** For a discrete-time chain the condition simplifies nicely:
+### What "Markov Chain" Means
 
-$$P[X_n = j \mid X_{n-1} = i_1,\; X_{n-2} = i_2,\; \ldots,\; X_0 = i_0]
-= P[X_n = j \mid X_{n-1} = i_1]$$
+A stochastic process {Xₙ : n = 0, 1, 2, ...} with discrete time, discrete state space S, and the Markov property is called a **Markov chain** (abbreviated MC). Adding time-homogeneity (Lesson 2 of Module 1) means the transition probabilities are captured by a single fixed matrix.
 
-In words: knowing the entire past $(i_0, i_1, \ldots, i_{n-1})$ adds nothing over knowing just the most recent state $i_1$. Everything about the future is encoded in where you are *now*.
+> **Notation block:**
+> - Pᵢⱼ — the (i,j) entry of the TPM; the probability of moving from state i to state j in one step
+> - P — the **Transition Probability Matrix** (TPM); a |S| × |S| matrix where P[i,j] = Pᵢⱼ
 
-> **Notation:** *P[X_n = j | X_{n-1} = i]* — the **one-step transition probability** from state i to state j. This is the probability that, if you are currently in state i, you will be in state j at the very next time step.
+For a time-homogeneous Markov chain:
 
----
+$$P_{ij} = P(X_{n+1} = j \mid X_n = i) \quad \text{for all } n \geq 0$$
 
-### The transition probability matrix (TPM)
+### Why the Markov Property Is a Strong Assumption
 
-Let's unpack this notation before we go further.
+In a biological context, the Markov property says that *knowing a patient is Severely Ill today is enough* — you get no additional predictive power from knowing that they were Mildly Ill yesterday and Healthy the day before. This may be approximately true for some diseases but not for others (e.g., diseases with long incubation periods or where prior treatment history matters). Always validate the Markov assumption in real data.
 
-> **Notation:** *P_{ij}* — the entry in row i, column j of the TPM **P**. It equals P[X_{n+1} = j | X_n = i]. The subscripts always follow the convention: *i = current state (row), j = next state (column)*.
+### Constructing a Realistic TPM: Four Clinical States
 
-The TPM **P** collects all one-step transition probabilities into a single matrix. If the state space has m states, **P** is an m × m matrix:
+Consider a patient health model with states:
+- **0 = Healthy (H):** No signs of disease
+- **1 = Mildly Ill (MI):** Symptomatic but not hospitalised
+- **2 = Severely Ill (SI):** Hospitalised
+- **3 = Dead (D):** Absorbing state
 
-$$\mathbf{P} = \begin{pmatrix} P_{00} & P_{01} & \cdots & P_{0,m-1} \\ P_{10} & P_{11} & \cdots & P_{1,m-1} \\ \vdots & \vdots & \ddots & \vdots \\ P_{m-1,0} & P_{m-1,1} & \cdots & P_{m-1,m-1} \end{pmatrix}$$
+> **Notation block:**
+> - S = {H, MI, SI, D} — the four states, numbered 0, 1, 2, 3
+> - An absorbing state is one from which escape is impossible: Pᴅᴅ = 1, Pᴅⱼ = 0 for j ≠ D
 
-**Two properties every TPM must satisfy** (it is called a *stochastic matrix*):
+We construct the TPM based on clinical reasoning:
 
-1. All entries are non-negative: $P_{ij} \geq 0$ for all i, j.
-2. Each row sums to 1: $\sum_{j} P_{ij} = 1$ for every row i.
+From **Healthy (H)**:
+- P(H→H) = 0.90: Most healthy patients remain healthy each week
+- P(H→MI) = 0.09: A small fraction become mildly ill
+- P(H→SI) = 0.01: A very small fraction are suddenly severely ill (acute event)
+- P(H→D) = 0.00: Direct death from health is negligible in this model
 
-The second property follows directly from probability: given you are in state i right now, you *must* be in *some* state next step. So the probabilities of all possible destinations sum to 1.
+From **Mildly Ill (MI)**:
+- P(MI→H) = 0.30: Recovery to healthy is common with treatment
+- P(MI→MI) = 0.50: Many stay in mild illness
+- P(MI→SI) = 0.18: Some progress to severe illness
+- P(MI→D) = 0.02: Small but non-zero mortality
 
-**A simple 2-state example.** Let the states be {0, 1}. The most general 2×2 stochastic matrix has just two free parameters:
+From **Severely Ill (SI)**:
+- P(SI→H) = 0.05: Some complete recovery (ICU discharge to home)
+- P(SI→MI) = 0.30: Partial improvement is the most common good outcome
+- P(SI→SI) = 0.50: Half remain severely ill each week
+- P(SI→D) = 0.15: 15% mortality rate from severe illness
 
-$$\mathbf{P} = \begin{pmatrix} 1-a & a \\ b & 1-b \end{pmatrix}$$
+From **Dead (D)**:
+- P(D→D) = 1.00: Death is absorbing — there is no exit
 
-where $0 \leq a \leq 1$ and $0 \leq b \leq 1$.
+The TPM is therefore:
 
-- $a = P_{01}$: the probability of *switching* from state 0 to state 1 in one step.
-- $b = P_{10}$: the probability of *switching* from state 1 to state 0 in one step.
-- The diagonal entries $1-a$ and $1-b$ are the probabilities of *staying* in the current state.
+$$P = \begin{pmatrix} 0.90 & 0.09 & 0.01 & 0.00 \\ 0.30 & 0.50 & 0.18 & 0.02 \\ 0.05 & 0.30 & 0.50 & 0.15 \\ 0.00 & 0.00 & 0.00 & 1.00 \end{pmatrix}$$
 
----
+Rows: H, MI, SI, D. Columns: H, MI, SI, D.
 
-### Time-homogeneity
+**Verify the absorbing state.** Row 4 (Dead): (0, 0, 0, 1). The row sums to 1 with all probability on D. Once dead, the process stays in D forever. This is the mathematical definition of an absorbing state.
 
-Most of this course assumes a **time-homogeneous** chain:
+**Verify row sums:**
+- Row H: 0.90 + 0.09 + 0.01 + 0.00 = 1.00 ✓
+- Row MI: 0.30 + 0.50 + 0.18 + 0.02 = 1.00 ✓
+- Row SI: 0.05 + 0.30 + 0.50 + 0.15 = 1.00 ✓
+- Row D: 0.00 + 0.00 + 0.00 + 1.00 = 1.00 ✓
 
-> **Notation:** *P_{ij}^{(t)} = P_{ij} for all t ∈ T* — the transition probabilities do not depend on *when* you make the transition. The superscript (t) is dropped because the matrix is the same at every time step.
+### The markovchain Package
 
-Biologically, this means the switching rates between states are constant over time. A disease model might be time-homogeneous over a short period (say, a single treatment phase) but not over years if the patient ages.
+In R, the `markovchain` package provides the `markovchain` S4 class to represent and manipulate Markov chains. Key functions:
 
----
-
-### Worked example: a 3-state health model
-
-Consider a model with three states:
-
-- **0 = Healthy**
-- **1 = Sick**
-- **2 = Dead** *(an absorbing state)*
-
-The TPM is:
-
-$$\mathbf{P} = \begin{pmatrix} 0.7 & 0.2 & 0.1 \\ 0.1 & 0.5 & 0.4 \\ 0 & 0 & 1 \end{pmatrix}$$
-
-Let's verify it's a stochastic matrix:
-
-- Row 0: $0.7 + 0.2 + 0.1 = 1.0$ ✓
-- Row 1: $0.1 + 0.5 + 0.4 = 1.0$ ✓
-- Row 2: $0 + 0 + 1 = 1.0$ ✓
-
-Now let's interpret each entry:
-
-| Entry | Value | Meaning |
-|---|---|---|
-| $P_{00} = 0.7$ | 70% | A healthy person stays healthy next month |
-| $P_{01} = 0.2$ | 20% | A healthy person becomes sick next month |
-| $P_{02} = 0.1$ | 10% | A healthy person dies next month (sudden death) |
-| $P_{10} = 0.1$ | 10% | A sick person recovers to healthy |
-| $P_{11} = 0.5$ | 50% | A sick person stays sick |
-| $P_{12} = 0.4$ | 40% | A sick person dies next month |
-| $P_{20} = 0$ | 0% | A dead person cannot become healthy |
-| $P_{21} = 0$ | 0% | A dead person cannot become sick |
-| $P_{22} = 1$ | 100% | A dead person stays dead |
-
----
-
-### Absorbing states
-
-Here's the key insight: **state 2 (Dead)** is special. Once you enter it, you never leave. This is called an **absorbing state**.
-
-> **Notation:** *State i is absorbing* if $P_{ii} = 1$, equivalently $P_{ij} = 0$ for all $j \neq i$. The entire row of state i in the TPM is zero except the diagonal entry, which equals 1.
-
-Biological examples of absorbing states:
-
-- **Death** (as above) — once dead, always dead.
-- **Complete remission** in some cancer models, if relapse is defined as impossible after a certain duration.
-- **Fixation** in population genetics — once an allele fixes at frequency 1 (or 0), drift cannot change it.
-
-In the TPM, absorbing states are easy to spot: their row is all zeros except a single 1 on the diagonal.
-
----
+- `new("markovchain", states=..., byrow=TRUE, transitionMatrix=..., name=...)` — create a chain
+- `markovchainSequence(n, markovchain, t0)` — simulate a trajectory of n steps starting from state t0
+- `steadyStates(mc)` — compute the stationary distribution (we prove this in Lesson 2)
+- `is.irreducible(mc)` — check if all states communicate (Lesson 3)
 
 ## Example
 
-### Reading a TPM from a diagram
+**Simulating a patient trajectory under the four-state model.**
 
-Suppose a diagram shows three states {A, B, C} with arrows labelled by probabilities:
+We use the TPM P above. Start with a cohort of patients, all initially Healthy. We want to know: what is the probability distribution over states after 10 weeks?
 
-- From A: 60% stay A, 30% go to B, 10% go to C
-- From B: 20% go to A, 50% stay B, 30% go to C
-- From C: 0% anywhere except C (100% stay C)
+Using matrix multiplication:
 
-The TPM is:
+$$\pi_{10} = \pi_0 \cdot P^{10}$$
 
-$$\mathbf{P} = \begin{pmatrix} 0.6 & 0.3 & 0.1 \\ 0.2 & 0.5 & 0.3 \\ 0 & 0 & 1 \end{pmatrix}$$
+where π₀ = (1, 0, 0, 0) (all Healthy at week 0).
 
-Row sums: all equal 1. State C is absorbing.
+The result P^10 can be computed in R. Here's the key insight about the Dead absorbing state: P^10[H, D] tells us the probability that a patient who was Healthy at week 0 is Dead by week 10. Even with only 0.01 probability of H→SI and 0.15 probability of SI→D, over 10 weeks the cumulative probability of death is non-trivial — this is why chronic disease models must be run over long time horizons.
 
-Notice the *asymmetry*: $P_{AB} = 0.3$ does not have to equal $P_{BA} = 0.2$. Each row must sum to 1, but there is no constraint relating rows to each other.
+**Checking for the absorbing state structure.** An absorbing state satisfies Pᵢᵢ = 1. In R:
+```r
+diag(P)["D"]  # should equal 1
+```
 
----
+And all off-diagonal entries in row D should be 0:
+```r
+P["D", c("H", "MI", "SI")]  # should be (0, 0, 0)
+```
 
 ## Task
 
-Open `exercise.R`. You will use the `markovchain` package to build the 3-state health model, visualise its transition diagram, compute multi-step probabilities by matrix exponentiation, and simulate patient trajectories.
-
-Run the check when done:
-
-```
-npm run check -- bdat-624 module-02 lesson-01
-```
+See `exercise.R`. You will define the four-state clinical Markov chain using the `markovchain` package, simulate a 100-step trajectory starting from Healthy, plot the trajectory, and verify the absorbing state structure.
 
 ## Check
 
@@ -172,4 +146,4 @@ npm run check -- bdat-624 module-02 lesson-01
 
 ## Reflection
 
-A colleague proposes a 3-state disease model where the TPM has $P_{02} = 0$ (healthy patients cannot die suddenly — they must pass through the sick state first). Is this a restriction on the *mathematics* or on the *biology*? Could you have a mathematically valid stochastic matrix with this constraint? What biological evidence would you need to justify or reject it for a specific disease?
+The Markov property assumes the current state is all you need to predict the future. In the four-state clinical model, the "Mildly Ill" state aggregates patients who have been mildly ill for 1 day versus those mildly ill for 6 months. In practice, duration of illness often predicts outcome better than the current severity category alone. This is called **duration dependence**. How could you modify the state space to partially capture duration without abandoning the Markov structure? (Hint: consider expanding MI into MI-short and MI-long.) What is the trade-off of this expansion in terms of data requirements for estimating the TPM?

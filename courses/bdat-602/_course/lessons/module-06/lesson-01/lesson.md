@@ -1,142 +1,99 @@
-# Lesson 1: Tokenisation and TF-IDF
+# Lesson 13: Tokenisation and TF-IDF
 
 ## Goal
 
-Tokenise the `complaint_notes` free-text column, remove stop words, compute term frequency–inverse document frequency (TF-IDF), and identify the most discriminating words per plan tier.
+After this lesson you can tokenise the insurance complaint notes, remove stop words, compute TF-IDF scores, build a document-term matrix, and identify the most discriminating terms for each complaint category.
 
 ## Concept
 
-### Text as Data
+### From text to numbers: the challenge
 
-Unstructured text cannot be fed directly into statistical algorithms. The standard pipeline:
-
-```
-Raw text → Tokenise → Remove stop words → Stem/Lemmatise
-        → Document-Term Matrix (DTM) → TF-IDF weights → Model
-```
-
----
+Machine learning algorithms expect numeric input. Text is unstructured — a sequence of characters with no natural numeric representation. The first step is to convert text into a matrix of numbers. Two decisions drive this: (1) what is a token? (2) how do we weight each token?
 
 ### Tokenisation
 
-A **token** is the basic unit of text. For word-level analysis a token is a single word. The `tidytext` package implements tidy tokenisation:
+A **token** is the unit of analysis in text mining. Common choices:
+- **Words (unigrams)**: "claim", "denied", "billing" — most common, simple to interpret.
+- **Bigrams**: pairs of adjacent words — "claim denied", "not covered". Bigrams capture negations ("not good" vs. "good") that unigrams miss.
+- **Sentences**: useful when document boundaries matter.
 
-```r
-library(tidytext)
-library(dplyr)
-source("R/simulate_bdat602_data.R")
+In `tidytext`: `unnest_tokens(word, complaint_notes)` splits each complaint into one row per word (unigram). For bigrams: `unnest_tokens(bigram, complaint_notes, token = "ngrams", n = 2)`.
 
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+### Stop word removal
 
-# Keep only rows with complaint notes; add a row ID
-complaints <- health_small |>
-  filter(!is.na(complaint_notes)) |>
-  mutate(doc_id = row_number()) |>
-  select(doc_id, complaint_notes, plan_tier, churned)
+Stop words are extremely common, non-discriminating words: "the", "a", "is", "I", "and". They appear in virtually every document and add noise. Remove them with `anti_join(stop_words)` where `stop_words` is a built-in `tidytext` lexicon.
 
-# Tokenise: one row per word
-tokens <- complaints |>
-  unnest_tokens(word, complaint_notes)
+### Term Frequency (TF)
 
-head(tokens, 10)
-nrow(tokens)   # ~90,000 tokens from 9,000 complaints
-```
+For term $t$ in document $d$:
 
----
+$$\text{tf}(t, d) = \frac{\text{count}(t, d)}{\sum_{t'} \text{count}(t', d)}$$
 
-### Stop Word Removal and Word Counts
+This is the proportion of document $d$'s words that are the term $t$. Normalising by document length prevents long documents from dominating.
 
-Stop words (the, and, is, …) are frequent but carry no meaning:
+**Numeric example**: a complaint of 20 words contains the word "billing" twice. $\text{tf}(\text{billing}, d) = 2/20 = 0.10$.
 
-```r
-data("stop_words")
+### Inverse Document Frequency (IDF)
 
-tokens_clean <- tokens |>
-  anti_join(stop_words, by = "word") |>
-  filter(nchar(word) > 2)   # drop very short tokens
+A term that appears in almost every document (e.g., "insurance") is uninformative — it does not distinguish one document type from another. IDF downweights such terms:
 
-# Top 20 most frequent words
-tokens_clean |>
-  count(word, sort = TRUE) |>
-  slice_head(n = 20) |>
-  ggplot(aes(x = reorder(word, n), y = n)) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +
-  labs(title = "Top 20 Words in Complaint Notes",
-       x = NULL, y = "Count") +
-  theme_minimal()
-```
+$$\text{idf}(t) = \log\!\left(\frac{N}{\text{df}(t)}\right)$$
 
----
+where $N$ = total number of documents and $\text{df}(t)$ = number of documents containing $t$.
+
+**Numeric example**: $N = 500{,}000$ complaints. "Insurance" appears in 480,000 documents: $\text{idf}(\text{insurance}) = \log(500000/480000) = \log(1.042) \approx 0.041$ — very low. "Reimbursed" appears in 12,000 documents: $\text{idf}(\text{reimbursed}) = \log(500000/12000) \approx 3.73$ — much higher.
+
+**Why log?** Without the log, $N/\text{df}(t)$ grows without bound and overwhelms TF. The log compresses the range. It also means that doubling the corpus size only adds a constant $\log(2)$ to every IDF — the relative ordering of terms is preserved.
 
 ### TF-IDF
 
-**Term Frequency (TF):** how often a word appears in a document.
-**Inverse Document Frequency (IDF):** penalises words that appear in many documents (less discriminating).
+$$\text{tf-idf}(t, d) = \text{tf}(t, d) \times \text{idf}(t)$$
 
-$$\text{TF-IDF}(w, d) = \text{TF}(w, d) \times \log\frac{N}{\text{DF}(w)}$$
+A term gets a high TF-IDF score if it appears often in this document (high TF) but rarely across all documents (high IDF). It is the "fingerprint" of a document — the terms that make this document unique.
 
-where $N$ is the number of documents and $\text{DF}(w)$ is the number of documents containing word $w$.
+### The document-term matrix (DTM)
 
-Words with high TF-IDF are frequent in a specific document group but rare across others — they are **discriminating**.
+Rows = documents. Columns = unique terms. Entry $(d, t)$ = tf-idf$(t, d)$. This matrix is very sparse (most terms appear in few documents). In `tidytext`, you work with the long form and convert with `cast_dtm()`.
+
+### tidytext workflow
 
 ```r
-# Compute TF-IDF per plan tier
-tfidf_tier <- tokens_clean |>
-  count(plan_tier, word) |>
-  bind_tf_idf(term = word, document = plan_tier, n = n) |>
-  arrange(desc(tf_idf))
+library(tidytext)
 
-# Top 5 discriminating words per plan tier
-tfidf_tier |>
-  group_by(plan_tier) |>
-  slice_max(tf_idf, n = 5) |>
-  ungroup() |>
-  ggplot(aes(x = reorder(word, tf_idf), y = tf_idf,
-             fill = plan_tier)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ plan_tier, scales = "free_y") +
-  coord_flip() +
-  labs(title = "Top TF-IDF Words by Plan Tier",
-       x = NULL, y = "TF-IDF") +
-  theme_minimal()
+tfidf_df <- health_data |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = row_number()) |>
+  unnest_tokens(word, complaint_notes) |>       # tokenise
+  anti_join(stop_words, by = "word") |          # remove stop words
+  count(doc_id, word) |>                        # term frequency counts
+  bind_tf_idf(word, doc_id, n)                  # compute tf, idf, tf_idf
 ```
 
----
+`bind_tf_idf()` adds columns `tf`, `idf`, and `tf_idf` to your word-count data frame.
 
-### Document-Term Matrix
+### Top terms per complaint category
 
-For algorithms that require a matrix format, convert the tidy token table to a sparse DTM:
+If documents are labelled by category (e.g., billing, claims, coverage, service), group them and find the top TF-IDF terms:
 
 ```r
-dtm <- tokens_clean |>
-  count(doc_id, word) |>
-  cast_dtm(document = doc_id, term = word, value = n)
-
-dim(dtm)   # documents × terms
+tfidf_df |>
+  group_by(category, word) |>
+  summarise(mean_tfidf = mean(tf_idf)) |>
+  slice_max(mean_tfidf, n = 10) |>
+  ungroup() |>
+  ggplot(aes(x = reorder_within(word, mean_tfidf, category), y = mean_tfidf, fill = category)) +
+  geom_col() + facet_wrap(~category, scales = "free") +
+  scale_x_reordered() +
+  coord_flip() + theme_minimal()
 ```
 
 ## Example
 
-```r
-# Words that appear only in Bronze complaints
-bronze_words <- tokens_clean |>
-  count(plan_tier, word) |>
-  tidyr::pivot_wider(names_from = plan_tier, values_from = n,
-                     values_fill = 0) |>
-  filter(Bronze > 0 & Gold == 0 & Silver == 0 & Platinum == 0) |>
-  arrange(desc(Bronze))
-```
+Full worked example is in `solution.Rmd`. It processes the `complaint_notes` column, builds TF-IDF scores, and identifies the top discriminating words for each complaint template category.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Tokenise `complaint_notes`, remove stop words, and count the top 10 words.
-2. Compute TF-IDF with `plan_tier` as the grouping document. Show the top 3 words per tier.
-3. Create a DTM. Report its dimensions.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) tokenise the complaint notes and count word frequencies; (2) remove stop words and identify the top 20 most common words; (3) compute TF-IDF with `bind_tf_idf()`; (4) visualise the top 10 TF-IDF words per complaint category.
 
 ## Check
 
@@ -146,4 +103,4 @@ npm run check -- bdat-602 module-06 lesson-01
 
 ## Reflection
 
-In the TF-IDF result, the word "claim" appears in the top words for several plan tiers with similar TF-IDF scores. Explain why this reduces its discriminating power, and suggest a preprocessing step that might make the term more informative.
+TF-IDF treats each document independently and ignores word order. A complaint saying "not satisfied" and one saying "satisfied" would share the token "satisfied" and get similar TF-IDF scores for that term. What text mining technique would capture this difference, and what are the trade-offs of using it?

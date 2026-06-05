@@ -1,144 +1,87 @@
-# Lesson 1: Decision Trees and Random Forests
+# Lesson 11: Decision Trees and Random Forests
 
 ## Goal
 
-Build a decision tree classifier with `rpart`, interpret splitting rules and variable importance, reduce overfitting by pruning, and upgrade to a random forest for improved accuracy.
+After this lesson you can build and prune a decision tree, construct a random forest, evaluate both with confusion matrices and ROC-AUC, and interpret variable importance plots.
 
 ## Concept
 
-### Decision Trees
+### Decision trees
 
-A decision tree partitions the feature space by recursively splitting on the variable and threshold that best separates the classes. Each internal node asks a yes/no question; each leaf predicts a class.
+A decision tree recursively partitions the feature space into rectangular regions. At each internal node, the algorithm chooses the split (variable + threshold) that maximises the reduction in node impurity.
 
-**Splitting criterion:** Gini impurity (default in `rpart`):
+**Gini impurity** at node $t$ with class proportions $p_1, p_2, \ldots, p_C$:
 
-$$\text{Gini}(t) = 1 - \sum_{k} p_k^2$$
+$$G(t) = 1 - \sum_{c=1}^{C} p_c^2$$
 
-where $p_k$ is the proportion of class $k$ in node $t$. A pure node has Gini = 0.
+For a binary problem, $G(t)$ ranges from 0 (pure: all one class) to 0.5 (50/50 split). The **information gain** from a split at node $t$ into left child $L$ and right child $R$ is:
 
-**Advantages:** interpretable, handles mixed types, no scaling needed.
-**Disadvantage:** high variance — small data changes produce very different trees (overfitting).
+$$\Delta G = G(t) - \frac{n_L}{n} G(L) - \frac{n_R}{n} G(R)$$
 
----
+The algorithm tries every variable and every threshold, and greedily selects the split with the largest $\Delta G$.
 
-### Fitting a Decision Tree
+**Numeric example**: at a node with 100 observations, 60 non-churners and 40 churners:
+- $G(\text{parent}) = 1 - (0.6^2 + 0.4^2) = 1 - (0.36 + 0.16) = 0.48$
+- Split on `plan_tier = "Bronze"` sends 55 non-churners + 20 churners to left (n=75), 5 + 20 to right (n=25).
+- $G(L) = 1 - (55/75)^2 - (20/75)^2 = 1 - 0.537 - 0.071 = 0.392$
+- $G(R) = 1 - (5/25)^2 - (20/25)^2 = 1 - 0.04 - 0.64 = 0.32$
+- $\Delta G = 0.48 - (75/100)(0.392) - (25/100)(0.32) = 0.48 - 0.294 - 0.08 = 0.106$
+
+**Pruning with cp**: trees that grow too deep overfit. In `rpart`, the complexity parameter `cp` penalises model size. The tree is pruned back if adding a split increases complexity cost by more than `cp × root RSS`. Use cross-validation (`plotcp()`) to select the optimal `cp`.
 
 ```r
 library(rpart)
 library(rpart.plot)
-library(dplyr)
-source("R/simulate_bdat602_data.R")
-
-health_small <- simulate_bdat602(n = 10000, seed = 602)
-
-# Train/test split
-set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
-
-# Fit tree to predict churn
-tree_fit <- rpart(
-  churned ~ age + bmi + income + plan_tier + num_claims +
-    claim_amount + support_calls + customer_rating + auto_pay,
-  data    = train,
-  method  = "class",
-  control = rpart.control(maxdepth = 5, minsplit = 50)
-)
-
-rpart.plot(tree_fit, type = 4, extra = 104,
-           main = "Decision Tree: Churn Prediction")
+tree <- rpart(churned ~ age + plan_tier + income + num_claims + support_calls,
+              data = train, method = "class", cp = 0.005)
+rpart.plot(tree, type = 4, extra = 104)
 ```
 
----
+### Random forests
 
-### Model Evaluation
+A single decision tree is high-variance: small changes in the training data produce very different trees. Random forests reduce variance by averaging many de-correlated trees.
 
-```r
-# Predictions on test set
-pred_class <- predict(tree_fit, test, type = "class")
-pred_prob  <- predict(tree_fit, test, type = "prob")[, "1"]
+**Algorithm**:
+1. Draw $B$ bootstrap samples (sampling with replacement) from the training data. Each sample is about $n$ rows, but ~37% of observations are omitted (the out-of-bag or OOB sample).
+2. On each bootstrap sample, grow a decision tree. **At each node**, consider only $m = \lfloor\sqrt{p}\rfloor$ randomly chosen features (for classification).
+3. To predict, average the $B$ tree predictions (or take the majority vote for classification).
 
-# Confusion matrix
-conf_mat <- table(Predicted = pred_class, Actual = test$churned)
-print(conf_mat)
+**Why do two tricks help?**
+- *Bagging* (bootstrap aggregation): averaging $B$ unbiased predictors reduces variance by $1/B$.
+- *Random feature selection*: if one feature dominates, all trees would use it at the first split — making them highly correlated. Randomly restricting the feature set decorrelates the trees, so averaging them provides more variance reduction than averaging correlated trees.
 
-# Accuracy, precision, recall
-TP  <- conf_mat["1", "1"];  FP <- conf_mat["1", "0"]
-TN  <- conf_mat["0", "0"];  FN <- conf_mat["0", "1"]
-acc <- (TP + TN) / sum(conf_mat)
-pre <- TP / (TP + FP)
-rec <- TP / (TP + FN)
+**Variable importance**: for each variable, measure the total reduction in node impurity across all splits on that variable, averaged over all $B$ trees. Higher = more important.
 
-cat("Accuracy: ", round(acc, 3), "\n")
-cat("Precision:", round(pre, 3), "\n")
-cat("Recall:   ", round(rec, 3), "\n")
-```
+**OOB error**: for each tree, the ~37% of observations not in the bootstrap sample (OOB observations) can be used to evaluate the tree without a separate validation set. Average the OOB predictions across all trees to get the OOB error rate — a nearly unbiased estimate of test error.
 
----
+### Evaluation metrics
 
-### Pruning to Reduce Overfitting
-
-The `cp` (complexity parameter) penalises large trees. Find the optimal `cp` using the 1-SE rule on the cross-validation error:
-
-```r
-printcp(tree_fit)
-plotcp(tree_fit)
-
-# Prune to the cp with lowest cross-validated error + 1 SE
-opt_cp  <- tree_fit$cptable[which.min(tree_fit$cptable[, "xerror"]), "CP"]
-tree_pruned <- prune(tree_fit, cp = opt_cp)
-rpart.plot(tree_pruned, type = 4, extra = 104,
-           main = "Pruned Tree: Churn Prediction")
-```
-
----
-
-### Random Forests
-
-A random forest trains many trees on bootstrap samples, each using a random subset of variables at each split. Predictions are aggregated by majority vote. This reduces variance dramatically.
+| Metric | Formula | When to use |
+|---|---|---|
+| Accuracy | $(TP+TN)/(TP+TN+FP+FN)$ | Balanced classes |
+| Precision | $TP/(TP+FP)$ | Cost of false alarms is high |
+| Recall (Sensitivity) | $TP/(TP+FN)$ | Cost of missed positives is high |
+| F1 | $2 \times P \times R / (P + R)$ | Imbalanced classes |
+| ROC-AUC | Area under sensitivity vs. 1-specificity | Overall discriminative ability |
 
 ```r
 library(randomForest)
+library(pROC)
 
-set.seed(602)
-rf_fit <- randomForest(
-  as.factor(churned) ~ age + bmi + income + plan_tier +
-    num_claims + claim_amount + support_calls +
-    customer_rating + auto_pay,
-  data       = train,
-  ntree      = 300,
-  mtry       = 3,     # variables per split ≈ √p
-  importance = TRUE
-)
-
-print(rf_fit)
-
-# Variable importance
-varImpPlot(rf_fit, main = "Random Forest Variable Importance")
+rf <- randomForest(factor(churned) ~ age + plan_tier + income + num_claims + support_calls,
+                   data = train, ntree = 200, mtry = 2, importance = TRUE)
+varImpPlot(rf)
+pred_prob <- predict(rf, test, type = "prob")[, 2]
+roc(test$churned, pred_prob, plot = TRUE)
 ```
-
-OOB (out-of-bag) error is an unbiased estimate of test error — no separate validation set needed.
 
 ## Example
 
-```r
-# Test-set accuracy for random forest
-rf_pred <- predict(rf_fit, test)
-mean(rf_pred == as.factor(test$churned))
-```
-
-Random forests typically achieve 5–10 percentage points higher accuracy than a single pruned tree.
+Full worked example in `solution.Rmd` trains both a decision tree and a random forest on the insurance dataset, tunes the tree with `plotcp()`, evaluates both with confusion matrix and ROC-AUC, and plots variable importance.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Fit a decision tree (`rpart`) to predict `high_risk` using `age`, `bmi`, `smoker`, `num_chronic_conditions`, and `plan_tier`. Plot it with `rpart.plot()`.
-2. Compute the confusion matrix on the test set and report accuracy.
-3. Fit a random forest with `ntree = 200`, `mtry = 2`. Plot variable importance.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) train a decision tree on `churned` and plot it; (2) tune `cp` using `plotcp()`; (3) train a random forest with `ntree = 200`, plot variable importance; (4) compare decision tree vs. random forest on ROC-AUC and F1 score.
 
 ## Check
 
@@ -148,4 +91,4 @@ npm run check -- bdat-602 module-05 lesson-01
 
 ## Reflection
 
-A random forest achieves 94% accuracy on the `high_risk` target. Is this a meaningful performance result? Examine how `high_risk` is defined in `simulate_bdat602_data.R` and explain why accuracy alone may be misleading here.
+Random forests cannot be directly visualised as trees. How would you explain a random forest prediction to a non-technical insurance underwriter who needs to understand *why* a customer was flagged as high-risk?

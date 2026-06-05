@@ -6,55 +6,61 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A filling machine consistently produces volumes between 498 ml and 502 ml with no identifiable cause. This is an example of:",
+      "text": "A process is said to be 'in statistical control' when:",
       "options": [
-        "Special-cause variation",
-        "Common-cause variation",
-        "Measurement error",
-        "Environmental variation"
+        "Only common-cause variation is present",
+        "No variation of any kind is present",
+        "All measurements fall within specification limits",
+        "Special-cause variation is less than 5% of total variation"
       ],
-      "correct": 1,
-      "explanation": "Variation that is always present, due to many small unknown factors, and predictable is common-cause variation. The process is 'in control' — no single cause can be identified."
+      "correct": 0,
+      "explanation": "Statistical control means the process is stable and predictable — only common-cause (random, inherent) variation is present. Specification limits are a separate concept from control limits."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "An API suddenly starts returning error codes because a cloud provider updated their authentication method. Which 6M category caused this variation?",
+      "text": "Which of the 6M categories best describes a root cause of 'incorrect SQL query algorithm deployed to production'?",
       "options": [
+        "Method",
         "Machine",
-        "Environment",
         "Material",
-        "Man"
+        "Mother Nature"
       ],
-      "correct": 1,
-      "explanation": "The cloud provider's change is an external Environmental factor. The change happened outside the team's direct control and altered the operating conditions of the process."
+      "correct": 0,
+      "explanation": "Method covers procedures, algorithms, and how work is done. A wrong query algorithm is a Method issue — the process of doing the work was incorrect."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "Special-cause variation can be reduced by changing the fundamental design of the process.",
-      "correct": false,
-      "explanation": "Special-cause variation is eliminated by identifying and removing the specific assignable cause. Changing the fundamental process design addresses common-cause variation, which is a management-level decision."
+      "type": "multiple-choice",
+      "text": "A run chart shows 9 consecutive data points all above the historical median. This is best interpreted as:",
+      "options": [
+        "A process shift — likely a special cause",
+        "Normal common-cause variation",
+        "Evidence that the median was computed incorrectly",
+        "Insufficient data to draw any conclusion"
+      ],
+      "correct": 0,
+      "explanation": "8 or more consecutive points on the same side of the median is a standard run chart signal for a process shift — the probability of this occurring by chance from a stable process is very low."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The 5 Whys technique is used to:",
+      "text": "A data engineer notices that ETL batch runtimes have been gradually increasing for 7 consecutive days. In run chart terms, this pattern is called a:",
       "options": [
-        "Calculate control chart limits",
-        "Trace a defect back to its root cause",
-        "Rank defect types by frequency",
-        "Estimate process capability"
+        "Trend",
+        "Shift",
+        "Cycle",
+        "Outlier"
       ],
-      "correct": 1,
-      "explanation": "The 5 Whys is a root-cause analysis technique. By repeatedly asking 'why?' you move past symptoms to the underlying root cause of a problem."
+      "correct": 0,
+      "explanation": "A trend is 6 or more consecutive points steadily moving in one direction (all increasing or all decreasing). This suggests a gradual drift in the process — perhaps accumulating data volume or slow memory leak."
     },
     {
       "id": "q5",
       "type": "true-false",
-      "text": "In a Big Data pipeline, corrupted records arriving from an upstream source would be classified as a 'Material' variation in the 6M framework.",
-      "correct": true,
-      "explanation": "In the 6M framework, 'Material' refers to the inputs to the process — in a data pipeline, this is the data itself. Corrupted or poor-quality input data is a Material variation source."
+      "text": "Treating common-cause variation as if it were special-cause variation and making adjustments will typically reduce process variation.",
+      "correct": false,
+      "explanation": "Adjusting a stable process in response to what is actually random noise is called 'over-adjustment' or 'tampering.' It adds extra variation on top of the existing natural variation, making the process worse — not better. This is Deming's funnel experiment result."
     }
   ]
 }

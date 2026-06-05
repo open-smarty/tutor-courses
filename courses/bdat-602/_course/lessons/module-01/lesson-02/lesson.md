@@ -2,146 +2,88 @@
 
 ## Goal
 
-Describe the six phases of CRISP-DM and explain how they differ from the linear KDD process. Load the course dataset from CSV using `readr` and `data.table`, perform first exploratory visualisations, and run an automated EDA report with `DataExplorer`.
+After this lesson you can apply the six CRISP-DM phases to a real insurance analytics project, generate and describe the course dataset, and connect a local R session to Apache Spark using `sparklyr`.
 
 ## Concept
 
-### CRISP-DM: Industry Standard for Mining Projects
+### CRISP-DM: the project lifecycle
 
-**CRISP-DM** (Cross-Industry Standard Process for Data Mining) operationalises KDD for industry projects. It adds *Business Understanding* and *Deployment* phases and emphasises that the process is **cyclical** — evaluation findings loop back to earlier phases.
+CRISP-DM (Cross-Industry Standard Process for Data Mining) is a vendor-neutral, iterative framework that organises a data mining project into six phases. Unlike the KDD process (which focuses on the technical pipeline), CRISP-DM also covers the business and deployment context.
 
-```
-Business Understanding
-        ↓
-Data Understanding  ←──────────────────────┐
-        ↓                                  │
-Data Preparation                           │
-        ↓                                  │
-   Modelling                               │
-        ↓                                  │
-   Evaluation ─────────────────────────────┘
-        ↓
-  Deployment
-```
+**Phase 1 — Business Understanding**
+Define what you want to achieve *in business terms*, then translate that into a data mining objective. Example: the insurance company wants to reduce churn. Business goal: "retain 10% more Gold-tier policyholders over the next year." Mining objective: "build a classifier that predicts churn 60 days before renewal with recall ≥ 0.70."
 
-| Phase | Key questions |
-|-------|--------------|
-| **Business Understanding** | What problem are we solving? What does success look like? |
-| **Data Understanding** | What data do we have? What are its quality issues? |
-| **Data Preparation** | How do we clean, transform, and engineer features? |
-| **Modelling** | Which algorithm? Which hyperparameters? |
-| **Evaluation** | Does the model meet business goals? Is the performance acceptable? |
-| **Deployment** | How do we deliver the model to users or systems? |
+**Phase 2 — Data Understanding**
+Collect initial data, explore it, and assess its quality. You answer: What variables do we have? Are they reliable? What patterns are immediately visible? Tools: `skim()`, `naniar::vis_miss()`, `ggplot2` histograms. At this stage you are not yet cleaning — you are *diagnosing*.
 
-CRISP-DM vs KDD:
+**Phase 3 — Data Preparation**
+Transform raw data into the analysis-ready form the modelling step needs. This is the most time-consuming phase in practice (often 60–70% of total project time). It includes selecting rows and columns, handling missing values, treating outliers, encoding categoricals, and engineering new features.
 
-| Aspect | KDD | CRISP-DM |
-|--------|-----|---------|
-| Starting point | Raw data | Business problem |
-| End point | Knowledge | Deployed solution |
-| Process shape | Linear (mostly) | Cyclical (explicitly) |
-| Iteration | Implied | Explicitly modelled |
+**Phase 4 — Modelling**
+Apply one or more algorithms. In CRISP-DM you often try several model families (logistic regression, random forest, gradient boosting) and tune hyperparameters. Output: a trained model and its performance on a validation set.
 
----
+**Phase 5 — Evaluation**
+Assess whether the model meets the business goal defined in Phase 1. Accuracy on a test set is necessary but not sufficient — a 99%-accurate fraud model that catches 0 fraudulent claims fails the business goal. Decide here whether to deploy or loop back.
 
-### Reading Data from CSV
+**Phase 6 — Deployment**
+Put the model into production: a batch scoring pipeline, a REST API, or a dashboard. This phase is often outside a data scientist's core skills but must be planned for from the start.
 
-In practice you read data from flat files rather than generating it. Two main functions:
+*CRISP-DM is circular, not linear.* After deployment, new data arrives, model performance drifts, and you loop back to Phase 1 or 2.
+
+### The course dataset: `simulate_bdat602()`
+
+Rather than using a real insurer's proprietary data (which cannot be shared), we use a carefully simulated dataset that mimics a real global health insurance portfolio.
 
 ```r
-# readr — tidyverse, auto-detects types
-library(readr)
-df_readr <- read_csv("data/raw/health_insurance_small.csv")
-
-# data.table — maximum speed on large files
-library(data.table)
-df_dt <- fread("data/raw/health_insurance_small.csv")
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-Key `read_csv()` arguments:
-- `col_types` — override inferred types
-- `na` — additional strings to treat as NA (e.g. `na = c("", "NA", "N/A", "Unknown")`)
-- `n_max` — read only the first n rows (useful for inspecting large files)
+Key properties:
+- **500,000 rows**, one per policy-record. ~70% of policyholders have multiple records.
+- **40 columns**: 4 identifiers, 7 demographics, 8 policy details, 4 medical usage, 5 claims history, 1 fraud flag, 5 customer behaviour, 1 free-text, 3 targets.
+- **Targets**: `churned` (binary), `high_risk` (binary), `claim_amount` (continuous).
+- **Intentional quality issues**: ~5% missing BMI, ~4% missing income, ~10% missing complaint notes, injected outliers in BMI and income.
 
----
+### Spark with sparklyr (introduction)
 
-### First Exploratory Visualisations
+When data exceeds available RAM, we move computation to Apache Spark. `sparklyr` provides a dplyr-compatible interface to Spark from R.
 
-```r
-library(ggplot2)
-library(dplyr)
+```{r spark-connect, eval=FALSE}
+library(sparklyr)
 
-# Distribution of claim amounts (right-skewed)
-ggplot(health_small |> filter(claim_amount > 0),
-       aes(x = claim_amount)) +
-  geom_histogram(bins = 60, fill = "steelblue", colour = "white") +
-  scale_x_log10(labels = scales::comma) +
-  labs(title = "Distribution of Claim Amounts (log scale)",
-       x = "Claim Amount (USD, log scale)", y = "Count") +
-  theme_minimal()
+# Connect to a local Spark instance (uses all available CPU cores)
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
 
-# Claim amount by plan tier
-ggplot(health_small |> filter(claim_amount > 0),
-       aes(x = plan_tier, y = claim_amount, fill = plan_tier)) +
-  geom_boxplot(outlier.alpha = 0.2) +
-  scale_y_log10(labels = scales::comma) +
-  labs(title = "Claim Amount by Plan Tier", x = NULL) +
-  theme_minimal() +
-  theme(legend.position = "none")
+# Push the R data frame into Spark memory
+health_tbl <- copy_to(sc, health_data, name = "health_insurance", overwrite = TRUE)
+
+# All dplyr verbs work on health_tbl — they translate to Spark SQL
+health_tbl |> count(plan_tier) |> collect()
+
+spark_disconnect(sc)
 ```
 
-Higher plan tiers show higher median claims — both because Platinum attracts higher-risk enrollees and because higher coverage incentivises larger claims.
-
----
-
-### Automated EDA with DataExplorer
-
-`DataExplorer::create_report()` generates a complete HTML EDA report in one call — missing value profiles, distributions, correlations, and QQ plots.
-
-```r
-library(DataExplorer)
-
-# Quick visual summaries
-plot_missing(health_small)       # missing value map
-plot_histogram(health_small)     # continuous distributions
-plot_correlation(               # correlation heatmap
-  health_small |>
-    select(age, bmi, income, premium, claim_amount,
-           num_claims, num_chronic_conditions),
-  title = "Correlation Matrix: Key Numeric Variables"
-)
-
-# Full automated report (eval=FALSE — run interactively)
-create_report(
-  health_small,
-  output_file  = "lecture1_eda.html",
-  output_dir   = "output/reports",
-  report_title = "BDAT 602: Health Insurance EDA"
-)
-```
+`collect()` brings results back to R as a tibble. Keep computations in Spark and only `collect()` the final summary — never collect 500,000 rows into R if you don't need them all.
 
 ## Example
 
-Applying CRISP-DM to this course project:
+A CRISP-DM business understanding document for a churn-prediction project.
 
-| Phase | What we do |
-|-------|-----------|
-| Business Understanding | Reduce churn and fraud losses for a health insurer |
-| Data Understanding | 500k records, 40 vars, 3 targets; intentional quality issues found via `skim()` |
-| Data Preparation | Impute BMI/income, winsorise outliers, encode categoricals, build `recipes` pipeline |
-| Modelling | Random forests for churn, isolation forest + logistic for fraud |
-| Evaluation | AUC, precision-recall, business lift; compare to naïve baseline |
-| Deployment | Score new policyholders monthly; alert high-risk accounts |
+**Business goal**: Reduce churn among Gold and Platinum policyholders by 15% over the next policy renewal cycle.
+
+**Success criterion**: A model that identifies policyholders at risk of churning in the next 60 days, achieving recall ≥ 0.70 on the test set (we prefer catching actual churners even at the cost of some false alarms).
+
+**Mining objective**: Train a binary classifier on `churned` using `age`, `plan_tier`, `deductible`, `customer_rating`, `support_calls`, `auto_pay`, and `policy_age_months`. Evaluate with precision-recall and ROC-AUC.
+
+**Data source**: `simulate_bdat602()` with n = 500,000. Policy records from 2024.
+
+**Constraints**: Must not use `policyholder_id` or `agent_id` as features (leakage risk). Model must be explainable to the retention team.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Read `data/raw/health_insurance_small.csv` with `readr::read_csv()`. Call `glimpse()` and report: how many rows? how many columns? Which columns were automatically parsed as logical?
-2. Create a histogram of `claim_amount` (filter to rows where `claim_amount > 0`), using a log10 x-axis. Title: "Claim Amounts: 10k Sample".
-3. Use `DataExplorer::plot_missing()` on the loaded data frame. Report which columns have missing values.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) set up packages and generate the dataset, (2) write a one-paragraph CRISP-DM Phase 1 document for a fraud-detection project using this dataset, (3) explore the three target variables (`churned`, `high_risk`, `claim_amount`) with `skim()` and at least one plot, (4) write the Spark code (with `eval=FALSE`) to connect to Spark and push the dataset.
 
 ## Check
 
@@ -151,4 +93,4 @@ npm run check -- bdat-602 module-01 lesson-02
 
 ## Reflection
 
-The CRISP-DM process is explicitly cyclical. Describe a scenario in this project where completing the Evaluation phase would send you back to the Data Preparation phase rather than to Deployment. What specific finding would trigger that loop?
+CRISP-DM Phase 5 (Evaluation) asks whether the model meets the *business* goal, not just the *statistical* goal. Can you construct a scenario where a model with 95% accuracy completely fails the business goal? What metric would catch this failure?

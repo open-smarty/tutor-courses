@@ -1,148 +1,180 @@
-# BDAT 624 — Module 3, Lesson 2: The Poisson Process and Renewal Counting
-# Exercise: Simulation, PMF verification, memorylessness, Gamma waiting times
-#
-# Prerequisites: base R + ggplot2 (install with: install.packages("ggplot2"))
-# Run: npm run check -- bdat-624 module-03 lesson-02
-
+# Required packages
 library(ggplot2)
-library(gridExtra)
+library(dplyr)
 
-set.seed(123)  # reproducibility
+# Scenario: Emergency department patient arrivals modelled as a Poisson process.
+# Lambda = 5 patients/hour. We simulate the process, verify its properties,
+# and examine inter-arrival and waiting time distributions.
 
-# Parameters
-lambda     <- 3       # arrivals per hour
-T_total    <- 24      # total observation window (hours)
-N_SIM      <- 1000    # number of replicated processes for Part 5
-
-# ============================================================
-# PART 1 — Simulate a Poisson process with rate lambda=3/hr for 24 hours
-#
-#   Strategy: generate interarrival times from Exp(lambda) one by one,
-#   accumulating arrival times until they exceed T_total.
-#   Then compute N(t) = number of arrivals in (0, t] for each hour t = 1..24.
-# ============================================================
-
-# TODO: generate interarrival times using rexp().
-#   Keep drawing until the cumulative sum exceeds T_total.
-#   Store cumulative arrival times in a vector `arrival_times`
-#   (only include those <= T_total).
-#   Hint: use a while loop or generate a large batch and trim.
-arrival_times <- # TODO
-
-# TODO: compute N(t) for each integer hour t = 1, 2, ..., 24.
-#   N(t) = number of arrival_times <= t.
-#   Store as vector `count_per_hour` of length 24.
-hours         <- 1:24
-count_per_hour <- # TODO
-
-cat("Total arrivals in 24 hours:", length(arrival_times), "\n")
-cat("Expected:", lambda * T_total, "\n")
+lambda <- 5   # patients per hour
+T_max  <- 10  # observe for 10 hours
+set.seed(42)
 
 # ============================================================
-# PART 2 — Plot the count process X(t) as a step function,
-#           and a histogram of hourly counts with Poisson(3) PMF overlaid.
+# Task 1: Simulate a Poisson process via exponential inter-arrivals
 # ============================================================
+# The Poisson process can be simulated by drawing inter-arrival times
+# from Exp(lambda) and accumulating them to get event times.
 
-# TODO: plot the step function of X(t) = cumulative arrivals vs time.
-#   The x-axis is time (0 to 24), the y-axis is X(t).
-#   Use a step plot (geom_step in ggplot2, or plot(..., type="s") in base R).
+# TODO: Draw exponential inter-arrival times until the cumulative time
+# exceeds T_max. Store ALL inter-arrival times in 'inter_arrivals'.
+# Then compute event times as cumulative sums.
 
+inter_arrivals <- rexp(1000, rate = lambda)  # draw more than enough
+event_times    <- cumsum(inter_arrivals)
+event_times    <- event_times[event_times <= T_max]  # keep only those ≤ T_max
+n_events       <- length(event_times)
 
-# TODO: plot a histogram of `count_per_hour` (24 hourly counts).
-#   Overlay the Poisson(3) PMF as points or a line.
-#   Hint: dpois(0:10, lambda = lambda) gives the PMF values.
-
-
-# ============================================================
-# PART 3 — Verify the memoryless property
-#
-#   From the simulated interarrival times (differences between consecutive
-#   arrivals), compare:
-#   (a) the full distribution of interarrival times T
-#   (b) the conditional distribution of T given T > threshold (e.g., threshold = 0.2)
-#   They should look the same (both Exp(lambda)).
-# ============================================================
-
-# TODO: compute interarrival times from arrival_times (differences between
-#   consecutive arrivals; the first interarrival is arrival_times[1] - 0).
-#   Store as `interarrivals`.
-interarrivals <- # TODO
-
-# TODO: choose a threshold, e.g. threshold = 0.2.
-#   Define conditional_times = interarrivals[interarrivals > threshold] - threshold
-#   (shift by threshold so we look at REMAINING time after threshold).
-threshold <- 0.2
-conditional_times <- # TODO
-
-# TODO: plot two overlaid density histograms (or two ggplot density plots):
-#   one for `interarrivals`, one for `conditional_times`.
-#   Overlay the Exp(lambda) density curve on both.
-#   They should look essentially identical — this is the memoryless property.
-
+cat("Total events in [0,", T_max, "]:", n_events, "\n")
+cat("Expected events:", lambda * T_max, "\n")
 
 # ============================================================
-# PART 4 — Waiting times to the n-th event: T_n ~ Gamma(n, lambda)
-#
-#   For n = 1, 2, 5, 10: collect the waiting time to the n-th arrival
-#   from the simulated arrival_times. Plot a histogram and overlay
-#   the Gamma(n, rate = lambda) density.
+# Task 2: Verify inter-arrival times are Exponential(lambda)
 # ============================================================
+# We use the first n_events inter-arrival times (those that correspond to
+# events within [0, T_max]).
+iats <- inter_arrivals[seq_len(n_events)]  # inter-arrival times used
 
-ns <- c(1, 2, 5, 10)
+# TODO: Plot a histogram of inter-arrival times with the theoretical
+# Exp(lambda) density overlaid.
+hist_df <- data.frame(iat = iats)
+iat_range <- seq(0, max(iats) * 1.1, length.out = 200)
+exp_density_df <- data.frame(x = iat_range, y = dexp(iat_range, rate = lambda))
 
-plots_part4 <- list()
+ggplot(hist_df, aes(x = iat)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 30,
+                 fill = "#3498db", alpha = 0.7, color = "white") +
+  geom_line(data = exp_density_df, aes(x = x, y = y),
+            color = "#e74c3c", linewidth = 1.3) +
+  labs(
+    title    = "Inter-Arrival Times: Observed vs Theoretical Exp(lambda)",
+    subtitle = paste("lambda =", lambda, "; red line = Exp(lambda) density"),
+    x = "Inter-arrival time (hours)", y = "Density"
+  ) +
+  theme_minimal()
 
-for (n_evt in ns) {
-  # TODO: extract the waiting time to the n_evt-th event.
-  #   If there are fewer than n_evt arrivals in your single simulation,
-  #   simulate more arrivals or note this edge case.
-  #   For a proper comparison, simulate N_SIM processes and collect
-  #   the n_evt-th arrival time from each.
+# TODO: Print mean and SD of observed inter-arrival times.
+# Theoretical: mean = 1/lambda, SD = 1/lambda (Exp distribution).
+cat("\nInter-arrival times:\n")
+cat("  Observed mean:", round(mean(iats), 4), "\n")
+cat("  Theoretical mean (1/lambda):", round(1/lambda, 4), "\n")
+cat("  Observed SD:", round(sd(iats), 4), "\n")
+cat("  Theoretical SD (1/lambda):", round(1/lambda, 4), "\n")
 
-  # TODO: simulate N_SIM independent sets of interarrivals and extract T_n.
-  #   Hint: replicate() + cumsum() + rexp()
-  waiting_times_n <- # TODO: vector of N_SIM waiting times to the n_evt-th event
+# ============================================================
+# Task 3: Verify N(t) ~ Poisson(lambda*t) using simulation
+# ============================================================
+# Simulate many independent replications and count events in [0, t]
+# for several values of t; compare to Poisson(lambda*t).
 
-  t_grid <- seq(0, quantile(waiting_times_n, 0.99), length.out = 300)
-  gamma_density <- dgamma(t_grid, shape = n_evt, rate = lambda)
+n_reps  <- 2000
+t_vals  <- c(0.5, 1, 2, 5)  # time points to check
 
-  df_n <- data.frame(t = waiting_times_n)
-  p_n <- ggplot(df_n, aes(x = t)) +
-    geom_histogram(aes(y = after_stat(density)), bins = 40,
-                   fill = "steelblue", alpha = 0.6, colour = "white") +
-    geom_line(data = data.frame(t = t_grid, d = gamma_density),
-              aes(x = t, y = d), colour = "red", linewidth = 1) +
-    labs(title = sprintf("T_%d ~ Gamma(%d, %.0f)", n_evt, n_evt, lambda),
-         subtitle = "Red = theoretical Gamma density",
-         x = sprintf("Time to %d-th event", n_evt), y = "Density") +
-    theme_minimal()
+# TODO: For each t in t_vals, simulate n_reps Poisson processes and record
+# the count of events in [0, t]. Compare the empirical distribution
+# to Poisson(lambda * t).
 
-  plots_part4[[as.character(n_evt)]] <- p_n
+verify_poisson <- function(t, n_reps, lambda) {
+  counts <- replicate(n_reps, {
+    # Simulate inter-arrivals until cumulative time > t
+    iat  <- rexp(ceiling(lambda * t * 5), rate = lambda)  # enough draws
+    et   <- cumsum(iat)
+    sum(et <= t)
+  })
+  list(t=t, counts=counts, lambda_t=lambda*t)
 }
 
-# TODO: arrange the 4 plots in a 2x2 grid using grid.arrange().
+set.seed(100)
+results <- lapply(t_vals, verify_poisson, n_reps = n_reps, lambda = lambda)
 
+# TODO: For each t, print: observed mean & variance vs Poisson(lambda*t)
+# (For Poisson: mean = variance = lambda*t)
+cat("\nPoisson verification (mean and variance should both equal lambda*t):\n")
+for (res in results) {
+  cat(sprintf("  t=%.1f: obs mean=%.3f, obs var=%.3f, theoretical=%.3f\n",
+              res$t, mean(res$counts), var(res$counts), res$lambda_t))
+}
 
 # ============================================================
-# PART 5 — E[X(t)] = lambda*t vs sample mean from 1000 simulations
-#
-#   Simulate 1000 independent Poisson processes, each for T_total = 24 hours.
-#   At each integer hour t = 1..24, compute the sample mean of X(t).
-#   Plot the sample mean vs the theoretical E[X(t)] = lambda*t.
+# Task 4: Verify n-th event time ~ Gamma(n, lambda)
 # ============================================================
+# The n-th event time T_n = sum of n i.i.d. Exp(lambda).
+# T_n ~ Gamma(n, rate=lambda).
 
-# TODO: simulate N_SIM Poisson processes, each of length T_total hours.
-#   For each process, compute count_per_hour (length-24 vector as in Part 1).
-#   Store all as a matrix `sim_counts` of dimension 24 x N_SIM.
-#   Hint: use replicate() with the same logic as Part 1.
-sim_counts <- # TODO
+# TODO: For n = 3, 8, 15 simulate 5000 realisations of T_n
+# by summing n exponentials. Plot histograms with Gamma density overlaid.
 
-# TODO: compute the sample mean at each hour (rowMeans of sim_counts).
-sample_mean <- # TODO
+set.seed(200)
+n_sim_gamma <- 5000
+ns_to_check <- c(3, 8, 15)
 
-# TODO: compute the theoretical mean E[X(t)] = lambda * t for t = 1..24.
-theoretical_mean <- # TODO
+gamma_df <- lapply(ns_to_check, function(n) {
+  # T_n = sum of n Exp(lambda) = Gamma(shape=n, rate=lambda)
+  T_n_sim <- replicate(n_sim_gamma, sum(rexp(n, rate = lambda)))
+  data.frame(n = n, T_n = T_n_sim)
+}) |> bind_rows()
 
-# TODO: plot sample_mean and theoretical_mean vs hours (1..24) on the same axes.
-#   Use different colours and add a legend.
-#   The sample mean should track lambda*t very closely.
+gamma_df$n_label <- paste0("n = ", gamma_df$n)
+
+# TODO: Plot histogram with Gamma(n, rate=lambda) density overlaid.
+# Facet by n.
+ggplot(gamma_df, aes(x = T_n)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 40,
+                 fill = "#2ecc71", alpha = 0.7, color = "white") +
+  stat_function(
+    fun = function(x) dgamma(x, shape = 3, rate = lambda),
+    aes(color = "n=3"), linewidth = 1.0, data = filter(gamma_df, n == 3)
+  ) +
+  facet_wrap(~ n_label, scales = "free") +
+  labs(
+    title    = "n-th Event Time T_n vs Gamma(n, lambda) Distribution",
+    subtitle = paste("lambda =", lambda, "; green bars = simulation; curve = Gamma density"),
+    x = "Time to n-th event (hours)", y = "Density"
+  ) +
+  theme_minimal()
+
+# A cleaner approach: add a separate density curve per facet
+ggplot(gamma_df, aes(x = T_n)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 40,
+                 fill = "#2ecc71", alpha = 0.7, color = "white") +
+  geom_line(
+    data = gamma_df |>
+      group_by(n, n_label) |>
+      reframe(x = seq(min(T_n), max(T_n), length.out=300),
+              y = dgamma(x, shape=unique(n), rate=lambda)),
+    aes(x=x, y=y), color="#e74c3c", linewidth=1.2
+  ) +
+  facet_wrap(~ n_label, scales="free") +
+  labs(title="n-th Event Waiting Time: Simulation vs Gamma(n, lambda)",
+       x="Time (hours)", y="Density") +
+  theme_minimal()
+
+# TODO: Print mean and variance of T_n for each n.
+# Theoretical: E[T_n] = n/lambda, Var[T_n] = n/lambda^2.
+cat("\nGamma verification:\n")
+for (n in ns_to_check) {
+  sims <- filter(gamma_df, n == !!n)$T_n
+  cat(sprintf("  n=%2d: obs mean=%.4f (theo=%.4f); obs var=%.4f (theo=%.4f)\n",
+              n, mean(sims), n/lambda, var(sims), n/lambda^2))
+}
+
+# ============================================================
+# Task 5: Memoryless property demonstration
+# ============================================================
+# The exponential distribution is memoryless: P(W > s+t | W > s) = P(W > t)
+# Demonstrate: condition on W > 1 (waited more than 1 hour) and check
+# that the remaining wait is still Exp(lambda).
+
+set.seed(999)
+W_sims <- rexp(100000, rate = lambda)
+
+# TODO: Given W > 1, compute the residual waiting time W - 1
+# and compare its distribution to Exp(lambda).
+s_val      <- 1.0          # conditioning on W > s_val
+residuals  <- (W_sims[W_sims > s_val] - s_val)
+
+cat("\nMemoryless property check (conditioning on W > 1):\n")
+cat("  Mean of residual W-1 | W>1:", round(mean(residuals), 4),
+    "(should be ~", round(1/lambda, 4), ")\n")
+cat("  Mean of unconditioned W:   ", round(mean(W_sims), 4), "\n")
+# Both should be ~0.2 = 1/lambda

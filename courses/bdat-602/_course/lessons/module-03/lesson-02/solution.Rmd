@@ -1,54 +1,103 @@
 ---
-title: "BDAT 602 — Module 3, Lesson 2 Solution"
-subtitle: "Mining Rules from the Health Insurance Dataset"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Mining Rules from the Health Insurance Dataset"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Build the transactions object
-
-```{r task1}
-source("R/simulate_bdat602_data.R")
+```{r load-packages}
+library(tidyverse)
 library(arules)
-library(dplyr)
+library(arulesViz)
 
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
+```
 
-bin_cols <- c("dental_cover", "vision_cover", "mental_cover",
-              "maternity_cover", "smoker", "high_risk")
+## Task 1: Prepare the transaction object
 
-health_bin <- health_small |>
-  select(all_of(bin_cols)) |>
+```{r task1-transactions}
+flag_cols <- c("dental_cover", "vision_cover", "mental_cover", "maternity_cover")
+
+trans_df <- health_data |>
+  select(all_of(flag_cols)) |>
   mutate(across(everything(), as.logical))
 
-trans <- as(health_bin, "transactions")
+trans <- as(trans_df, "transactions")
 summary(trans)
 ```
 
-The transaction summary shows item frequencies — dental cover and vision cover are among the most common (linked to Gold/Platinum tier prevalence).
+## Task 2: Plot item frequencies
 
-## Task 2 — Run Apriori
-
-```{r task2}
-rules_ins <- apriori(
+```{r task2-item-freq}
+itemFrequencyPlot(
   trans,
-  parameter = list(supp = 0.05, conf = 0.45, minlen = 2)
+  topN  = 4,
+  type  = "relative",
+  main  = "Relative Item Frequency — Insurance Add-On Covers",
+  col   = "steelblue",
+  ylim  = c(0, 0.5)
 )
-cat("Rules generated:", length(rules_ins), "\n")
 ```
 
-## Task 3 — Dental cover on the RHS
-
-```{r task3}
-dental_rules <- subset(rules_ins, rhs %pin% "dental_cover")
-inspect(head(sort(dental_rules, by = "confidence"), 3))
+```{r task2-interpret}
+# dental_cover is the most frequent add-on (~35% of policyholders).
+# maternity_cover is the rarest (~13%), because it has a lower probability
+# for male and older female policyholders in the simulator.
+# Rarer items tend to appear in fewer frequent itemsets, so maternity_cover
+# will feature in fewer rules unless paired with a very common item.
 ```
 
-The highest-confidence dental cover rules typically involve co-purchase of vision or mental health cover, reflecting that higher-tier policyholders tend to buy the full add-on bundle.
+## Task 3: Mine association rules
+
+```{r task3-apriori}
+rules <- apriori(
+  trans,
+  parameter = list(supp = 0.05, conf = 0.70, minlen = 2)
+)
+summary(rules)
+```
+
+```{r task3-top10}
+inspect(head(sort(rules, by = "lift"), 10))
+```
+
+```{r task3-dental-rules}
+dental_rules <- subset(rules, rhs %in% "dental_cover=TRUE")
+inspect(sort(dental_rules, by = "lift"))
+```
+
+## Task 4: Scatter plot and actionable recommendations
+
+```{r task4-scatter}
+plot(
+  rules,
+  method  = "scatter",
+  measure = c("support", "confidence"),
+  shading = "lift",
+  main    = "Association Rules — Insurance Add-On Covers"
+)
+```
+
+```{r task4-recommendations}
+top3 <- head(sort(rules, by = "lift"), 3)
+inspect(top3)
+
+# Rule 1: {vision_cover=TRUE} → {dental_cover=TRUE}  (example, lift ~ 1.8-2.0)
+# Recommendation: Target all policyholders who hold vision cover but not dental
+# with a bundled dental add-on offer. The high lift means they are ~2x more
+# likely than average to accept, justifying a targeted (lower-cost) campaign.
+
+# Rule 2: {mental_cover=TRUE} → {dental_cover=TRUE}  (example)
+# Recommendation: When a policyholder contacts the insurer to add mental health
+# cover, proactively suggest dental cover at the same time — the co-occurrence
+# rate is high enough to make this a natural upsell moment.
+
+# Rule 3: {vision_cover=TRUE, mental_cover=TRUE} → {dental_cover=TRUE}  (example)
+# Recommendation: Policyholders holding both vision and mental cover are the
+# strongest candidates for a "premium care" bundle including dental. Design a
+# three-add-on bundle product priced attractively for this segment.
+```

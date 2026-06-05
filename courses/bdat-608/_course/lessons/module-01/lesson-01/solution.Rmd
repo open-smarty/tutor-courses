@@ -1,52 +1,72 @@
 ---
-title: "BDAT 608 | Module 1, Lesson 1 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: What Is a Statistical Model?"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Prerequisites
-
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
 ```
 
----
+## Task 1: Explore the diamonds dataset
 
-## Task 1 — Explore sim1
-
-```{r explore-sim1}
-data("sim1", package = "modelr")
-glimpse(sim1)
-# 30 rows, 2 columns: x (integer), y (double)
+```{r task1}
+data("diamonds", package = "ggplot2")
+glimpse(diamonds)
+summary(diamonds)
 ```
 
-**Answer:** `sim1` has **30 rows** and **2 columns** (`x` and `y`).
+## Task 2: Scatter plot of price vs carat coloured by cut
 
----
-
-## Task 2 — Scatter Plot
-
-```{r scatter-plot}
-ggplot(sim1, aes(x, y)) +
-  geom_point(size = 3, colour = "#1B3A6B") +
-  labs(title = "sim1: My first look") +
+```{r task2}
+ggplot(diamonds, aes(x = carat, y = price, colour = cut)) +
+  geom_point(alpha = 0.3) +
+  labs(
+    title   = "Diamond price vs carat weight, coloured by cut",
+    x       = "Carat",
+    y       = "Price (USD)",
+    colour  = "Cut"
+  ) +
   theme_minimal()
 ```
 
-The plot shows a clear upward linear trend: as `x` increases from 1 to 10, `y` increases roughly proportionally, with random scatter around the line.
+## Task 3: Fit a simple linear model
 
----
+```{r task3}
+mod1 <- lm(price ~ carat, data = diamonds)
+summary(mod1)
+```
 
-## Reflection
+**Interpretation.** The fitted model is:
 
-"Zero residuals" on the training data means the model has **memorised** the noise in addition to the signal. Such a model will fail on new data because noise does not repeat. The goal of modelling is to capture the signal — the repeatable pattern — not the noise. A model with zero training residuals is overfit: it is too tightly tuned to this particular sample.
+$$\widehat{\text{price}} = -2{,}256 + 7{,}756 \times \text{carat}$$
+
+Every additional carat is associated with an increase of about \$7,756 in price on average. The intercept ($-\$2{,}256$) is the predicted price for a 0-carat diamond — which is meaningless, but mathematically consistent. $R^2 \approx 0.85$ means that carat alone explains about 85% of the variance in diamond price.
+
+## Task 4: Add residuals and inspect the pattern
+
+```{r task4}
+diamonds_resid <- diamonds |>
+  add_residuals(mod1)
+
+ggplot(diamonds_resid, aes(x = carat, y = resid)) +
+  geom_point(alpha = 0.2, colour = "steelblue") +
+  geom_ref_line(h = 0, colour = "darkorange") +
+  labs(
+    title   = "Residuals vs carat — linear model on diamonds",
+    x       = "Carat",
+    y       = "Residual (actual - predicted price, USD)"
+  ) +
+  theme_minimal()
+
+# Interpretation: The residuals fan outward as carat increases — the spread
+# of residuals is much larger for heavy diamonds than for light ones.
+# This is called heteroscedasticity (non-constant variance).
+# It means the linear model is systematically wrong: it underestimates
+# variability for large diamonds. A log transformation of both variables
+# is indicated to stabilise the variance.
+```

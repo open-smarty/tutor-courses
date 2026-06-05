@@ -2,191 +2,134 @@
 
 ## Goal
 
-By the end of this lesson you will be able to classify every state in a Markov chain as accessible, communicating, periodic, or aperiodic; determine whether a chain is irreducible and/or regular; and distinguish recurrent, null-recurrent, and transient states — culminating in the definition of ergodicity and its convergence guarantee.
+Classify every state in a Markov chain as accessible, communicating, recurrent, or transient; compute the period of a state; and understand what ergodicity means and why it guarantees long-run stability.
 
 ## Concept
 
-### Motivation: not all chains converge
+### Accessibility and Communication
 
-In Lesson 2 we found that some chains converge to a stationary distribution. But not all chains do. Some oscillate forever. Some states are visited only finitely many times before the chain moves on permanently. Others are visited infinitely often.
+Before we ask whether a chain converges, we need to understand the structure of its states: which states can "see" each other?
 
-Here's the key insight: understanding *why* a chain converges (or fails to) requires classifying each state individually. The vocabulary we build in this lesson — accessibility, communication, periodicity, recurrence — is the toolkit for that diagnosis.
+> **Notation block:**
+> - P⁽ⁿ⁾ᵢⱼ — n-step transition probability from state i to state j
+> - i → j — "state j is **accessible** from state i"; read "i leads to j"
+> - i ↔ j — "states i and j **communicate**"; read "i and j communicate"
 
----
+**Definition: Accessibility.** State j is **accessible** from state i (written i → j) if there exists some n ≥ 0 such that P⁽ⁿ⁾ᵢⱼ > 0.
 
-### Accessibility and communication
+In plain English: starting from i, there is a positive probability of eventually reaching j (possibly in multiple steps). Note: if n=0, then i → i trivially (the chain "goes to i from i in 0 steps" means it stays put).
 
-> **Notation:** *i → j* (read: "state j is accessible from state i") — there exists n > 0 such that $P_{ij}^{(n)} > 0$. You can eventually reach j if you start at i, in some finite number of steps.
+**Definition: Communication.** States i and j **communicate** (written i ↔ j) if i → j AND j → i — each is accessible from the other.
 
-> **Notation:** *i ↔ j* (read: "states i and j communicate") — both $i \to j$ AND $j \to i$. Each state can reach the other.
+Communication is an **equivalence relation** (it satisfies reflexivity, symmetry, and transitivity). It therefore partitions the state space S into disjoint **communicating classes** — groups of states that all mutually communicate.
 
-Note the direction matters. $i \to j$ does not imply $j \to i$. For example, in the health model from Lesson 1, state 0 (Healthy) can reach state 2 (Dead) — but not the reverse.
+**Definition: Irreducibility.** A Markov chain is **irreducible** if all states communicate with each other — i.e., there is only one communicating class, which is all of S.
 
-**Communication is an equivalence relation:**
+Here's the key insight: in an irreducible chain, you can get from anywhere to anywhere (given enough steps). This is a strong and useful property — it guarantees a unique stationary distribution and eventual convergence.
 
-- *Reflexive:* $i \leftrightarrow i$ (trivially, since $P_{ii}^{(0)} = 1$)
-- *Symmetric:* if $i \leftrightarrow j$ then $j \leftrightarrow i$
-- *Transitive:* if $i \leftrightarrow j$ and $j \leftrightarrow k$ then $i \leftrightarrow k$
+### Period
 
-Because it is an equivalence relation, communication partitions the state space into **equivalence classes** (sometimes called communication classes). States in the same class all communicate with each other; states in different classes do not communicate in both directions.
+Even in an irreducible chain, the chain might visit certain states only at regular intervals. The **period** captures this regularity.
 
----
+> **Notation block:**
+> - d(i) — the **period** of state i; read "d of i"
+> - gcd — **greatest common divisor**
+> - {n ≥ 1 : P⁽ⁿ⁾ᵢᵢ > 0} — the set of return times to state i; "all step counts at which there is positive probability of returning to i"
 
-### Irreducibility
+**Definition: Period.** The period of state i is:
 
-**Definition.** A Markov chain is called **irreducible** if all states form a single equivalence class — that is, every state can reach every other state.
+$$d(i) = \gcd\{n \geq 1 : P^{(n)}_{ii} > 0\}$$
 
-In the 3-state health model, states {0, 1} communicate (0 → 1 → 0 is possible via $P_{10} = 0.1 > 0$), but state 2 (Dead) is absorbing: you can reach it from 0 and 1, but you cannot escape. So {0, 1} and {2} are different equivalence classes, and the chain is **not** irreducible.
+If d(i) = 1: state i is **aperiodic** — the chain can return to i at *any* step length (given enough time).
+If d(i) = 2: state i is **periodic with period 2** — the chain can only return to i at even-numbered steps.
+If d(i) = k > 1: returns are only possible at multiples of k.
 
-Biological meaning: a chain is irreducible if "from any health state, it is theoretically possible to reach any other health state." In many disease models, this is not true (death is irreversible), so we work with non-irreducible chains and focus our analysis on the transient states.
+**Important fact:** All states in the same communicating class have the same period. So we can speak of the "period of a class."
 
----
+**Example:** Consider a chain that alternates between two states: 1 → 2 → 1 → 2 → ... Both states have period 2 (can only return after 2, 4, 6, ... steps). This is a periodic chain.
 
-### Periodicity
+**Biological example:** A bacterium divides exactly every generation — a strictly synchronous population. If we model health states at each generation, the period equals the generation length. In practice, biological systems are rarely perfectly periodic, so aperiodicity (period=1) is common.
 
-> **Notation:** *d(i)* — the **period** of state i, defined as the greatest common divisor (gcd) of all return times: $d(i) = \gcd\{n \geq 1 : P_{ii}^{(n)} > 0\}$. If no return is possible, d(i) = 0 by convention.
+### Recurrence and Transience
 
-Let's unpack this notation before we go further. $P_{ii}^{(n)} > 0$ means the process *can* return to state i after exactly n steps. The period d(i) is the gcd of all such n — intuitively, it is the "rhythm" of the chain's returns to state i.
+Perhaps the most important classification: will the chain ever return to a state it has visited, or might it wander away forever?
 
-- **Aperiodic state:** $d(i) = 1$. The process can return at irregular times — no fixed rhythm.
-- **Periodic state:** $d(i) = d > 1$. Returns are only possible at multiples of d.
+> **Notation block:**
+> - fᵢ — the probability that the chain, starting from state i, ever returns to state i; read "f sub i"
+> - fᵢ = P(Xₙ = i for some n ≥ 1 | X₀ = i)
 
-**Key theorem.** If $i \leftrightarrow j$ (states communicate), then $d(i) = d(j)$. Communicating states share the same period.
+**Definition: Recurrent state.** State i is **recurrent** if fᵢ = 1 — the chain returns to i with probability 1, starting from i.
 
-This means periodicity is a property of *communication classes*, not individual states. All states in an irreducible chain have the same period.
+**Definition: Transient state.** State i is **transient** if fᵢ < 1 — there is a positive probability of never returning to i.
 
----
+Here's the key insight for transient states: if fᵢ < 1, then the probability of visiting i exactly k times is fᵢᵏ⁻¹(1-fᵢ) (geometric distribution). So the total number of visits to a transient state is finite almost surely (geometric random variable). Eventually the chain leaves a transient state and never returns.
 
-### The alternating chain: a chain with no limiting distribution
+For recurrent states: if fᵢ = 1, then the chain returns infinitely often with probability 1. The average return time is E[T_i] where T_i = min{n ≥ 1 : Xₙ = i}.
 
-Consider the 2-state chain (from Dr. Asiedu's notes, p. 13–14):
+**Positive recurrence vs null recurrence:**
+- **Positive recurrent:** E[T_i] < ∞ (the mean return time is finite)
+- **Null recurrent:** fᵢ = 1 but E[T_i] = ∞ (the chain returns with certainty, but it takes infinitely long on average)
 
-$$\mathbf{P} = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}$$
+For finite state spaces, all recurrent states are positive recurrent. Null recurrence only arises in infinite state spaces (e.g., random walk on ℤ).
 
-This chain alternates: from state 0 you go to state 1, from state 1 you go to state 0. No staying.
+### Ergodic Chains
 
-Check the period:
-- From state 0, you can return after $n = 2, 4, 6, \ldots$ steps. So $d(0) = \gcd\{2, 4, 6, \ldots\} = 2$.
-- By the theorem, $d(1) = 2$ as well.
-
-Both states have period 2. Powers of **P** alternate:
-
-$$\mathbf{P}^2 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} = \mathbf{I}, \quad \mathbf{P}^3 = \mathbf{P}, \quad \mathbf{P}^4 = \mathbf{I}, \quad \ldots$$
-
-So $\mathbf{P}^n$ alternates between $\mathbf{I}$ and $\mathbf{P}$ for even/odd n — it never converges.
-
-Yet this chain *does* have a stationary distribution: $\pi = (1/2, 1/2)$. You can verify $\pi \mathbf{P} = (1/2, 1/2) = \pi$.
-
-This is the key example showing that **stationary distribution ≠ limiting distribution**. The chain has a well-defined stationary distribution, but because it is periodic (d = 2), $P^n$ does not converge.
-
----
-
-### Regularity
-
-**Definition.** A stochastic matrix **P** is **regular** if there exists $n \geq 1$ such that all entries of $\mathbf{P}^n$ are strictly positive.
-
-Equivalently, a finite chain is regular if and only if it is **irreducible** (all states communicate) and **aperiodic** (all states have period 1).
-
-**Key theorem (convergence for regular chains).** If **P** is a regular TPM for a finite, time-homogeneous chain, then:
-
-$$\lim_{n \to \infty} \mathbf{P}^n = \tilde{\pi}$$
-
-where $\tilde{\pi}$ is a matrix with every row equal to $(\pi_1, \pi_2, \ldots, \pi_m)$, and $\pi_j > 0$ for all j, $\sum_j \pi_j = 1$.
-
-The alternating chain fails regularity because $P^n$ alternates and never has all strictly positive entries simultaneously.
-
----
-
-### Recurrence and transience
-
-Let's unpack this notation before we go further.
-
-> **Notation:** *f_{ij}^{(n)}* — the **first passage time probability**: $f_{ij}^{(n)} = P(X_n = j,\; X_r \neq j \text{ for } r = 1, \ldots, n-1 \mid X_0 = i)$. The probability of visiting state j for the *first time* at exactly step n, starting from state i.
-
-> **Notation:** *f_{ii}^{(*)}* — the **total first return probability** to state i: $f_{ii}^{(*)} = \sum_{n=1}^{\infty} f_{ii}^{(n)}$. This is the probability of ever returning to state i, starting from i.
-
-> **Notation:** *μᵢ* — the **mean recurrence time** (expected return time): $\mu_i = \sum_{n=1}^{\infty} n \cdot f_{ii}^{(n)}$. The expected number of steps to return to state i, starting from i.
-
-Using these, we classify states into three types:
-
-| Type | Condition | Meaning |
-|---|---|---|
-| **Transient** | $f_{ii}^{(*)} < 1$ | Starting from i, there is positive probability of never returning |
-| **Null recurrent** | $f_{ii}^{(*)} = 1$ and $\mu_i = \infty$ | Certain to return, but expected return time is infinite |
-| **Positive recurrent** | $f_{ii}^{(*)} = 1$ and $\mu_i < \infty$ | Certain to return, and expected return time is finite |
-
-Here's the key insight: **recurrent** states ($f_{ii}^{(*)} = 1$) are visited infinitely often (almost surely) in the long run. **Transient** states are eventually abandoned — the chain visits them finitely many times and moves on.
-
-**Important fact for finite chains.** In any *finite* irreducible Markov chain, all states are **positive recurrent**. Null recurrence and transience only arise for infinite-state-space chains (like simple random walk on all integers).
-
----
-
-### Ergodicity
-
-**Definition.** A Markov chain is called **ergodic** if it is:
-
+**Definition: Ergodic chain.** A Markov chain is **ergodic** if it is:
 1. **Irreducible** — all states communicate
-2. **Positive recurrent** — every state has finite mean recurrence time
-3. **Aperiodic** — every state has period 1
+2. **Aperiodic** — period d(i) = 1 for all i (equivalently, the single communicating class is aperiodic)
+3. **Positive recurrent** — all states have finite mean return times
 
-Ergodic chains have the strongest convergence guarantee:
+For finite state spaces, irreducibility alone guarantees positive recurrence. So for practical purposes: a finite, irreducible, aperiodic chain is ergodic.
 
-**Ergodic theorem.** An ergodic chain has a *unique* stationary distribution π, and for any starting state i and any state j:
+**Ergodic theorem.** For an ergodic chain:
 
-$$\lim_{n \to \infty} P_{ij}^{(n)} = \pi_j > 0$$
+$$\frac{1}{n} \sum_{k=0}^{n-1} \mathbf{1}[X_k = i] \xrightarrow{n \to \infty} \pi_i \quad \text{with probability 1}$$
 
-Moreover, the long-run proportion of time the chain spends in state j equals $\pi_j$, regardless of starting state.
+> **Notation block:**
+> - 1[Xₖ = i] — the **indicator function**; equals 1 if Xₖ = i, and 0 otherwise; read "one if X_k equals i"
+> - (1/n) Σₖ 1[Xₖ = i] — the **time-average** fraction of steps spent in state i over n steps
 
-For finite chains, ergodic = irreducible + aperiodic (positive recurrence is automatic in finite irreducible chains).
+The time-average fraction of time in state i converges (with probability 1) to the stationary probability πᵢ. This is the ergodic analogue of the law of large numbers: time averages equal space averages (= stationary probabilities).
 
----
+### State Classification in a Chain with an Absorbing State
 
-### Summary: the classification hierarchy
+Consider a chain with states {H, MI, SI, D} where D is absorbing.
 
-```
-Markov chain
-├── Irreducible?
-│   ├── No  → multiple communication classes
-│   │         (some states may be transient or absorbing)
-│   └── Yes → all states share the same period d
-│             ├── d > 1 (periodic): stationary dist. exists,
-│             │          but no limiting dist.
-│             └── d = 1 (aperiodic): regular chain
-│                        → ERGODIC → unique stationary = limiting dist.
-└── (Finite chains: if irreducible, all states are positive recurrent)
-```
+- **State D:** Recurrent (positive recurrent: return time = 0, since you never leave). Also, it forms its own communicating class {D}.
+- **States H, MI, SI:** Each of H, MI, SI is accessible from the others (as long as the transition probabilities are positive). They form a communicating class {H, MI, SI}. However, because D is accessible from H, MI, SI but D cannot reach back, the class {H, MI, SI} is **transient**. Starting from any of H, MI, SI, the chain will eventually enter D and never return. So H, MI, SI are all transient states.
 
----
+The chain as a whole is NOT irreducible (because of the absorbing state D).
 
 ## Example
 
-### Classifying the 3×3 chain from Lesson 2
+**Classifying a 4-state chain.**
 
-$$\mathbf{P} = \begin{pmatrix} 0 & 2/3 & 1/3 \\ 3/8 & 1/8 & 1/2 \\ 1/2 & 1/2 & 0 \end{pmatrix}$$
+Consider S = {1, 2, 3, 4} with the following transitions:
 
-**Step 1: irreducibility.** Can every state reach every other?
-- $0 \to 1$: $P_{01} = 2/3 > 0$ ✓
-- $1 \to 0$: $P_{10} = 3/8 > 0$ ✓
-- $0 \to 2$: $P_{02} = 1/3 > 0$ ✓
-- $2 \to 0$: $P_{20} = 1/2 > 0$ ✓
+$$P = \begin{pmatrix} 0 & 0.5 & 0.5 & 0 \\ 0.5 & 0 & 0 & 0.5 \\ 0.5 & 0 & 0 & 0.5 \\ 0 & 0 & 0 & 1 \end{pmatrix}$$
 
-All pairs communicate. The chain is **irreducible**.
+**Step 1: Accessibility.**
+- From 1: can reach 2 (P₁₂=0.5), 3 (P₁₃=0.5). From 2, can reach 1 and 4. From 3, can reach 1 and 4. So from 1 we can reach 1↔2, 1↔3, and also 4.
+- From 4: P₄₄=1, P₄j=0 for j≠4. So 4 cannot reach 1, 2, or 3.
 
-**Step 2: periodicity.** State 0 has $P_{00} = 0$, $P_{00}^{(2)} > 0$ (e.g. path 0→1→0). But also path 0→2→0 in 2 steps, and 0→1→0→... in 3 steps. So return times include 2 and 3. $\gcd(2, 3) = 1$. State 0 is **aperiodic** ($d = 1$).
+**Step 2: Communicating classes.**
+- Check: does 1 communicate with 2? 1→2 (direct) and 2→1 (direct). Yes: 1↔2.
+- Does 1 communicate with 3? 1→3 (direct) and 3→1 (direct). Yes: 1↔3.
+- Does 2 communicate with 3? 2→1→3 in 2 steps: P⁽²⁾₂₃ = P₂₁P₁₃ = 0.5×0.5=0.25>0. And 3→1→2 in 2 steps. Yes: 2↔3.
+- Classes: {1, 2, 3} (all communicate), {4} (absorbing, only talks to itself).
 
-**Conclusion.** Irreducible + aperiodic = **ergodic**. The unique stationary distribution is $\pi = (0.3, 0.4, 0.3)$ from Lesson 2, and $\mathbf{P}^n \to \tilde{\pi}$.
+**Step 3: Recurrence/Transience.**
+- {4}: absorbing → recurrent (positive recurrent).
+- {1, 2, 3}: can access 4 (e.g., 2→4: P₂₄=0.5>0), but 4 cannot return to 1, 2, 3. So {1, 2, 3} is a transient class. Once the chain enters 4, states 1, 2, 3 are never revisited.
 
----
+**Step 4: Period.**
+- State 1: P⁽¹⁾₁₁ = 0 (no self-loop). P⁽²⁾₁₁ = P₁₂P₂₁ + P₁₃P₃₁ = 0.25+0.25=0.5>0. So return in 2 steps is possible. P⁽³⁾₁₁ = ... (check: 1→2→4, dead end; 1→2→1→1... hmm, in 3 steps: 1→2→1→2? no, final at 2 not 1). Let me be careful: P⁽³⁾₁₁: paths of length 3 returning to 1. 1→2→1→? The chain from 1: 50% go to 2, 50% go to 3. From 2 in step 2: 50% to 1, 50% to 4. After 3 steps from 1 to 1: 1→2→1→... (then from 1 in 1 step: 50%→2, 50%→3, 0%→1). So 1→2→1→2 or 1→2→1→3, not 1→2→1→1. Similarly 1→3→1→{2,3} not 1→3→1→1. So P⁽³⁾₁₁ = 0 (can only return to 1 in even steps with this structure). Thus d(1) = gcd{2, 4, 6,...} = 2. State 1 is **periodic with period 2**.
+
+**Conclusion:** The chain is NOT ergodic: it is not irreducible (state 4 is separate) and the non-absorbing class {1,2,3} is periodic (period 2) and transient.
 
 ## Task
 
-Open `exercise.R`. You will use the `markovchain` package to test irreducibility and compute periods, observe the non-convergence of the alternating chain, and simulate a random walk with reflecting boundaries to compare empirical visit frequencies with the theoretical stationary distribution.
-
-Run the check when done:
-
-```
-npm run check -- bdat-624 module-02 lesson-03
-```
+See `exercise.R`. You will build and analyse a 5-state chain using the `markovchain` package: check irreducibility, identify communicating classes, determine periods, and classify states as recurrent or transient.
 
 ## Check
 
@@ -196,4 +139,4 @@ npm run check -- bdat-624 module-02 lesson-03
 
 ## Reflection
 
-The ergodic theorem says the long-run proportion of time in state j equals $\pi_j$. A researcher uses this to estimate transition probabilities from a long observed trajectory of a single patient's disease states. What assumption about the patient's disease process does this require? Is it plausible for a chronic disease like diabetes or HIV? What would violate the time-homogeneity assumption, and how might you detect the violation in the data?
+The ergodic theorem guarantees that time averages converge to space averages (the stationary distribution). In a clinical context, this says that if you follow one patient for a very long time under the Markov model, the fraction of time they spend in each state equals πᵢ. But consider: is it realistic to imagine following a single patient for "infinitely long"? Most models have an absorbing state (death). How does the presence of an absorbing state violate the ergodic theorem's assumptions, and what alternative long-run quantities (e.g., expected time in each transient state before absorption) would be more clinically meaningful?

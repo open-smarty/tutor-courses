@@ -1,47 +1,118 @@
 ---
-title: "BDAT 602 — Module 3, Lesson 1 Exercise"
-subtitle: "Market Basket Analysis and the Apriori Algorithm"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Market Basket Analysis and the Apriori Algorithm"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Explore the Groceries dataset
-
-Load `Groceries` from `arules`. Call `summary()`. Report: how many transactions? How many items?
-
-```{r task1}
-# YOUR CODE HERE
-# library(arules)
-# data("Groceries")
-# summary(Groceries)
+```{r load-packages}
+library(tidyverse)
+library(arules)
+library(arulesViz)
 ```
 
-**Transactions:** ___
-**Items:** ___
+## Task 1: Compute support, confidence, and lift by hand
 
-## Task 2 — Run Apriori
+Use the 5-transaction toy database from the lesson.
 
-Run `apriori()` on `Groceries` with `supp = 0.01`, `conf = 0.25`, `minlen = 2`. Store the result in `rules`. Print the number of rules generated.
+```{r task1-toy-data}
+# Transaction database (as a list of character vectors)
+trans_list <- list(
+  T1 = c("dental", "vision"),
+  T2 = c("dental", "mental"),
+  T3 = c("dental", "vision", "mental"),
+  T4 = c("vision", "mental"),
+  T5 = c("dental", "vision")
+)
+N <- length(trans_list)
 
-```{r task2}
-# YOUR CODE HERE
-# rules <- apriori(Groceries, parameter = list(supp = 0.01, conf = 0.25, minlen = 2))
-# length(rules)
+# Helper function: count how many transactions contain a given itemset
+contains <- function(trans_list, itemset) {
+  sum(sapply(trans_list, function(t) all(itemset %in% t)))
+}
 ```
 
-**Number of rules generated:** ___
+```{r task1-support}
+# TODO: compute support of {dental}, {vision}, {mental}, {dental, vision}
+supp_dental        <- NULL  # contains(...) / N
+supp_vision        <- NULL
+supp_mental        <- NULL
+supp_dental_vision <- NULL
 
-## Task 3 — Top rules by lift
+cat("supp({dental})        =", supp_dental, "\n")
+cat("supp({vision})        =", supp_vision, "\n")
+cat("supp({mental})        =", supp_mental, "\n")
+cat("supp({dental, vision})=", supp_dental_vision, "\n")
+```
 
-Print the top 5 rules sorted by lift using `inspect(head(sort(rules, by = "lift"), 5))`.
+```{r task1-confidence}
+# TODO: compute confidence of dental → vision  and  vision → dental
+conf_d_v <- NULL  # supp_dental_vision / supp_dental
+conf_v_d <- NULL  # supp_dental_vision / supp_vision
 
-```{r task3}
-# YOUR CODE HERE
+cat("conf(dental → vision) =", conf_d_v, "\n")
+cat("conf(vision → dental) =", conf_v_d, "\n")
+```
+
+```{r task1-lift}
+# TODO: compute lift of dental → vision
+lift_d_v <- NULL  # conf_d_v / supp_vision
+
+cat("lift(dental → vision) =", lift_d_v, "\n")
+# Is the association positive, negative, or independent? Write a comment.
+# Answer:
+```
+
+## Task 2: Verify the anti-monotone property
+
+```{r task2-antimonotone}
+# Set min_supp = 0.60
+min_supp <- 0.60
+
+# TODO: compute support of {dental, mental}
+supp_dental_mental <- NULL
+
+# Is {dental, mental} infrequent (below min_supp)?
+cat("supp({dental, mental}) =", supp_dental_mental, "— infrequent:", supp_dental_mental < min_supp, "\n")
+
+# TODO: compute support of the superset {dental, vision, mental}
+supp_all_three <- NULL
+cat("supp({dental, vision, mental}) =", supp_all_three, "— also infrequent:", supp_all_three < min_supp, "\n")
+
+# Comment: does the anti-monotone property hold here?
+# Answer:
+```
+
+## Task 3: Run apriori() on the toy transactions
+
+```{r task3-apriori}
+# Convert the list to an arules transactions object
+trans <- as(trans_list, "transactions")
+
+# Inspect the transaction object
+inspect(trans)
+
+# TODO: run apriori() with min_supp = 0.40 and min_conf = 0.60
+rules <- NULL  # apriori(trans, parameter = list(supp = ..., conf = ..., minlen = 2))
+
+# TODO: inspect the rules sorted by lift (descending)
+# inspect(sort(rules, by = "lift"))
+```
+
+## Task 4: Interpret the top rules
+
+```{r task4-interpret}
+# TODO: run inspect() on the top 3 rules sorted by lift
+# For each rule, write a business-friendly sentence explaining what it means.
+
+# Rule 1: ... → ... (lift = ...)
+# Business interpretation:
+
+# Rule 2: ... → ... (lift = ...)
+# Business interpretation:
+
+# Rule 3: ... → ... (lift = ...)
+# Business interpretation:
 ```

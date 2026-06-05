@@ -6,56 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "What does model_matrix(data, y ~ x^2 + x) actually produce in R?",
+      "text": "In the formula y ~ x1 + x2, what does the '+' operator do?",
       "options": [
-        "Two columns: one for x and one for x squared",
-        "Three columns: intercept, x, and x^2",
-        "Only one predictor column because ^ is a formula operator that collapses to just x",
-        "An error because ^ is not allowed in formulas"
+        "It adds the values of x1 and x2 together before using them as a predictor",
+        "It specifies that x1 and x2 are both included as separate additive predictors in the model",
+        "It creates an interaction term between x1 and x2",
+        "It squares x1 and adds x2"
       ],
-      "correct": 2,
-      "explanation": "In R formulas, ^ means 'crossing up to this degree', not exponentiation. y ~ x^2 + x is equivalent to y ~ x — it collapses to a single x column. Use I(x^2) for literal squaring."
+      "correct": 1,
+      "explanation": "In R formula notation, '+' means 'include this predictor in the model additively.' The model y ~ x1 + x2 means y = β₀ + β₁x1 + β₂x2 + ε — two separate predictors with separate coefficients. To create an interaction, use '*' or ':'."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "A factor variable with 5 levels is added to an lm() model. How many columns does it contribute to the model matrix (assuming the default intercept is present)?",
-      "options": ["1", "4", "5", "6"],
-      "correct": 1,
-      "explanation": "With k levels and an intercept, R creates k-1 dummy columns (one level becomes the reference group absorbed into the intercept). For 5 levels: 5-1 = 4 dummy columns."
+      "type": "true-false",
+      "text": "For a factor with 5 levels, R creates 5 dummy variable columns in the design matrix.",
+      "correct": false,
+      "explanation": "R creates k − 1 = 4 dummy columns for a factor with k = 5 levels. The reference level (first by default) is represented by all four dummies being 0. Including all k dummies would create perfect multicollinearity (the dummy columns sum to the intercept column), making X'X singular."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "Under OLS with a categorical predictor, the predicted value for each category is exactly equal to the sample mean of that category in the training data.",
-      "correct": true,
-      "explanation": "When x is categorical and there are no other predictors, OLS minimises SSR within each group independently — which is achieved by predicting the group mean. This is the equivalence between OLS and one-way ANOVA."
+      "type": "multiple-choice",
+      "text": "In lm(log(price) ~ log(carat) + cut), the coefficient for cutIdeal is 0.40. What does this mean?",
+      "options": [
+        "Ideal diamonds cost $0.40 more than Fair diamonds",
+        "Ideal diamonds cost 40% more than Fair diamonds regardless of carat",
+        "Holding carat constant, Ideal-cut diamonds have a log(price) that is 0.40 units higher than Fair-cut, i.e., exp(0.40) ≈ 1.49 times the price of Fair",
+        "The model R² improves by 0.40 when cut is added"
+      ],
+      "correct": 2,
+      "explanation": "In a log-response model, a coefficient of 0.40 means log(price) is 0.40 units higher for Ideal vs Fair (holding carat constant). Back-transforming: exp(0.40) ≈ 1.49, so Ideal diamonds cost about 49% more than Fair diamonds of the same carat weight."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In the formula y ~ x1 - 1, what is removed?",
+      "text": "You change the reference level of 'cut' from 'Fair' to 'Ideal' using relevel(). How does this affect R²?",
       "options": [
-        "The predictor x1",
-        "The intercept term",
-        "The interaction between the intercept and x1",
-        "Observations where x1 equals 1"
+        "R² increases because Ideal is a better reference level",
+        "R² decreases because fewer dummy variables are in the model",
+        "R² is unchanged — re-parameterisation does not affect model fit",
+        "R² changes only if the sample size is small"
       ],
-      "correct": 1,
-      "explanation": "In R formula syntax, -1 removes the implicit intercept. The resulting model passes through the origin (y-intercept = 0). This is useful when theory requires the line to pass through zero."
+      "correct": 2,
+      "explanation": "Changing the reference level is a pure re-parameterisation. The fitted values ŷᵢ are identical regardless of which level is the reference, so RSS, TSS, and therefore R² are unchanged. Only the interpretation of individual coefficients changes."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "The lm() intercept for a model with categorical x is 1.15. A new category 'e' (not in the training data) is added. What would add_predictions() return for group 'e'?",
+      "text": "Without controlling for carat, Ideal-cut diamonds appear cheaper than Fair-cut. But after adding log(carat) to the model, Ideal has a positive coefficient. What statistical phenomenon explains this?",
       "options": [
-        "1.15 (the intercept, as if 'e' were the reference group)",
-        "NA, because 'e' was not seen during training",
-        "An error, because lm() cannot predict for unseen factor levels",
-        "0, because the dummy variable for 'e' is missing"
+        "Heteroscedasticity",
+        "Confounding — carat is correlated with both cut and price, distorting the raw cut-price relationship",
+        "Multicollinearity between Ideal and Fair",
+        "Selection bias in how diamonds were sampled"
       ],
-      "correct": 2,
-      "explanation": "R will return an error (or NA with a warning) when predict() encounters a factor level that was not present in the training data. The model does not know how to encode an unseen level."
+      "correct": 1,
+      "explanation": "Confounding (related to Simpson's Paradox): cut and carat are correlated (lower-quality cuts are applied to larger, heavier rough stones). In the raw data, cut is 'confounded' by carat — the apparent cheapness of Ideal is really the smallness of Ideal diamonds. Once we control for carat in the regression, the genuine quality premium of Ideal cut is revealed."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "In R, the formula y ~ . (dot) includes all columns in the data frame as predictors.",
+      "correct": true,
+      "explanation": "The dot shorthand y ~ . means 'use all other columns in the data frame as predictors.' It is convenient for exploratory modelling but can inadvertently include ID columns, date columns, or the response variable itself if the data frame is not carefully prepared."
     }
   ]
 }

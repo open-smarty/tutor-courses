@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "What does data_grid(x) do when x is a continuous variable with values 1–10?",
+      "text": "What does data_grid(diamonds, carat = seq_range(carat, n = 100)) produce?",
       "options": [
-        "Returns only the unique observed values of x from the dataset",
-        "Creates a new data frame with a single evenly spaced sequence of x values spanning the observed range",
-        "Generates a random sample of x values from a normal distribution",
-        "Subsets the original dataset to rows where x is an integer"
+        "A 100-row random sample of diamonds",
+        "A tibble with 100 evenly spaced carat values spanning the observed range",
+        "A 100-column matrix of predicted prices",
+        "100 bootstrap replicates of the carat variable"
       ],
       "correct": 1,
-      "explanation": "data_grid() creates an evenly spaced prediction grid over the range of each specified variable. For integer x = 1:10, it returns one row per unique value."
+      "explanation": "data_grid() creates a regular grid over the specified variables. seq_range(carat, n = 100) generates 100 evenly spaced values from min(carat) to max(carat). The result is a clean x-axis for overlaying a smooth fitted curve without the irregular spacing of the raw data."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "add_residuals(sim1_mod) computes which quantity for each row?",
-      "options": [
-        "The predicted value ŷ",
-        "The standardised residual (residual / standard error)",
-        "The observed y minus the predicted ŷ",
-        "The Cook's distance for each observation"
-      ],
-      "correct": 2,
-      "explanation": "A residual = observed y − predicted ŷ. add_residuals() adds this as a new column (named 'resid' by default) to the original data frame."
+      "type": "true-false",
+      "text": "add_residuals(model) can be applied to a data_grid() output to compute residuals for the grid points.",
+      "correct": false,
+      "explanation": "Residuals require observed y-values: eᵢ = yᵢ − ŷᵢ. The data_grid() output only contains x-values — there is no y column, so residuals cannot be computed. add_residuals() must be applied to the original dataset that contains both x and y."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "If the residuals-vs-predictor plot shows a perfectly random cloud of points centred at zero, you should try adding more predictors to improve the model.",
-      "correct": false,
-      "explanation": "Random scatter around zero is the ideal outcome — it means the model has captured all systematic variation. Adding predictors is only warranted if residuals show a pattern (curve, fan shape, or non-zero mean)."
+      "type": "multiple-choice",
+      "text": "After fitting mod <- lm(log(price) ~ log(carat)), you call add_predictions(mod, var = 'log_pred'). The predictions are on the log(price) scale. To overlay them on a price-scale scatter plot, what transformation is needed?",
+      "options": [
+        "Divide log_pred by log(10)",
+        "Compute exp(log_pred) to back-transform to the price scale",
+        "Square log_pred",
+        "No transformation — lm() always predicts on the original scale"
+      ],
+      "correct": 1,
+      "explanation": "The model was fitted on log(price), so predictions are in log(price) units. To compare with raw prices, apply the inverse function: exp(). This reverses the logarithm and gives predicted prices in dollars."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "You fit a model and add_residuals() to a dataset. The residuals form a fan shape — small spread at low x, large spread at high x. What assumption is violated?",
+      "text": "In the residual plot of the log-log diamond model coloured by cut, Ideal-cut diamonds cluster above zero and Fair-cut diamonds cluster below zero. What action should you take next?",
       "options": [
-        "Linearity of the mean function",
-        "Homoscedasticity (constant variance of residuals)",
-        "Independence of observations",
-        "Normality of the response variable"
+        "Accept the model — the residuals are centred at zero on average",
+        "Remove outliers from the dataset",
+        "Add cut as a predictor to the model to capture the quality premium",
+        "Switch from log-log to a quadratic model"
       ],
-      "correct": 1,
-      "explanation": "A fan shape in residuals indicates heteroscedasticity — the variance of the residuals is not constant across predictor values. OLS assumes constant variance (homoscedasticity)."
+      "correct": 2,
+      "explanation": "Systematic clustering of residuals by a categorical variable (cut) is a clear signal that the variable explains variance the model has missed. Adding cut as a predictor will remove this pattern from the residuals and improve the model's fit."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "add_predictions() works with 'any model that has a predict() method'. What does this mean in practice?",
+      "text": "You compute the mean residual per cut level from the log-log model. Ideal cut has the highest mean residual (+0.18). What does this mean in practical terms?",
       "options": [
-        "It only works with lm() models",
-        "It can be used with glm(), gam(), rpart(), and other model types, not just lm()",
-        "It requires the model to be re-fitted before adding predictions",
-        "It returns predictions only for the training data, not new observations"
+        "Ideal-cut diamonds have the highest carat weight",
+        "The model overestimates prices for Ideal-cut diamonds",
+        "The model underestimates prices for Ideal-cut diamonds — they command a quality premium not captured by carat alone",
+        "Ideal-cut diamonds have the lowest price variance"
       ],
-      "correct": 1,
-      "explanation": "add_predictions() calls predict(model, newdata = ...) internally. Since glm(), gam(), rpart(), and many other R model objects have a predict() method, add_predictions() works with all of them."
+      "correct": 2,
+      "explanation": "A positive mean residual means actual log(price) exceeds predicted log(price), i.e., exp(0.18) ≈ 1.2 — the model underestimates Ideal-cut prices by about 20% on average. This is the quality premium: Ideal-cut diamonds are worth more than their carat weight alone would suggest."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "add_predictions() and add_residuals() both work with lm(), glm(), and gam() objects, as long as those objects have a predict() method.",
+      "correct": true,
+      "explanation": "modelr functions are model-agnostic — they call predict(model, newdata = ...) internally. Any R model class that implements a predict() method (which includes lm, glm, gam, nls, rpart, and many others) can be used with add_predictions() and add_residuals()."
     }
   ]
 }

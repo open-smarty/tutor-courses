@@ -1,66 +1,81 @@
 """
-Module 2, Lesson 1 — Xbar-R Control Charts (Solution)
+BDAT 614 — Module 2, Lesson 1
+Solution: Xbar-R Control Charts for Fill Weight Data
 """
 import numpy as np
 import matplotlib.pyplot as plt
 
-subgroups = [
-    [10.02, 10.05, 9.98, 10.01, 10.03],
-    [10.04, 10.00, 10.06, 9.99, 10.02],
-    [9.97, 10.03, 10.01, 10.00, 9.99],
-    [10.05, 10.02, 10.04, 10.01, 10.03],
-    [10.00, 9.98, 10.02, 10.05, 10.01],
-    [10.03, 10.01, 9.99, 10.04, 10.02],
-    [10.08, 10.06, 10.07, 10.09, 10.05],
-    [10.01, 10.03, 10.00, 10.02, 10.04],
-    [9.99, 10.00, 10.01, 9.98, 10.02],
-    [10.02, 10.04, 10.01, 10.03, 10.00],
-]
+np.random.seed(7)
 
-A2, D3, D4 = 0.577, 0.0, 2.114
+# Control chart constants for subgroup size n=5
+A2 = 0.577
+D3 = 0.0
+D4 = 2.114
 
-data = np.array(subgroups)
-xbar_values = data.mean(axis=1)
-r_values = data.max(axis=1) - data.min(axis=1)
+# ============================================================
+# Task 1: Generate subgroup data
+# ============================================================
+data = np.random.normal(loc=500, scale=1.5, size=(25, 5))
 
-xbar_bar = xbar_values.mean()
-r_bar = r_values.mean()
+# ============================================================
+# Task 2: Compute subgroup statistics
+# ============================================================
+subgroup_means  = np.mean(data, axis=1)
+subgroup_ranges = np.max(data, axis=1) - np.min(data, axis=1)
 
-xbar_ucl = xbar_bar + A2 * r_bar
-xbar_lcl = xbar_bar - A2 * r_bar
-r_ucl = D4 * r_bar
-r_lcl = D3 * r_bar
+xbar_bar = np.mean(subgroup_means)
+R_bar    = np.mean(subgroup_ranges)
 
-print("=== Xbar-R Control Chart Limits ===")
-print(f"Grand Mean (x̄̄):   {xbar_bar:.4f}")
-print(f"Average Range (R̄): {r_bar:.4f}")
-print(f"Xbar UCL: {xbar_ucl:.4f}  CL: {xbar_bar:.4f}  LCL: {xbar_lcl:.4f}")
-print(f"R    UCL: {r_ucl:.4f}   CL: {r_bar:.4f}  LCL: {r_lcl:.4f}")
+print(f"Grand mean (x̄̄):      {xbar_bar:.3f} g")
+print(f"Average range (R̄):    {R_bar:.3f} g")
 
-x_ooc = [i for i, v in enumerate(xbar_values) if v > xbar_ucl or v < xbar_lcl]
-r_ooc = [i for i, v in enumerate(r_values)    if v > r_ucl    or v < r_lcl]
-print(f"\nOut-of-control Xbar points: subgroups {[i+1 for i in x_ooc]}")
-print(f"Out-of-control R     points: subgroups {[i+1 for i in r_ooc]}")
+# ============================================================
+# Task 3: Compute control limits
+# ============================================================
+UCL_xbar = xbar_bar + A2 * R_bar
+LCL_xbar = xbar_bar - A2 * R_bar
+UCL_R    = D4 * R_bar
+LCL_R    = D3 * R_bar
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7))
-k = range(1, len(subgroups) + 1)
+print(f"\nXbar chart — UCL: {UCL_xbar:.3f}  CL: {xbar_bar:.3f}  LCL: {LCL_xbar:.3f}")
+print(f"R chart    — UCL: {UCL_R:.3f}  CL: {R_bar:.3f}  LCL: {LCL_R:.3f}")
 
-for ax, values, cl, ucl, lcl, ooc, title in [
-    (ax1, xbar_values, xbar_bar, xbar_ucl, xbar_lcl, x_ooc, "Xbar Chart — Bolt Diameter (mm)"),
-    (ax2, r_values,    r_bar,    r_ucl,    r_lcl,    r_ooc, "R Chart — Bolt Diameter (mm)"),
-]:
-    ax.plot(k, values, 'b-o', label='Value')
-    ax.axhline(cl,  color='green', linestyle='-',  label=f'CL={cl:.4f}')
-    ax.axhline(ucl, color='red',   linestyle='--', label=f'UCL={ucl:.4f}')
-    ax.axhline(lcl, color='red',   linestyle='--', label=f'LCL={lcl:.4f}')
-    for i in ooc:
-        ax.plot(i + 1, values[i], 'ro', markersize=12, label='Out of control' if i == ooc[0] else '')
+# ============================================================
+# Task 4: Plot both charts
+# ============================================================
+subgroup_numbers = np.arange(1, 26)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
+
+def plot_chart(ax, values, cl, ucl, lcl, title, ylabel):
+    """Plot a single control chart panel."""
+    ax.plot(subgroup_numbers, values, color="steelblue",
+            marker="o", markersize=5, linewidth=1.5, label="Subgroup statistic")
+
+    ax.axhline(ucl, color="red",   linestyle="--", linewidth=1.5, label=f"UCL = {ucl:.3f}")
+    ax.axhline(cl,  color="green", linestyle="--", linewidth=1.5, label=f"CL  = {cl:.3f}")
+    ax.axhline(lcl, color="red",   linestyle="--", linewidth=1.5, label=f"LCL = {lcl:.3f}")
+
+    # Flag out-of-control points
+    ooc = (values > ucl) | (values < lcl)
+    if ooc.any():
+        ax.scatter(subgroup_numbers[ooc], values[ooc], color="red", s=80,
+                   zorder=5, label="Out of control")
+
+    ax.set_xlabel("Subgroup number")
+    ax.set_ylabel(ylabel)
     ax.set_title(title)
-    ax.set_xlabel('Subgroup')
-    ax.legend(loc='upper right', fontsize=8)
+    ax.legend(loc="upper right", fontsize=8)
     ax.grid(True, alpha=0.3)
 
+plot_chart(ax1, subgroup_means,  xbar_bar, UCL_xbar, LCL_xbar,
+           "Xbar Chart — Fill Weight (n=5)", "Subgroup mean (g)")
+
+plot_chart(ax2, subgroup_ranges, R_bar, UCL_R, LCL_R,
+           "R Chart — Fill Weight (n=5)", "Subgroup range (g)")
+
+plt.suptitle("Xbar-R Control Charts: Bottling Machine Fill Weight", fontsize=13)
 plt.tight_layout()
-plt.savefig('xbar_r_chart.png', dpi=100)
+plt.savefig("module-02-lesson-01-xbar-r.png", dpi=150, bbox_inches="tight")
 plt.show()
-print("\nChart saved as xbar_r_chart.png")
+print("\nChart saved as module-02-lesson-01-xbar-r.png")

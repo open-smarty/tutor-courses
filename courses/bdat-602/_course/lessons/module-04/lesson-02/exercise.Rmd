@@ -1,53 +1,100 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 2 Exercise"
-subtitle: "Hierarchical Clustering"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Hierarchical Clustering"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Prepare data and distance matrix
+```{r load-packages}
+library(tidyverse)
+library(cluster)  # for silhouette()
 
-Take a 500-row sample of `health_small` (use `set.seed(602)` before `slice_sample()`). Select `age`, `bmi`, and `num_claims`. Impute `bmi` with its median. Scale all three variables. Compute the Euclidean distance matrix.
-
-```{r task1}
-# YOUR CODE HERE
-# library(dplyr)
-# set.seed(602)
-# hc_sub <- health_small |>
-#   slice_sample(n = 500) |>
-#   select(age, bmi, num_claims) |>
-#   mutate(bmi = if_else(is.na(bmi), median(bmi, na.rm=TRUE), bmi)) |>
-#   na.omit()
-# hc_scaled <- scale(hc_sub)
-# dist_mat  <- dist(hc_scaled, method = "euclidean")
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+# Use 5,000 rows — hclust needs O(n^2) memory
+health_data <- simulate_bdat602(n = 5000, seed = 602)
 ```
 
-## Task 2 — Fit hierarchical clustering and plot dendrogram
+## Task 1: Prepare the data
 
-Fit with Ward.D2 linkage. Plot the dendrogram with `labels = FALSE`, `hang = -1`.
+```{r task1-prepare}
+# TODO: select age, bmi, income, num_claims, num_chronic_conditions
+# drop_na(), then scale()
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  NULL  # replace with scale()
 
-```{r task2}
-# YOUR CODE HERE
-# hc_ward <- hclust(dist_mat, method = "ward.D2")
-# plot(hc_ward, labels = FALSE, hang = -1,
-#      main = "Dendrogram: Ward.D2 Linkage", xlab = "", ylab = "Height")
+dim(clust_data)
 ```
 
-## Task 3 — Cut at k = 3
+## Task 2: Fit hierarchical clustering (Ward linkage) and plot the dendrogram
 
-Use `cutree()` to cut at k = 3. Print the cluster size table.
+```{r task2-hclust}
+# TODO: compute the Euclidean distance matrix with dist()
+D <- NULL  # dist(clust_data, method = "euclidean")
 
-```{r task3}
-# YOUR CODE HERE
-# clusters <- cutree(hc_ward, k = 3)
-# table(clusters)
+# TODO: fit hclust with method = "ward.D2"
+hc <- NULL  # hclust(D, method = "ward.D2")
+
+# TODO: plot the dendrogram
+# Use labels = FALSE (too many to show), hang = -1 for a clean look
+# Add a red dashed horizontal line at a height that gives ~4 clusters
+
+plot(hc, labels = FALSE, hang = -1,
+     main = "Ward.D2 Dendrogram — Insurance Policyholders")
+# abline(h = ???, col = "red", lty = 2)
+```
+
+```{r task2-interpret}
+# Looking at the dendrogram, at what height do the major branches merge?
+# How many distinct groups can you identify before the final merge?
+# Answer (as a comment):
+```
+
+## Task 3: Extract clusters and compare to k-means
+
+```{r task3-cutree}
+# TODO: use cutree() to extract 4 clusters from hc
+clusters_hc <- NULL  # cutree(hc, k = 4)
+
+# Print the size of each cluster
+table(clusters_hc)
+```
+
+```{r task3-compare}
+# For reference, run k-means with k = 4 on the same data
+set.seed(602)
+km4 <- kmeans(clust_data, centers = 4, nstart = 25)
+
+# Compare cluster sizes
+cat("Hierarchical cluster sizes:", table(clusters_hc), "\n")
+cat("k-means cluster sizes:     ", km4$size, "\n")
+
+# Are the cluster sizes similar? Which method produces more balanced clusters?
+# Answer (as a comment):
+```
+
+## Task 4: Single linkage — chaining effect
+
+```{r task4-single-linkage}
+# TODO: re-fit hclust with method = "single"
+hc_single <- NULL  # hclust(D, method = "single")
+
+# TODO: plot the dendrogram for single linkage
+plot(hc_single, labels = FALSE, hang = -1,
+     main = "Single Linkage Dendrogram — Insurance Policyholders")
+```
+
+```{r task4-chaining}
+# Extract 4 clusters from single linkage
+clusters_single <- cutree(hc_single, k = 4)
+table(clusters_single)
+
+# Describe the chaining effect you observe:
+# - What do the cluster sizes look like with single linkage?
+# - How does the dendrogram shape differ from Ward?
+# Answer (as a comment):
 ```

@@ -1,87 +1,57 @@
 ---
-title: "BDAT 608 | Module 3, Lesson 2 — Diagnostic Plots and Model Comparison"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Diagnostic Plots and Model Comparison"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 8, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-library(ggfortify)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-sim1_mod <- lm(y ~ x, data = sim1)
+library(broom)
 ```
 
----
-
-## Task 1 — Base R Diagnostics
-
-```{r base-diagnostics, fig.width=9, fig.height=7}
-# TODO: Produce the 2×2 base R diagnostic panel for sim1_mod.
-# Use par(mfrow = c(2, 2)) before and par(mfrow = c(1, 1)) after.
+```{r fit-models}
+data("diamonds", package = "ggplot2")
+mod1 <- lm(log(price) ~ log(carat),                      data = diamonds)
+mod2 <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)
 ```
 
----
+## Task 1: Four diagnostic plots for mod1
 
-## Task 2 — ggfortify Diagnostics
+```{r task1, fig.width=9, fig.height=7}
+# TODO: Produce the four diagnostic plots for mod1 using plot().
+# Set par(mfrow = c(2,2)) before and par(mfrow = c(1,1)) after.
+# In comments, describe what each of the four plots tells you about mod1.
 
-```{r ggplot-diagnostics}
-# TODO: Use autoplot() to produce the same four diagnostics.
-# Set colour = "#1B3A6B" and smooth.colour = "#C9A84C".
 ```
 
----
+## Task 2: AIC comparison
 
-## Task 3 — Fit Quadratic Model
+```{r task2}
+# TODO: Call AIC(mod1, mod2).
+# Which model has lower AIC? By how much?
+# Write a one-sentence interpretation using the rule: ΔAIC > 10 = strong evidence.
 
-```{r quadratic-model}
-# TODO: Fit mod_b <- lm(y ~ x + I(x^2), data = sim1)
-# Print summary(mod_b)
 ```
 
----
+## Task 3: F-test for the extra predictors
 
-## Task 4 — Compare Fitted Lines
+```{r task3}
+# TODO: Call anova(mod1, mod2).
+# Report the F-statistic, degrees of freedom for numerator and denominator,
+# and the p-value.
+# Does the F-test confirm the AIC result?
 
-```{r compare-fits}
-mod_a <- sim1_mod  # linear (already fitted)
-
-# TODO: Use gather_predictions(mod_a, mod_b) to overlay both models on sim1.
-# Facet by model.
 ```
 
----
+## Task 4: Residuals vs fitted for mod2
 
-## Task 5 — Compare Residuals
+```{r task4}
+# TODO: Use augment(mod2) from broom to get the residuals and fitted values.
+# Plot .resid (y) vs .fitted (x). Add a horizontal line at 0.
+# Compare to mod1: has the pattern improved?
 
-```{r compare-residuals}
-# TODO: Use gather_residuals(mod_a, mod_b) to compare residuals.
-# Plot x vs resid, faceted by model. Add geom_ref_line(h = 0).
 ```
-
----
-
-## Task 6 — AIC Comparison
-
-```{r aic}
-# TODO: Run AIC(mod_a, mod_b). Which model is preferred?
-# Write your interpretation as a comment.
-```
-
----
-
-## Reflection
-
-<!-- Is non-normal residuals always a sign that the model is wrong?
-     When does normality matter and when does it not? (3–4 sentences) -->

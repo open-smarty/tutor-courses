@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "k-Means minimises which objective function?",
+      "text": "The k-means objective function minimises:",
       "options": [
-        "Total between-cluster sum of squares (BCSS)",
-        "Total within-cluster sum of squares (WCSS)",
-        "The silhouette coefficient",
-        "The number of clusters k"
+        "The sum of absolute distances from each point to its centroid",
+        "The sum of squared distances from each point to its assigned centroid (WCSS)",
+        "The maximum distance between any two points in the same cluster",
+        "The between-cluster sum of squares"
       ],
       "correct": 1,
-      "explanation": "k-Means minimises WCSS — the total squared Euclidean distance from each observation to its cluster centroid. Minimising WCSS creates compact, internally cohesive clusters."
+      "explanation": "k-means minimises the Within-Cluster Sum of Squares (WCSS) = Σₖ Σᵢ∈Cₖ ||xᵢ − μₖ||². Using squared distances means the optimal centroid is the arithmetic mean of the cluster's points, making the update step a simple average."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Why should nstart be set to 25 (or higher) in kmeans()?",
+      "text": "Why do we set nstart = 25 when calling kmeans() in R?",
       "options": [
-        "To run 25 cross-validation folds",
-        "Because k-Means converges to a local minimum; multiple random starts increases the chance of finding the global minimum",
-        "To create 25 clusters",
-        "To run the algorithm for exactly 25 iterations"
+        "To run 25 clustering iterations before convergence",
+        "To try 25 different random initialisations and keep the solution with the lowest WCSS",
+        "To set the maximum number of clusters to 25",
+        "To ensure the algorithm runs for at least 25 seconds"
       ],
       "correct": 1,
-      "explanation": "k-Means converges to a local minimum depending on the random initialisation. Running nstart = 25 starts means 25 random initialisations are tried; the best result (lowest WCSS) is returned."
+      "explanation": "Lloyd's algorithm converges to a local minimum that depends on the initial centroid positions. Running nstart = 25 repetitions with different random starts increases the probability of finding the global (best) local minimum. The run with the lowest WCSS is returned."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "The elbow plot shows silhouette scores on the y-axis.",
-      "correct": false,
-      "explanation": "The elbow plot shows WCSS (total within-cluster sum of squares) on the y-axis against the number of clusters k. The silhouette plot is a separate diagnostic that shows average silhouette width against k."
+      "type": "multiple-choice",
+      "text": "In the elbow method, WCSS always decreases as k increases. What does the 'elbow' represent?",
+      "options": [
+        "The k value with the lowest WCSS",
+        "The k value beyond which adding more clusters gives diminishing returns in WCSS reduction",
+        "The k value that maximises the silhouette score",
+        "The point where WCSS stops decreasing"
+      ],
+      "correct": 1,
+      "explanation": "WCSS always decreases as k increases (at k = n, WCSS = 0). The elbow is the inflection point where the rate of decrease sharply slows — adding more clusters beyond this point gives little additional compactness but increases model complexity."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The silhouette score for an observation ranges from -1 to +1. A score close to +1 means:",
+      "text": "A silhouette score of −0.3 for a data point means:",
       "options": [
-        "The observation is likely an outlier",
-        "The observation is well-matched to its cluster and poorly matched to neighbouring clusters",
-        "The observation belongs equally to two clusters",
-        "The total WCSS is minimised"
+        "The point is well-clustered and far from other clusters",
+        "The point is on the boundary between two clusters",
+        "The point is closer to another cluster than to its own cluster — it may be misclassified",
+        "The clustering algorithm did not converge for this point"
       ],
-      "correct": 1,
-      "explanation": "A silhouette close to +1 indicates the observation is much closer to its own cluster centroid than to the nearest other cluster. A score near 0 indicates borderline assignment; negative scores suggest possible misassignment."
+      "correct": 2,
+      "explanation": "Silhouette score s(i) = (b(i) − a(i)) / max(a(i), b(i)). When s(i) < 0, it means b(i) < a(i): the point's average distance to its own cluster is greater than its average distance to the nearest other cluster. This indicates the point is likely in the wrong cluster."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "k-means clustering requires you to scale your features before fitting, because the algorithm is distance-based.",
+      "correct": true,
+      "explanation": "k-means uses Euclidean distance. If one feature (e.g., income in thousands) has a much larger scale than another (e.g., age in years), income will dominate the distance calculation and effectively determine cluster membership. Z-score standardisation puts all features on equal footing."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "After clustering policyholders, you want to describe each cluster in business terms. What is the appropriate next step?",
+      "text": "You cluster 50,000 policyholders into 4 groups. Cluster 3 has average age = 67, average chronic conditions = 3.1, and high claim amounts. What label best describes this cluster for business use?",
       "options": [
-        "Re-run k-means with a different random seed",
-        "Join cluster labels back to the original data and compute per-cluster summaries of key variables",
-        "Remove the smallest cluster because it may be noise",
-        "Increase k until each cluster has exactly one member"
+        "Young healthy low-risk policyholders",
+        "Middle-income moderate-risk policyholders",
+        "Elderly high-utilisation policyholders — likely to have high claims",
+        "High-income premium plan seekers"
       ],
-      "correct": 1,
-      "explanation": "Cluster profiling involves joining the integer cluster labels back to the original (unscaled) data and computing group-level summaries (means, proportions). This translates the abstract cluster numbers into interpretable business segments."
+      "correct": 2,
+      "explanation": "Old age, high chronic conditions, and high claims are strongly associated with heavy healthcare utilisation. This cluster is best labelled as elderly high-utilisation — a segment that warrants different pricing, care management, and retention strategies."
     }
   ]
 }

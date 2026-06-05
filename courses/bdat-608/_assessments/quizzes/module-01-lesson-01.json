@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In the equation y = f(x) + ε, what does ε represent?",
+      "text": "In the decomposition y = f(x) + ε, what does ε represent?",
       "options": [
-        "The fitted value predicted by the model",
-        "Random variation that no model can explain",
-        "The slope of the regression line",
-        "The difference between two model families"
+        "The systematic pattern we want to learn",
+        "The random, irreducible noise that no model can explain",
+        "The fitted coefficient estimated from data",
+        "The residual computed after fitting the model"
       ],
       "correct": 1,
-      "explanation": "ε (epsilon) is the noise — irreducible random variation due to measurement error, unobserved factors, and pure chance. f(x) is the signal (fitted value)."
+      "explanation": "ε is the noise component — random variation that is unpredictable and cannot be reduced by any model. f(x) is the signal. The residual eᵢ = yᵢ − ŷᵢ is an estimate of ε for each observation."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "What is the difference between a model family and a fitted model?",
-      "options": [
-        "A model family is for training data; a fitted model is for test data",
-        "A model family defines the equation shape; a fitted model is the specific member closest to the data",
-        "A model family always has more parameters than a fitted model",
-        "There is no difference — the terms are interchangeable"
-      ],
-      "correct": 1,
-      "explanation": "The model family (e.g., all straight lines y = a1 + a2·x) defines the shape. The fitted model is the one specific line whose parameters were estimated from the observed data."
+      "type": "true-false",
+      "text": "The model family y = β₀ + β₁x and the fitted model ŷ = 0.25 + 0.77x are the same thing.",
+      "correct": false,
+      "explanation": "They are distinct. The model family is the shape — all possible straight lines. The fitted model is the specific member of that family (with particular numbers for the intercept and slope) that was estimated from the data."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "In the statistical modelling cycle, you only need to fit a model once and then you are done.",
-      "correct": false,
-      "explanation": "Modelling is iterative. After fitting, you inspect residuals; if they show patterns, you revise the model family and refit. The cycle repeats until residuals look like random noise."
+      "type": "multiple-choice",
+      "text": "You fit a linear model to the diamonds dataset and plot residuals vs carat. The residuals fan outward: small for low-carat diamonds and large for high-carat diamonds. What does this indicate?",
+      "options": [
+        "The model is correctly specified and needs no refinement",
+        "There are no outliers in the dataset",
+        "The variance of the residuals increases with carat — heteroscedasticity",
+        "The relationship between price and carat is perfectly linear"
+      ],
+      "correct": 2,
+      "explanation": "A fan shape in the residual plot is the signature of heteroscedasticity: the noise variance is not constant but grows with the predictor. This violates a key OLS assumption and suggests a variance-stabilising transformation (like log) is needed."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "What does it mean when a residuals-vs-predictor plot shows a clear curved pattern?",
+      "text": "In R, which function from the modelr package attaches the column 'resid' (eᵢ = yᵢ − ŷᵢ) to a data frame?",
       "options": [
-        "The model fits the data perfectly",
-        "The noise ε is normally distributed",
-        "The model has captured all the systematic variation",
-        "There is remaining structure the model has not captured — the model family is likely misspecified"
+        "add_predictions()",
+        "data_grid()",
+        "add_residuals()",
+        "gather_residuals()"
       ],
-      "correct": 3,
-      "explanation": "A curved pattern in residuals means the model missed a non-linear component. The residuals should look like random scatter if the model family is correctly specified."
+      "correct": 2,
+      "explanation": "add_residuals(model) computes eᵢ = yᵢ − ŷᵢ for every row in the data frame and appends it as a new column called 'resid'. add_predictions() appends fitted values instead."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "George Box's quote 'All models are wrong, but some are useful' implies that:",
+      "text": "You fit lm(price ~ carat) and inspect the residuals. You notice that residuals cluster by cut level — all 'Fair' cut diamonds have negative residuals and all 'Ideal' diamonds have positive residuals. What should you conclude?",
       "options": [
-        "We should never use statistical models because they are always wrong",
-        "A model does not need to be literally true to be practically useful for describing data",
-        "Useful models always have zero residuals",
-        "The best model is the one with the most parameters"
+        "The model is well specified; clusters are just sampling noise",
+        "Cut is an irrelevant variable and should be excluded",
+        "The model is missing 'cut' as a predictor — it explains systematic variation in residuals",
+        "The residuals are correctly distributed around zero"
       ],
-      "correct": 1,
-      "explanation": "Box's point is that a model is an approximation — it simplifies reality. The relevant question is not 'Is it true?' but 'Is it useful/adequate for describing the data and making predictions?'"
+      "correct": 2,
+      "explanation": "Systematic patterns in residuals — especially grouping by a variable not in the model — indicate that the variable is explaining variance that the model missed. Adding 'cut' as a predictor would reduce the residual variance and improve the model."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "In the iterative modelling cycle, we stop refining the model as soon as R² exceeds 0.80.",
+      "correct": false,
+      "explanation": "We stop when residuals look like random noise — no systematic patterns remain. R² is one indicator of fit, but a model with R² = 0.80 can still have strongly patterned residuals, meaning it is missing important structure. Conversely, R² = 0.95 can coexist with well-behaved residuals. Residual inspection is the deciding criterion."
     }
   ]
 }

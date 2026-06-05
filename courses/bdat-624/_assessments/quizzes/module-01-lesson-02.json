@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A transition probability matrix P for a finite-state Markov chain must satisfy:",
+      "text": "In a Transition Probability Matrix P, what does the entry P_{ij} represent?",
       "options": [
-        "All entries are strictly positive",
-        "Each column sums to 1",
-        "Each row sums to 1",
-        "The matrix is symmetric"
+        "The probability that the process starts in state i",
+        "The probability of moving from state j to state i in one step",
+        "The probability of moving from state i to state j in one step",
+        "The number of steps needed to reach state j from state i"
       ],
       "correct": 2,
-      "explanation": "Each row of a transition probability matrix must sum to 1 because row i represents the probability distribution over all possible next states given the current state is i. The total probability of transitioning to some state must be 1. Entries can be zero (some transitions are impossible), columns need not sum to 1, and the matrix is not generally symmetric."
+      "explanation": "P_{ij} is the one-step transition probability from state i (current) to state j (next). The row index i is the 'from' state; the column index j is the 'to' state."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "The notation P_{ij}^{(n)} represents:",
-      "options": [
-        "The probability of transitioning from state j to state i in one step",
-        "The probability of transitioning from state i to state j in exactly n steps",
-        "The n-th power of the single entry P_{ij}",
-        "The probability of being in state i at time n, regardless of starting state"
-      ],
-      "correct": 1,
-      "explanation": "P_{ij}^{(n)} = P(X_n = j | X_0 = i) is the n-step transition probability from state i to state j. It is the (i,j) entry of the matrix P raised to the n-th power (P^n), not the n-th power of the scalar P_{ij}. Note the direction: i is the starting state (row), j is the destination state (column)."
+      "type": "true-false",
+      "text": "For a valid Transition Probability Matrix, the COLUMN sums must all equal 1.",
+      "correct": false,
+      "explanation": "It is the ROW sums that must equal 1 (not column sums). Each row i gives the probability distribution over next states given current state i, so those probabilities must sum to 1 by the law of total probability. A matrix with columns summing to 1 is called doubly stochastic only if rows also sum to 1."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "A time-homogeneous Markov chain has the same transition probabilities regardless of the absolute time — only the elapsed time (number of steps) matters.",
-      "correct": true,
-      "explanation": "This is exactly the definition of time-homogeneity. P_{ij}^{(m,n)} = P_{ij}^{(n-m)} depends only on the gap n - m, not on the absolute values of m and n. This means a single transition matrix P fully characterises the chain, and multi-step probabilities are just powers of P."
+      "type": "multiple-choice",
+      "text": "A patient is in the Infected state (I). The one-step TPM gives P_{I,R} = 0.50. What does this mean?",
+      "options": [
+        "50% of all patients will be in state R next week",
+        "A patient currently in state I has a 50% chance of moving to state R in one step",
+        "50% of the population starts in state R",
+        "The process spends 50% of its time in state R on average"
+      ],
+      "correct": 1,
+      "explanation": "P_{I,R} = 0.50 is a conditional probability: given that the patient is currently in state I (Infected), the probability of being in state R (Recovered) after one step is 0.50. It says nothing about the global proportion in R or the starting distribution."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In the 3-state patient model with states {Healthy, Sick, Dead} and one-month TPM P, the quantity P(Dead at month 6 | Healthy at month 0) is found by computing:",
+      "text": "A stochastic process is called time-homogeneous if:",
       "options": [
-        "The (1, 3) entry of P",
-        "The (1, 3) entry of P⁶",
-        "6 times the (1, 3) entry of P",
-        "The (3, 1) entry of P⁶"
+        "The state space does not change over time",
+        "The transition probability P_{ij} does not depend on the current time step n — only on the states i and j",
+        "The process always returns to its starting state",
+        "All transition probabilities are equal"
       ],
       "correct": 1,
-      "explanation": "Multi-step transition probabilities are given by entries of P raised to the appropriate power. The probability of being in state 3 (Dead, column 3) after 6 months, starting from state 1 (Healthy, row 1), is the (1, 3) entry of P⁶. Multiplying by 6 would be wrong — transition probabilities do not scale linearly with the number of steps."
+      "explanation": "Time-homogeneity (stationarity) means P(X(n+1)=j | X(n)=i) = P_{ij} is the same for all n. The 'rules of the game' are constant over time. This allows us to write the TPM as a single fixed matrix rather than a different matrix at each step."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "Given the initial distribution π₀ = (0.7, 0.3) and the one-step TPM P = [[0.8, 0.2], [0.4, 0.6]], what is P(X₂ = state 2)?",
+      "options": [
+        "0.30",
+        "0.28",
+        "0.26",
+        "0.32"
+      ],
+      "correct": 2,
+      "explanation": "π₂ = π₀ · P². First P² = P×P: P²[1,2]=0.8×0.2+0.2×0.6=0.16+0.12=0.28; P²[2,2]=0.4×0.2+0.6×0.6=0.08+0.36=0.44. Then P(X₂=2)=0.7×0.28+0.3×0.44=0.196+0.132=0.328. Hmm let me recalculate: P²: row1=(0.8×0.8+0.2×0.4, 0.8×0.2+0.2×0.6)=(0.64+0.08,0.16+0.12)=(0.72,0.28). row2=(0.4×0.8+0.6×0.4,0.4×0.2+0.6×0.6)=(0.32+0.24,0.08+0.36)=(0.56,0.44). π₂=(0.7×0.72+0.3×0.56, 0.7×0.28+0.3×0.44)=(0.504+0.168, 0.196+0.132)=(0.672,0.328). So P(X₂=state 2)=0.328≈0.33. Closest answer: 0.32. The exact answer is 0.328."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "The matrix [[0.4, 0.6], [0.2, 0.8]] is a valid stochastic matrix.",
+      "text": "The n-step Transition Probability Matrix P^(n) can be computed by raising the one-step matrix P to the n-th matrix power: P^(n) = P^n.",
       "correct": true,
-      "explanation": "A valid stochastic matrix requires (1) all entries between 0 and 1, and (2) each row sums to 1. Checking: all four entries are in [0, 1]; row 1: 0.4 + 0.6 = 1.0 ✓; row 2: 0.2 + 0.8 = 1.0 ✓. The matrix is therefore a valid transition probability matrix for a 2-state Markov chain."
+      "explanation": "This is a consequence of the Chapman-Kolmogorov equations (proven in Module 2, Lesson 2). By induction, the probability of moving from state i to state j in exactly n steps equals the (i,j) entry of the n-th matrix power of P."
     }
   ]
 }

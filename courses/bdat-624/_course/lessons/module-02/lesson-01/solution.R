@@ -1,119 +1,124 @@
-# BDAT 624 — Module 2, Lesson 1 — SOLUTION
-# The Markov Property and Transition Matrices
-
+# SOLUTION: Module 02 Lesson 01 — The Markov Property and Transition Matrices
 library(markovchain)
-library(diagram)
+library(ggplot2)
+library(dplyr)
 
-# -----------------------------------------------------------------------
-# Part 1: Build the 3-state health Markov chain
-# -----------------------------------------------------------------------
+# ============================================================
+# Task 1: Four-state TPM
+# ============================================================
+states_4 <- c("H", "MI", "SI", "D")
 
-P_matrix <- matrix(
-  data = c(0.7, 0.2, 0.1,
-           0.1, 0.5, 0.4,
-           0.0, 0.0, 1.0),
-  nrow = 3, byrow = TRUE,
-  dimnames = list(c("Healthy", "Sick", "Dead"),
-                  c("Healthy", "Sick", "Dead"))
+P4 <- matrix(
+  c(0.90, 0.09, 0.01, 0.00,   # from H
+    0.30, 0.50, 0.18, 0.02,   # from MI
+    0.05, 0.30, 0.50, 0.15,   # from SI
+    0.00, 0.00, 0.00, 1.00),  # from D (absorbing)
+  nrow = 4, byrow = TRUE,
+  dimnames = list(states_4, states_4)
 )
 
-# Verify row sums
-cat("Row sums of P:\n")
-print(rowSums(P_matrix))
-# Expected: Healthy=1, Sick=1, Dead=1
+cat("Row sums (must all be 1):\n")
+print(rowSums(P4))
 
-# Create the markovchain object
-health_mc <- new("markovchain",
-                 transitionMatrix = P_matrix,
-                 name = "3-State Health Model")
-print(health_mc)
+cat("\nDead row (absorbing state check):\n")
+print(P4["D", ])
+# Output should be: H=0, MI=0, SI=0, D=1
 
-# -----------------------------------------------------------------------
-# Part 2: Transition diagram
-# -----------------------------------------------------------------------
+# ============================================================
+# Task 2: markovchain object
+# ============================================================
+health_mc4 <- new("markovchain",
+  states           = states_4,
+  byrow            = TRUE,
+  transitionMatrix = P4,
+  name             = "4-State Health Chain"
+)
+print(health_mc4)
 
-plot(health_mc, main = "3-State Health Model — Transition Diagram",
-     vertex.color = c("lightblue", "lightyellow", "lightcoral"),
-     edge.label.cex = 0.9)
+cat("\nIs irreducible:", is.irreducible(health_mc4), "\n")
+# Result: FALSE — the chain is NOT irreducible because state D (Dead) is
+# absorbing. You cannot get from D to H, MI, or SI, so D does not
+# communicate with the other states. An irreducible chain requires every
+# state to be reachable from every other state in a finite number of steps.
 
-# -----------------------------------------------------------------------
-# Part 3: Multi-step probabilities — P^3
-# -----------------------------------------------------------------------
+# ============================================================
+# Task 3: Simulate trajectories
+# ============================================================
+set.seed(2024)
+traj_H  <- markovchainSequence(n = 100, markovchain = health_mc4, t0 = "H")
+traj_MI <- markovchainSequence(n = 100, markovchain = health_mc4, t0 = "MI")
+
+# ============================================================
+# Task 4: Plot trajectories
+# ============================================================
+traj_df <- data.frame(
+  step  = rep(1:100, 2),
+  state = factor(c(traj_H, traj_MI), levels = states_4),
+  start = rep(c("Start: H", "Start: MI"), each = 100)
+)
+
+p_traj <- ggplot(traj_df, aes(x = step, y = state, color = state)) +
+  geom_point(size = 1.5) +
+  facet_wrap(~ start, ncol = 1) +
+  scale_color_manual(values = c(
+    "H"  = "#2ecc71",
+    "MI" = "#f39c12",
+    "SI" = "#e74c3c",
+    "D"  = "#2c3e50"
+  )) +
+  labs(
+    title    = "100-Step Patient Trajectories: 4-State Health Markov Chain",
+    subtitle = "Once the process enters D (Dead), it stays there forever",
+    x = "Week", y = "State", color = "State"
+  ) +
+  theme_minimal(base_size = 12)
+print(p_traj)
+
+# ============================================================
+# Task 5: 10-week distribution
+# ============================================================
+pi0_H <- c(H = 1, MI = 0, SI = 0, D = 0)
 
 mat_power <- function(M, n) {
   result <- diag(nrow(M))
-  for (i in seq_len(n)) {
-    result <- result %*% M
-  }
+  for (i in seq_len(n)) result <- result %*% M
   result
 }
 
-P3 <- mat_power(P_matrix, 3)
-cat("\nP^3 (3-step transition matrix):\n")
-print(round(P3, 4))
+weeks <- 0:20
+plot_data <- lapply(weeks, function(n) {
+  dist_n <- pi0_H %*% mat_power(P4, n)
+  data.frame(
+    week  = n,
+    state = states_4,
+    prob  = as.numeric(dist_n)
+  )
+}) |> bind_rows()
 
-p_dead_3 <- P3["Healthy", "Dead"]
-cat("\nP(Dead at month 3 | start Healthy) =", round(p_dead_3, 4), "\n")
-# Interpretation: ~27% probability of being dead by month 3 starting healthy.
+plot_data$state <- factor(plot_data$state, levels = states_4)
 
-# -----------------------------------------------------------------------
-# Part 4: Simulate 500 patient trajectories for 24 months
-# -----------------------------------------------------------------------
+p_dist <- ggplot(plot_data, aes(x = week, y = prob, color = state, group = state)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c(
+    "H"  = "#2ecc71",
+    "MI" = "#f39c12",
+    "SI" = "#e74c3c",
+    "D"  = "#2c3e50"
+  )) +
+  labs(
+    title    = "Distribution of 4-State Health Model Over 20 Weeks",
+    subtitle = "Starting condition: all patients Healthy",
+    x = "Week", y = "Probability", color = "State"
+  ) +
+  theme_minimal(base_size = 12)
+print(p_dist)
 
-set.seed(42)
-n_patients <- 500
-n_months   <- 24
-states     <- c("Healthy", "Sick", "Dead")
-
-trajectories <- matrix(NA_character_, nrow = n_patients, ncol = n_months + 1)
-trajectories[, 1] <- "Healthy"
-
-for (i in seq_len(n_patients)) {
-  path <- rmarkovchain(n = n_months, object = health_mc, t0 = "Healthy")
-  trajectories[i, 2:(n_months + 1)] <- path
-}
-
-# Compute proportions at each time point
-proportions <- matrix(0, nrow = n_months + 1, ncol = 3,
-                      dimnames = list(0:n_months, states))
-
-for (t in seq_len(n_months + 1)) {
-  for (s in states) {
-    proportions[t, s] <- mean(trajectories[, t] == s)
-  }
-}
-
-# Plot
-matplot(
-  x    = 0:n_months,
-  y    = proportions,
-  type = "l", lty = 1, lwd = 2,
-  col  = c("steelblue", "darkorange", "firebrick"),
-  ylim = c(0, 1),
-  xlab = "Month",
-  ylab = "Proportion of patients",
-  main = "Patient state proportions over 24 months (n = 500)"
-)
-legend("topright",
-       legend = states,
-       col    = c("steelblue", "darkorange", "firebrick"),
-       lty = 1, lwd = 2, bty = "n")
-
-# Compare simulation at month 3 to P^3
-cat("\nSimulated P(Dead at month 3 | start Healthy) =",
-    round(proportions["3", "Dead"], 4), "\n")
-cat("Theoretical P^3[Healthy, Dead]              =",
-    round(p_dead_3, 4), "\n")
-
-# -----------------------------------------------------------------------
-# Part 5: Absorbing states
-# -----------------------------------------------------------------------
-
-abs_states <- absorbingStates(health_mc)
-cat("\nAbsorbing states:", abs_states, "\n")
-# Expected: "Dead"
-
-# Bonus: verify by checking which rows have P_ii = 1
-diag_vals <- diag(P_matrix)
-cat("Diagonal entries of P:", diag_vals, "\n")
-cat("States with P_ii = 1:", names(diag_vals)[diag_vals == 1], "\n")
+# Probability of death by week 10 for a patient starting Healthy
+prob_dead_10 <- as.numeric((pi0_H %*% mat_power(P4, 10))["D"])
+cat("\nP(Dead at week 10 | Healthy at week 0):", round(prob_dead_10, 4), "\n")
+# Interpretation: Even from a Healthy starting state, there is a small but
+# meaningful cumulative probability of death by week 10. This demonstrates
+# how the model captures long-run disease risk through repeated transitions.
+# As week → ∞, all probability mass moves into D (the only absorbing state),
+# so P(Dead) → 1 as n → ∞.

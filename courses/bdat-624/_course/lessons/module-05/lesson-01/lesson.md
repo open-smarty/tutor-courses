@@ -2,182 +2,132 @@
 
 ## Goal
 
-By the end of this lesson you will be able to define the survival function, hazard function, and cumulative hazard, derive the key relationships connecting them, explain what censoring is and why it arises, compute a Kaplan-Meier estimate by hand, and fit and plot KM curves in R using the `survival` package.
+Define the survival function, hazard function, and their relationship; understand right censoring; derive the Kaplan-Meier estimator; and apply the log-rank test to compare survival curves.
 
 ## Concept
 
-### Connection to Arc 1
+### Motivation: Time-to-Event Data
 
-We have spent the first arc studying continuous-time stochastic processes — Poisson processes, birth-death chains, and Markov chains — asking: how many events occur by time t? The Poisson process, for instance, counts arrivals at rate λ. Survival analysis asks the complementary question: **when does the first event occur, and what is its distribution?** We now shift from counting events to modelling the *time until* an event. The tools we build here sit at the heart of clinical trial analysis, epidemiology, and reliability engineering.
+A clinical trial follows 100 lung cancer patients from diagnosis. After 2 years, some patients have died, but 30 are still alive. For those 30, we know they survived at least 2 years — but we don't know when they will die. For 5 patients who dropped out at various points, we know they were alive when last seen. These are **censored observations**: partial information, not missing data.
 
----
+Survival analysis is the branch of statistics designed to handle time-to-event data — especially when some event times are only partially observed due to censoring.
 
-### Why standard regression fails
+### The Survival Function S(t)
 
-In a clinical trial, patients are enrolled at different times and may not experience the event (death, relapse, infection) before the study ends. Consider a patient who is alive at the end of a 5-year study. We do not know when they will die — only that they have survived at least 5 years. This is **partial information**: informative, but incomplete. Discarding such patients would introduce severe bias. Treating them as if they had experienced the event at the last contact time would be equally wrong. Standard regression has no natural way to handle this structure. Survival analysis was developed precisely to use these partial observations correctly.
+> **Notation block:**
+> - T — the **event time** (a non-negative random variable); for a patient, T is the time from some origin (e.g., diagnosis) to the event (e.g., death or relapse); read "T"
+> - t — a specific time point; a non-negative real number; read "t"
+> - S(t) = P(T > t) — the **survival function**; probability of surviving (not experiencing the event) beyond time t; read "S of t"
 
----
+$$S(t) = P(T > t) = 1 - F(t)$$
 
-### The survival function and its relatives
+where F(t) = P(T ≤ t) is the cumulative distribution function.
 
-> **Notation:** T — the survival time (time from study entry until the event of interest, e.g., death, relapse, infection). T is a non-negative continuous random variable defined on [0, ∞).
+**Properties of S(t):**
+- S(0) = 1 (at time 0, everyone is event-free)
+- S(∞) = 0 (eventually, all experience the event — or we assume this)
+- S(t) is non-increasing: once you've had the event, you can't "un-have" it
+- S(t) is right-continuous
 
-> **Notation:** S(t) = P(T > t) — the **survival function**. This is the probability of surviving (not yet experiencing the event) beyond time t.
+### The Hazard Function h(t)
 
-> **Notation:** F(t) = P(T ≤ t) = 1 − S(t) — the **cumulative distribution function** of T. This is the probability of the event occurring by time t.
+> **Notation block:**
+> - h(t) — the **hazard function** (also called hazard rate or force of mortality); read "h of t"
+> - Δ — a small time increment (used in the limit definition)
+> - P(t ≤ T < t+Δ | T ≥ t) — the conditional probability of the event in [t, t+Δ) given survival to t; read "probability of event in [t, t+delta] given survived to t"
 
-> **Notation:** f(t) = −dS(t)/dt = F′(t) — the **probability density function** of T.
+$$h(t) = \lim_{\Delta \to 0} \frac{P(t \leq T < t + \Delta \mid T \geq t)}{\Delta}$$
 
-> **Notation:** h(t) = f(t) / S(t) — the **hazard function** (also called the hazard rate or intensity function). This is the instantaneous rate of the event at time t, *given* survival up to t.
+The hazard is the **instantaneous rate** of the event at time t, given survival to t. It is not a probability — it can exceed 1.
 
-Let us unpack the hazard more carefully. For a small interval (t, t + Δt]:
+**Biological shapes of h(t):**
+- **Constant:** h(t) = λ (exponential distribution) — appropriate when risk doesn't change with time (e.g., certain infections)
+- **Increasing:** h(t) rises with t (Weibull with shape > 1) — ageing, progressive disease
+- **Decreasing:** h(t) falls with t (Weibull with shape < 1) — early events are riskier (neonatal mortality, post-surgery complications)
+- **Bathtub:** high early, then low, then rising again — human mortality (infant mortality → healthy adult → old age)
 
-$$h(t)\,\Delta t \approx P\bigl(T \in (t,\,t+\Delta t] \mid T > t\bigr)$$
+### The Key Relationship: S, h, and H
 
-Here's the key insight: h(t) answers "given that you have made it to time t, what is your risk of the event in the next tiny instant?" It is a conditional rate, not a probability. It can exceed 1. A decreasing hazard means the longer you survive, the safer you become (e.g., post-operative mortality). An increasing hazard means the risk grows with age or time (e.g., age-related disease incidence).
+> **Notation block:**
+> - H(t) = ∫₀ᵗ h(u) du — the **cumulative hazard function**; read "H of t"
+> - f(t) = -S'(t) — the **probability density function** of T; read "f of t"
 
-> **Notation:** H(t) = ∫₀ᵗ h(u) du — the **cumulative hazard function**. This integrates the instantaneous risk over time.
+The fundamental identity connecting S and h:
 
----
+$$S(t) = \exp(-H(t)) = \exp\!\left(-\int_0^t h(u) \, du\right)$$
 
-### Key relationships
+**Derivation.** By the chain rule and the definition of conditional probability:
 
-We derive the three fundamental identities that link S(t), h(t), and H(t).
+$$h(t) = \lim_{\Delta\to 0} \frac{P(t \leq T < t+\Delta | T \geq t)}{\Delta} = \frac{f(t)}{S(t)} = -\frac{S'(t)}{S(t)}$$
 
-**Identity 1: H(t) = −ln S(t), equivalently S(t) = e^{−H(t)}.**
+This gives the ODE S'(t) = -h(t)S(t), which (with S(0)=1) has solution S(t) = exp(-∫₀ᵗ h(u)du) = exp(-H(t)). ∎
 
-Start from the definition of h(t):
-$$h(t) = \frac{f(t)}{S(t)} = \frac{-S'(t)}{S(t)} = -\frac{d}{dt}\ln S(t)$$
-
-Integrate both sides from 0 to t, using S(0) = 1, so ln S(0) = 0:
-$$H(t) = \int_0^t h(u)\,du = -\ln S(t)$$
-
-Therefore:
-$$\boxed{S(t) = e^{-H(t)} = \exp\!\left(-\int_0^t h(u)\,du\right)} \tag{5.1}$$
-
-This identity is crucial: it means the full survival function is determined by the hazard function alone.
-
-**Identity 2: h(t) = −d/dt ln S(t) = f(t)/S(t).**
-
-This follows directly from the derivation above. We can also write:
-$$h(t) = \frac{f(t)}{S(t)} = \frac{-S'(t)}{S(t)} \tag{5.2}$$
-
-**Identity 3: For the exponential distribution, h(t) = λ (constant).**
-
-If T ~ Exponential(λ), then f(t) = λe^{−λt} and S(t) = e^{−λt}. Therefore:
-$$h(t) = \frac{\lambda e^{-\lambda t}}{e^{-\lambda t}} = \lambda$$
-
-Here's the key insight: the exponential distribution has **constant hazard** — the risk of the event is the same at every time point, regardless of how long you have already survived. This is the "memoryless" property. From Identity 1: H(t) = λt and S(t) = e^{−λt}, consistent with the exponential CDF.
-
----
+Also: h(t) = -d[log S(t)]/dt.
 
 ### Censoring
 
-> **Notation:** δ (delta) — the **event indicator**. δ = 1 if the event was directly observed; δ = 0 if the observation was censored (the event had not occurred by last contact).
+**Right censoring** (most common): we know the patient survived to at least time c (the censoring time), but do not observe T. Example: the study ends before the patient experiences the event; or the patient is lost to follow-up.
 
-**Right censoring** (the most common type) occurs when we know only that T > c for some censoring time c. A patient alive at the end of the study, or who withdrew, is right-censored at their last contact time. We observe the pair (min(T, c), δ = 1{T ≤ c}).
+> **Notation block:**
+> - (tᵢ, δᵢ) — the data for patient i: tᵢ is the observed time, δᵢ is the event indicator; δᵢ = 1 if the event was observed, δᵢ = 0 if the observation was right-censored; read "t_i and delta_i"
+> - tᵢ = min(Tᵢ, Cᵢ) — the observed time is the minimum of the true event time Tᵢ and the censoring time Cᵢ
 
-**Left censoring** occurs when we know the event occurred before some observation time but not exactly when (e.g., already infected at first screening).
+**Why naively ignoring censored observations is wrong.** If you simply exclude censored patients, you are throwing away information — and you are selecting on who died (which biases estimates downward). The Kaplan-Meier estimator handles censoring correctly by updating the risk set.
 
-**Interval censoring** occurs when we know only that the event occurred in an interval (l, r] (e.g., infection detected at a quarterly visit).
+### The Kaplan-Meier Estimator
 
-The key assumption for valid survival analysis is **non-informative censoring**: the reason a subject is censored must be unrelated to their underlying survival time. A patient who drops out because they are too sick to attend violates this assumption.
+> **Notation block:**
+> - t₁ < t₂ < ... < tₖ — the distinct **event times** (only times at which events actually occurred, not censoring times); read "t sub 1, t sub 2, ..."
+> - dᵢ — number of events (deaths/failures) at time tᵢ; read "d sub i"
+> - nᵢ — **number at risk** just before time tᵢ: all patients who have neither experienced the event nor been censored before tᵢ; read "n sub i"
+> - Ŝ(t) — the Kaplan-Meier estimate of S(t); read "S-hat of t"
 
----
+$$\hat{S}(t) = \prod_{t_i \leq t} \left(1 - \frac{d_i}{n_i}\right)$$
 
-### The Kaplan-Meier estimator
+**Intuition:** At each event time tᵢ, the conditional probability of surviving *through* tᵢ (given survival to just before tᵢ) is estimated as 1 - dᵢ/nᵢ. The Kaplan-Meier estimate multiplies these step-by-step conditional survival probabilities.
 
-The KM estimator is the non-parametric maximum likelihood estimator of S(t). It makes no distributional assumption about T — it uses only the observed event times and censoring indicators.
+**Why censoring is handled correctly:** Censored patients contribute to the risk set nᵢ for all event times before they are censored, then are removed. They are "used" appropriately without being discarded.
 
-Let t_{(1)} < t_{(2)} < ... < t_{(m)} be the ordered **distinct event times** (censored observations do not contribute event times).
+**Greenwood's formula for variance:**
 
-At each event time t_{(j)}, define:
+> **Notation block:**
+> - Var(Ŝ(t)) — estimated variance of the KM estimator at time t
 
-> **Notation:** dⱼ — the number of events (δ = 1) at time t_{(j)}.
+$$\widehat{\mathrm{Var}}(\hat{S}(t)) \approx \hat{S}(t)^2 \sum_{t_i \leq t} \frac{d_i}{n_i(n_i - d_i)}$$
 
-> **Notation:** nⱼ — the number at risk just before t_{(j)}: all subjects who have not yet had the event and have not yet been censored.
+95% confidence interval: Ŝ(t) ± 1.96 × √Var(Ŝ(t)).
 
-> **Notation:** Ŝ(t) — the **Kaplan-Meier estimator** of S(t).
+### Log-Rank Test
 
-$$\boxed{\hat{S}(t) = \prod_{j:\,t_{(j)} \leq t} \left(1 - \frac{d_j}{n_j}\right)} \tag{5.3}$$
+The **log-rank test** compares survival curves between two (or more) groups.
 
-Here's the key insight: the KM estimator is a **product of conditional survival probabilities**. Each factor (1 − dⱼ/nⱼ) estimates the probability of surviving past t_{(j)} given survival to just before t_{(j)}. Multiplying these conditional probabilities gives the marginal probability of surviving past t — this is exactly the multiplicative structure of conditional probability.
+> **Notation block:**
+> - H₀: S₁(t) = S₂(t) for all t — the null hypothesis: the two groups have identical survival curves
+> - Oᵢ — **observed** number of events in group g at event time tᵢ
+> - Eᵢ — **expected** number of events under H₀
+> - χ² = (Σ(O-E))² / Σ(Var) — the log-rank test statistic; under H₀, approximately χ²(1) for two groups
 
-Between event times, Ŝ(t) is constant. It is a step function that drops at each observed event time.
-
----
-
-### Worked example
-
-Six patients have the following observed times (+ denotes censored):
-
-| Patient | Time | Status |
-|---------|------|--------|
-| 1 | 1 | event |
-| 2 | 2+ | censored |
-| 3 | 3 | event |
-| 4 | 5 | event |
-| 5 | 6+ | censored |
-| 6 | 9 | event |
-
-Distinct event times: t_{(1)}=1, t_{(2)}=3, t_{(3)}=5, t_{(4)}=9.
-
-| j | t_{(j)} | nⱼ (at risk) | dⱼ (events) | 1 − dⱼ/nⱼ | Ŝ(t_{(j)}) |
-|---|---------|-------------|------------|-----------|-----------|
-| 1 | 1 | 6 | 1 | 5/6 | 5/6 ≈ 0.833 |
-| 2 | 3 | 4 | 1 | 3/4 | (5/6)(3/4) = 5/8 = 0.625 |
-| 3 | 5 | 3 | 1 | 2/3 | (5/8)(2/3) = 5/12 ≈ 0.417 |
-| 4 | 9 | 1 | 1 | 0/1 = 0 | 0 |
-
-Note: patient 2 was censored at time 2 (between t_{(1)}=1 and t_{(2)}=3), so the risk set at t_{(2)}=3 drops from 5 to 4. Patient 5 was censored at time 6 (between t_{(3)}=5 and t_{(4)}=9), so the risk set at t_{(4)}=9 is 1.
-
----
-
-### Confidence intervals: Greenwood's formula
-
-Ŝ(t) is a product of random quantities. Its variance is estimated using **Greenwood's formula** (stated without derivation):
-
-$$\widehat{\operatorname{Var}}\!\left[\hat{S}(t)\right] = \hat{S}(t)^2 \sum_{j:\,t_{(j)} \leq t} \frac{d_j}{n_j(n_j - d_j)}$$
-
-The 95% confidence interval is constructed on the log(−log) scale to ensure the CI stays within [0,1]:
-
-$$\widehat{\operatorname{Var}}\!\left[\ln(-\ln \hat{S}(t))\right] \approx \sum_{j:\,t_{(j)} \leq t} \frac{d_j}{n_j(n_j - d_j)}$$
-
-In R, `survfit()` computes these CIs automatically.
-
----
-
-### The log-rank test
-
-When we have two groups (e.g., treatment vs. control), we want to test:
-
-H₀: S₁(t) = S₂(t) for all t (the two groups have the same survival function).
-
-The **log-rank test** is the standard non-parametric test for this. At each event time t_{(j)}, it computes the observed (Oᵢⱼ) and expected (Eᵢⱼ) number of events in group i under H₀. The test statistic is a weighted sum of (O − E) across all event times. Under H₀ it follows approximately a χ²(1) distribution for two groups.
-
-In R: `survdiff(Surv(...) ~ group, data = ...)`. The p-value tests whether the survival curves are equal over all time points simultaneously.
-
----
+The log-rank test statistic weights all time points equally, giving more power when the hazard ratio between groups is constant over time.
 
 ## Example
 
-See the worked calculation in the table above. In R, the same calculation on the `lung` dataset is illustrated in `exercise.R`.
+**NCCTG Lung Cancer Dataset (R's `survival::lung`).**
+
+The `lung` dataset in R contains survival times for 228 patients with advanced lung cancer. Variables include `time` (days), `status` (2=dead, 1=censored), and `sex` (1=male, 2=female).
+
+```r
+library(survival)
+km_fit <- survfit(Surv(time, status==2) ~ sex, data = lung)
+plot(km_fit)
+```
+
+The Kaplan-Meier curves show that female patients (sex=2) have better survival than male patients. The log-rank test (survdiff) gives a p-value to test whether this difference is statistically significant.
+
+**Reading the KM curve:** At time t=365 days (1 year), Ŝ_female(365) ≈ 0.58 means approximately 58% of female patients are estimated to have survived 1 year.
 
 ## Task
 
-Open `exercise.R`. You will:
-
-1. Create a `Surv` object from the `lung` dataset.
-2. Fit and plot an overall KM curve with 95% confidence bands.
-3. Fit KM curves stratified by sex and plot them on the same graph.
-4. Perform a log-rank test comparing male vs. female survival.
-5. Report median survival times and the log-rank p-value; write a one-sentence interpretation.
-
-Fill in every `# TODO:` marker and run:
-
-```
-npm run check -- bdat-624 module-05 lesson-01
-```
+See `exercise.R`. You will fit Kaplan-Meier curves to the `lung` dataset, stratified by sex; compute Greenwood's formula manually at one time point; perform and interpret the log-rank test; and create a publication-quality KM plot.
 
 ## Check
 
@@ -187,4 +137,4 @@ npm run check -- bdat-624 module-05 lesson-01
 
 ## Reflection
 
-The Kaplan-Meier estimator drops to 0 when the last observed time is an event (as in the worked example above). But what happens when the last observation is a censored time? Ŝ(t) then stays positive beyond the last event — it is undefined beyond the last censored time. Why is this a problem for estimating, say, the median survival time? How would you handle it in a report?
+The log-rank test weights all time points equally. An alternative is the **Wilcoxon test** (using `survdiff(rho=1)`), which weights early time points more heavily. In a cancer trial, if a new treatment works only in the long term (late separation of KM curves), which test would be more powerful: log-rank or Wilcoxon? What biological scenario would make early-weighted tests more appropriate? Relate your answer to the shape of the hazard functions for the two groups.

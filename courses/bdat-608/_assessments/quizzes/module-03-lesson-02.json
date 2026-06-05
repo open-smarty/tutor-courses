@@ -6,61 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In the Scale-Location diagnostic plot, what does a flat red loess line indicate?",
+      "text": "In the Residuals vs Fitted plot, you see a U-shaped curve in the residuals (positive at both extremes, negative in the middle). What does this indicate?",
       "options": [
-        "The residuals have a mean of zero",
         "The residuals are normally distributed",
-        "The variance of residuals is approximately constant across fitted values (homoscedasticity)",
-        "There are no influential observations in the dataset"
+        "Variance is non-constant (heteroscedasticity)",
+        "The mean function is non-linear — a quadratic or log term is needed",
+        "There are influential outliers that should be removed"
       ],
       "correct": 2,
-      "explanation": "Scale-Location plots the square root of standardised residuals against fitted values. A flat loess line means the spread of residuals is constant — the homoscedasticity assumption holds."
+      "explanation": "A U-shape (or any curve) in the Residuals vs Fitted plot indicates that the mean function is mis-specified — the model assumes a linear relationship but the true relationship is curved. Adding a squared term, a log transformation, or a spline would fix this."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "Cook's Distance measures the influence of each observation on the fitted model. An observation with Cook's D > 1 is typically described as:",
-      "options": [
-        "A statistical outlier with a large residual",
-        "An influential point that substantially changes the fitted coefficients when removed",
-        "An observation that violates the normality assumption",
-        "A leverage point that lies far from the centre of the predictor space only"
-      ],
-      "correct": 1,
-      "explanation": "Cook's Distance combines residual size and leverage to measure how much the fitted model would change if that observation were removed. High D (>1 or >4/n) identifies influential points."
+      "type": "true-false",
+      "text": "In the Normal Q-Q plot, if points lie exactly on the 45° diagonal, the residuals follow a perfect normal distribution.",
+      "correct": true,
+      "explanation": "The Normal Q-Q plot compares the empirical quantiles of the residuals to the theoretical quantiles of a standard normal. If residuals are exactly normal, their quantiles match those of the normal distribution and all points fall on the diagonal line y = x."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "AIC (Akaike Information Criterion) rewards models for fitting the data well but penalises them for having more parameters.",
-      "correct": true,
-      "explanation": "AIC = -2·log(likelihood) + 2k, where k is the number of parameters. Lower AIC is better. The 2k penalty prevents adding parameters that do not meaningfully improve fit."
+      "type": "multiple-choice",
+      "text": "AIC = 2k − 2log(L̂). Model A has AIC = −3,200. Model B has AIC = −3,180. Which model is preferred?",
+      "options": [
+        "Model B (larger AIC is better)",
+        "Model A (lower AIC is better)",
+        "They are equivalent — the difference is less than 2",
+        "Neither — AIC cannot compare models with different numbers of parameters"
+      ],
+      "correct": 1,
+      "explanation": "Lower AIC is better. Model A has AIC = −3,200 which is lower than −3,180. The difference is 20 AIC units — strong evidence (> 10) in favour of Model A. AIC is specifically designed to compare models with different numbers of parameters."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "gather_predictions(mod_a, mod_b) returns a data frame in what format?",
+      "text": "anova(mod1, mod2) produces F = 5,473, p-value < 2.2e-16. What is the null hypothesis being tested?",
       "options": [
-        "One column per model, one row per observation",
-        "One row per model per observation, with a 'model' column and a 'pred' column",
-        "A list of two data frames, one for each model",
-        "A wide data frame with model names as column headers"
+        "That mod1 and mod2 have the same AIC",
+        "That all additional coefficients in mod2 (compared to mod1) are simultaneously equal to zero",
+        "That the residuals of mod2 are normally distributed",
+        "That mod2 has lower RMSE than mod1"
       ],
       "correct": 1,
-      "explanation": "gather_predictions() stacks predictions from all models into a long (tidy) data frame with a 'model' column and a 'pred' column. This makes faceted ggplot2 comparisons straightforward."
+      "explanation": "The F-test for nested models tests H₀: all extra parameters in mod2 (beyond those in mod1) are simultaneously zero. Rejecting this null means that at least one of the extra predictors explains a statistically significant amount of variance — mod2 is the better model."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "A Normal Q-Q plot shows that residuals deviate from the diagonal at both ends (heavy tails). The MOST important consequence is that:",
+      "text": "In the Residuals vs Leverage plot, a diamond has high leverage but a very small residual. Should you be concerned?",
       "options": [
-        "The slope and intercept estimates are biased",
-        "R-squared is artificially inflated",
-        "Standard errors, t-statistics, and p-values may not be reliable for small samples",
-        "The model will fail to make any predictions"
+        "Yes — high leverage always means the point is influential",
+        "No — influence requires both high leverage AND a large residual. A high-leverage, low-residual point lies on the fitted line and does not distort the estimates",
+        "Yes — high-leverage points should always be removed",
+        "No — Cook's distance is only relevant for large samples"
       ],
-      "correct": 2,
-      "explanation": "OLS coefficient estimates (slope, intercept) are still unbiased under heavy-tailed noise — only the inference machinery (SEs, t-tests, CIs) relies on normality. For large samples, CLT provides approximate validity anyway."
+      "correct": 1,
+      "explanation": "Cook's distance = (leverage × residual²) / (variance × parameters). A point with high leverage but near-zero residual has near-zero Cook's distance — it is not influential because it happens to fall close to the fitted line even though it is far from the centre of the predictor space."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "A non-flat red line in the Scale-Location plot confirms that the residuals have constant variance (homoscedasticity).",
+      "correct": false,
+      "explanation": "A non-flat line in the Scale-Location plot indicates heteroscedasticity — the variance of residuals changes with fitted values. A flat red line indicates constant variance. The Scale-Location plot is specifically designed to make non-constant variance visible."
     }
   ]
 }

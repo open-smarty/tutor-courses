@@ -1,75 +1,137 @@
 ---
-title: "BDAT 602 — Module 6, Lesson 2 Solution"
-subtitle: "Topic Modelling with LDA"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Topic Modelling with LDA"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Build the DTM
-
-```{r task1}
+```{r load-packages}
+library(tidyverse)
 library(tidytext)
-library(dplyr)
+library(topicmodels)
 
-data("stop_words")
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 20000, seed = 602)
+```
 
-complaints <- health_small |>
+```{r prepare-words}
+complaints <- health_data |>
   filter(!is.na(complaint_notes)) |>
   mutate(doc_id = row_number())
 
-dtm <- complaints |>
+word_counts <- complaints |>
   unnest_tokens(word, complaint_notes) |>
   anti_join(stop_words, by = "word") |>
-  filter(nchar(word) > 2) |>
-  count(doc_id, word) |>
-  cast_dtm(document = doc_id, term = word, value = n)
+  count(doc_id, word)
 
-dim(dtm)
+cat("Unique documents:", n_distinct(word_counts$doc_id), "\n")
+cat("Unique terms:    ", n_distinct(word_counts$word), "\n")
 ```
 
-## Task 2 — Fit LDA and plot top words
+## Task 1: Build the Document-Term Matrix
 
-```{r task2}
-library(topicmodels)
-library(ggplot2)
+```{r task1-dtm}
+dtm <- word_counts |>
+  cast_dtm(doc_id, word, n)
 
-set.seed(602)
-lda_fit  <- LDA(dtm, k = 4, control = list(seed = 602))
-beta_mat <- tidy(lda_fit, matrix = "beta")
+dtm
+# The DTM has one row per document, one column per term.
+# Sparsity is high (>99%) because each complaint uses only ~10-20 unique
+# words from a vocabulary of hundreds.
+```
 
-beta_mat |>
+## Task 2: Fit a 5-topic LDA model
+
+```{r task2-lda}
+lda5 <- LDA(
+  dtm,
+  k       = 5,
+  method  = "Gibbs",
+  control = list(seed = 602, iter = 500, burnin = 100)
+)
+```
+
+## Task 3: Extract and visualise word-topic probabilities (beta)
+
+```{r task3-beta}
+topics_beta <- tidy(lda5, matrix = "beta")
+
+topics_beta |>
   group_by(topic) |>
-  slice_max(beta, n = 6) |>
+  slice_max(beta, n = 5) |>
+  ungroup()
+```
+
+```{r task3-plot}
+topics_beta |>
+  group_by(topic) |>
+  slice_max(beta, n = 10) |>
   ungroup() |>
-  ggplot(aes(x = reorder(term, beta), y = beta)) +
-  geom_col(fill = "steelblue") +
-  facet_wrap(~ topic, scales = "free_y") +
+  mutate(term = reorder_within(term, beta, topic)) |>
+  ggplot(aes(x = term, y = beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~topic, scales = "free_y") +
+  scale_x_reordered() +
   coord_flip() +
-  labs(title = "LDA: Top 6 Words per Topic (k=4)",
-       x = NULL, y = "Beta") +
+  labs(title = "Top 10 Words per LDA Topic",
+       x = "Term", y = "β (word-topic probability)") +
   theme_minimal()
 ```
 
-With 4 topics and the templated complaint notes, the topics should map approximately to: billing/premium, claims processing, coverage/services, and positive feedback.
-
-## Task 3 — Topic prevalence
-
-```{r task3}
-gamma_mat <- tidy(lda_fit, matrix = "gamma")
-
-gamma_mat |>
-  group_by(topic) |>
-  summarise(avg_gamma = round(mean(gamma), 3)) |>
-  arrange(desc(avg_gamma))
+```{r task3-label-topics}
+# Topic labels based on top words (typical results with this simulator):
+# Topic 1: "Billing Disputes"
+#   Top words: charged, premium, statement, balance, notice, month, account
+# Topic 2: "Slow Claim Processing"
+#   Top words: claim, pending, submitted, processing, months, documents, incomplete
+# Topic 3: "Coverage Gaps"
+#   Top words: covered, dental, prescription, formulary, reimbursed, physiotherapy
+# Topic 4: "Poor Customer Service"
+#   Top words: service, hold, transferred, app, portal, emails, departments
+# Topic 5: "Positive Feedback"
+#   Top words: satisfied, professionally, promptly, renewed, clear, recommend, easy
+# The labels match the 5 template categories used in the simulator, demonstrating
+# that LDA can recover the latent structure without any supervision.
 ```
 
-The most prevalent topic is likely the billing/claims topic — consistent with these being the most common complaint categories in the simulation templates.
+## Task 4: Document-topic probabilities and perplexity
+
+```{r task4-gamma}
+doc_topics <- tidy(lda5, matrix = "gamma")
+
+doc_topics |>
+  group_by(topic) |>
+  summarise(mean_gamma = round(mean(gamma), 4)) |>
+  arrange(desc(mean_gamma))
+# The topics should be approximately equally prevalent (~0.20 each) since the
+# simulator samples from 5 templates with roughly equal probability.
+```
+
+```{r task4-perplexity}
+perp_values <- sapply(3:7, function(k) {
+  mod <- LDA(dtm, k = k, method = "Gibbs",
+             control = list(seed = 602, iter = 200, burnin = 50))
+  perplexity(mod)
+})
+
+tibble(K = 3:7, perplexity = perp_values) |>
+  ggplot(aes(x = K, y = perplexity)) +
+  geom_line() + geom_point(size = 2, colour = "steelblue") +
+  labs(title = "LDA Perplexity vs. Number of Topics",
+       x = "Number of Topics (K)", y = "Perplexity") +
+  theme_minimal()
+```
+
+```{r task4-best-k}
+cat("Perplexity by K:\n")
+tibble(K = 3:7, perplexity = round(perp_values, 1)) |> print()
+
+# Perplexity typically shows an elbow around K = 5 for this dataset.
+# K = 5 matches the 5 template categories in the simulator.
+# Beyond K = 5, perplexity decreases more slowly and topics begin to split
+# existing coherent themes into sub-themes, reducing interpretability.
+# The perplexity elbow aligns with domain knowledge: 5 complaint categories.
+```

@@ -1,28 +1,21 @@
-# Task: Policyholder Segmentation with k-Means
+# Task: k-Means Clustering of Insurance Policyholders
 
 ## Objective
 
-Segment policyholders into meaningful risk groups and describe each segment in business-ready language.
+Segment 50,000 insurance policyholders into meaningful clusters using k-means, choose the optimal number of clusters with the elbow and silhouette methods, and produce a business-interpretable cluster profile.
 
 ## Instructions
 
-1. **Prepare** — Use the 7 clustering variables: `age`, `bmi`, `income`, `num_chronic_conditions`, `num_claims`, `claim_amount`, `support_calls`. Impute `bmi` and `income` with medians. Scale with `scale()`. Remove NA rows.
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-2. **Choose k** — Plot the elbow plot for k = 2 to 8. Choose the optimal k (your choice — justify it in one sentence).
+2. **Task 1 — Prepare features**: Select `age`, `bmi`, `income`, `num_claims`, `num_chronic_conditions`. Drop rows with any NA using `drop_na()`. Apply `scale()` to Z-score standardise all five columns. Verify that every column has mean ≈ 0 and sd ≈ 1.
 
-3. **Fit** — Fit k-means with your chosen k, `nstart = 25`, `set.seed(602)`.
+3. **Task 2 — Elbow plot**: Compute WCSS for k = 1 to 10 (use `nstart = 25` for each). Plot WCSS vs k with `ggplot2`. Identify and state your chosen k in a comment, giving a one-sentence justification based on the elbow shape.
 
-4. **Profile** — Join cluster labels back to the original (unscaled) data. For each cluster, report:
-   - n (cluster size)
-   - Mean age, BMI, income, num_claims, claim_amount
-   - % Platinum or Gold plan
-   - Fraud rate (%)
-   - Churn rate (%)
+4. **Task 3 — Fit and evaluate**: Fit `kmeans()` with your chosen k and `nstart = 25`. Report the total WCSS and cluster sizes. Compute the mean silhouette score (sample 5,000 rows for `dist()` if needed for speed).
 
-5. **Name your segments** — Give each cluster a descriptive business label (e.g. "Young Healthy Bronze", "High-Utilisation Platinum") and write 1–2 sentences explaining what makes each segment distinctive.
-
-6. **Visualisation** — Fit a 2-component PCA on the same scaled data. Plot PC1 vs PC2 coloured by cluster label.
+5. **Task 4 — Profile and label**: Add the cluster assignments back to the dataset. Summarise each cluster by: n, mean age, mean BMI, mean income, mean num\_claims, mean num\_chronic\_conditions, and proportion who smoke. Assign a descriptive business label to each cluster (e.g., "Young Healthy Low-Risk"). Your labels must be justified by the statistics in the profile table.
 
 ## Submission
 
-Knit your Rmd to HTML with the profile table, segment names, and PC scatter plot visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. Cluster labels and justifications must appear as R comments inside the Task 4 code chunk.

@@ -1,66 +1,73 @@
 {
   "id": "module-05-lesson-01",
-  "title": "Quiz: Generalised Linear Models — Logistic and Poisson Regression",
+  "title": "Quiz: GLMs — Logistic and Poisson Regression",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In logistic regression, what does add_predictions(mod, type = 'response') return for each observation?",
+      "text": "In a logistic regression, the logit link maps P(Y=1) to the linear predictor. What does 'inverting' the link function give you?",
       "options": [
-        "The log-odds (linear predictor)",
-        "The predicted probability P(Y=1)",
-        "The binary prediction (0 or 1)",
-        "The residual for each observation"
+        "The log-odds of the event",
+        "The predicted probability P(Y=1) = 1 / (1 + e^(−η)), which is always in (0,1)",
+        "The odds ratio for each predictor",
+        "The residual deviance"
       ],
       "correct": 1,
-      "explanation": "type = 'response' applies the inverse link function (logistic function) to the linear predictor, transforming log-odds into probabilities between 0 and 1."
+      "explanation": "The logit link is g(μ) = log(μ/(1−μ)) = η. Inverting gives μ = P(Y=1) = eη/(1+eη) = 1/(1+e^(−η)). This is the logistic sigmoid function, which always maps any real η to a value in (0,1) — solving the problem of OLS predicting probabilities outside [0,1]."
     },
     {
       "id": "q2",
       "type": "true-false",
-      "text": "A Poisson regression coefficient of 0.05 for 'age' means that each additional year of age increases the expected count by 5 units.",
-      "correct": false,
-      "explanation": "Poisson coefficients are on the log scale. exp(0.05) ≈ 1.051 — each additional year multiplies the expected count by 1.051, a 5.1% multiplicative increase, not an additive increase of 5 units."
+      "text": "In logistic regression, exp(β₁) is the odds ratio: it tells you by what factor the odds of the event change for a one-unit increase in x₁.",
+      "correct": true,
+      "explanation": "The log-odds model is log(odds) = β₀ + β₁x₁. A one-unit increase in x₁ changes the log-odds by β₁, which multiplies the odds by exp(β₁). This is the odds ratio (OR). OR > 1 means x₁ increases the odds; OR < 1 means it decreases them."
     },
     {
       "id": "q3",
       "type": "multiple-choice",
-      "text": "Why can't ordinary linear regression (OLS) be directly used for a binary 0/1 response?",
+      "text": "In Poisson regression with glm(y ~ x, family = poisson()), the coefficient for x is β₁ = 0.03. How do you interpret exp(β₁)?",
       "options": [
-        "OLS requires the response to be a count variable",
-        "OLS can predict values outside [0, 1] which are not valid probabilities",
-        "OLS requires all predictors to be categorical",
-        "OLS cannot handle large datasets efficiently"
+        "Each unit increase in x adds 0.03 to the expected count",
+        "Each unit increase in x multiplies the expected count by exp(0.03) ≈ 1.030 — a 3% increase in the rate",
+        "The expected count is 3% of x",
+        "The model explains 3% of the variance in counts"
       ],
       "correct": 1,
-      "explanation": "OLS is unconstrained — it can predict negative values or values greater than 1. These are not valid probabilities. Logistic regression constrains predictions to (0,1) via the logistic link function."
+      "explanation": "In Poisson regression with the log link, the model is log(μ) = β₀ + β₁x, so μ = exp(β₀ + β₁x). A unit increase in x changes μ by a factor of exp(β₁) — this is the rate ratio. exp(0.03) ≈ 1.030 means a 3% increase in the expected count per unit increase in x."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In glm(), which family argument fits a logistic regression model for a binary outcome?",
+      "text": "You fit a logistic model for P(dep_delay > 30) and get AIC = 189,000. The null model (intercept only) has AIC = 191,000. What can you conclude?",
       "options": [
-        "family = gaussian()",
-        "family = poisson(link = 'log')",
-        "family = binomial(link = 'logit')",
-        "family = Gamma(link = 'log')"
+        "The predictors explain more than 50% of the variance in departure delays",
+        "The model with predictors is preferred (ΔAIC = 2,000 >> 10), but the absolute AIC values suggest the predictors explain only a modest fraction of delay risk",
+        "The null model is preferred because it is simpler",
+        "AIC cannot be used for logistic regression"
       ],
-      "correct": 2,
-      "explanation": "Logistic regression uses the binomial family with the logit link. The binomial family models proportions/counts of successes; the logit link maps probabilities to the real line."
+      "correct": 1,
+      "explanation": "ΔAIC = 2,000 is overwhelming evidence for the model with predictors. However, a logistic model AIC of 189,000 on 336,776 observations suggests the model has modest predictive power overall — AIC measures relative goodness of fit, not absolute. The large ΔAIC just means the predictors are statistically useful, not that they explain most of the variation."
     },
     {
       "id": "q5",
       "type": "multiple-choice",
-      "text": "An exponentiated logistic regression coefficient for 'toptier' is 7.0. Which interpretation is correct?",
+      "text": "Which R function fits a Poisson regression for count data?",
       "options": [
-        "Top-tier students have a 7-unit higher probability of admission",
-        "Top-tier students are 7 times more likely to be admitted in absolute terms",
-        "Attending a top-tier school multiplies the odds of admission by 7",
-        "Top-tier students have 7% higher admission rates"
+        "lm(y ~ x, family = poisson())",
+        "glm(y ~ x, family = poisson(link = 'log'))",
+        "glm(y ~ x, family = gaussian())",
+        "nlm(y ~ x, family = poisson())"
       ],
-      "correct": 2,
-      "explanation": "Exponentiated logistic coefficients are odds ratios. OR = 7 means the odds of admission for top-tier school students are 7 times the odds for non-top-tier students. This is not a direct statement about probability differences."
+      "correct": 1,
+      "explanation": "Poisson regression is a GLM fitted with glm(). The family = poisson() argument specifies the Poisson distribution with the canonical log link. lm() only handles the normal (Gaussian) family. nlm() is a general numerical minimiser, not a GLM function."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "The deviance D = −2log(L̂) in a GLM plays the same role as RSS in an OLS model — it measures lack of fit.",
+      "correct": true,
+      "explanation": "Deviance is the GLM generalisation of RSS. For normal errors, deviance = RSS/σ². For binomial and Poisson, deviance measures how far the fitted model is from the saturated model (which perfectly fits the data). Residual deviance / residual df ≈ 1 indicates good fit; >> 1 indicates overdispersion."
     }
   ]
 }

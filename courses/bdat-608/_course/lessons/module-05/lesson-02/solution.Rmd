@@ -1,93 +1,108 @@
 ---
-title: "BDAT 608 | Module 5, Lesson 2 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Robust Regression and GAMs"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 8, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
 library(MASS)
 library(mgcv)
-select <- dplyr::select; filter <- dplyr::filter
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-data("sim4", package = "modelr")
-sim1_base <- sim1
+library(broom)
 ```
 
-## Task 1 — Inject Outliers and Fit Models
+```{r load-data}
+data("sim1",    package = "modelr")
+data("diamonds", package = "ggplot2")
+```
 
-```{r robust-fit}
-sim1_out <- sim1_base |>
+## Task 1: OLS vs robust regression with outliers
+
+```{r task1}
+sim1_out <- sim1 |>
   mutate(
-    y          = ifelse(row_number() %in% c(3, 17), y + 15, y),
-    is_outlier = row_number() %in% c(3, 17)
+    y          = ifelse(row_number() %in% c(5, 15), y + 20, y),
+    is_outlier = row_number() %in% c(5, 15)
   )
 
-mod_ols <- lm(y ~ x,                      data = sim1_out)
+mod_ols <- lm(y ~ x,                    data = sim1_out)
 mod_rob <- MASS::rlm(y ~ x, method = "M", data = sim1_out)
-```
 
-## Task 2 — Plot Comparison
+cat("OLS:    intercept =", round(coef(mod_ols)[1], 2),
+    " slope =", round(coef(mod_ols)[2], 2), "\n")
+cat("Robust: intercept =", round(coef(mod_rob)[1], 2),
+    " slope =", round(coef(mod_rob)[2], 2), "\n")
+cat("True values (sim1 without outliers): intercept ≈ 4.22, slope ≈ 2.05\n")
 
-```{r robust-plot}
 ggplot(sim1_out, aes(x, y, shape = is_outlier)) +
   geom_point(colour = "grey30", size = 2.5) +
   geom_abline(aes(intercept = coef(mod_ols)[1], slope = coef(mod_ols)[2],
-                  colour = "OLS"),    linewidth = 1.2) +
+                  colour = "OLS"), linewidth = 1.2) +
   geom_abline(aes(intercept = coef(mod_rob)[1], slope = coef(mod_rob)[2],
                   colour = "Robust"), linewidth = 1.2) +
-  scale_colour_manual(values = c("OLS" = "#C9A84C", "Robust" = "#1B3A6B")) +
+  scale_colour_manual(values = c("OLS" = "goldenrod", "Robust" = "steelblue")) +
   scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 8),
-                     labels  = c("Normal", "Outlier"), name = "Point type") +
-  labs(title = "OLS vs Robust regression with two outliers", colour = "Method") +
-  theme_minimal(base_size = 13)
+                     labels = c("Normal", "Outlier")) +
+  labs(
+    title    = "OLS vs Robust regression on sim1 with two outliers (★)",
+    subtitle = "Gold OLS line is pulled upward; blue robust line stays near true values.",
+    colour   = "Method",
+    shape    = "Point type"
+  ) +
+  theme_minimal()
 ```
 
-## Task 3 — Coefficient Comparison
+## Task 2: Fit a GAM on diamonds
 
-```{r coef-compare}
-cat("OLS:    intercept =", round(coef(mod_ols)[1], 2),
-    " slope =", round(coef(mod_ols)[2], 2), "  <- pulled by outliers\n")
-cat("Robust: intercept =", round(coef(mod_rob)[1], 2),
-    " slope =", round(coef(mod_rob)[2], 2), "  <- close to true values (4.22, 2.05)\n")
-```
-
-## Task 4 — Fit GAM on sim4
-
-```{r gam-fit}
-mod_gam <- gam(y ~ s(x1) + s(x2), data = sim4, method = "REML")
+```{r task2}
+mod_gam <- gam(
+  log(price) ~ s(log(carat)) + s(depth) + cut,
+  data   = diamonds,
+  method = "REML"
+)
 summary(mod_gam)
+# Read EDF values from: "Approximate significance of smooth terms"
 ```
 
-## Task 5 — GAM Smooth Plots and Heatmap
+## Task 3: Is s(depth) linear or non-linear?
 
-```{r gam-plots}
-plot(mod_gam, pages = 1, shade = TRUE, col = "#1B3A6B", shade.col = "#C9A84C40")
+```{r task3}
+# EDF values are in the smooth summary table.
+# s(log(carat)) typically has EDF ≈ 7-9 — highly non-linear.
+# s(depth)      typically has EDF ≈ 2-4 — mildly non-linear.
+# Interpretation: depth has a curved (not linear) effect on log(price),
+# but the curve is gentler than the strongly non-linear carat relationship.
+cat("Summary (key section):\n")
+print(summary(mod_gam)$s.table)
 ```
 
-```{r gam-heatmap}
-sim4 |>
-  data_grid(x1 = seq_range(x1, n=40), x2 = seq_range(x2, n=40)) |>
-  add_predictions(mod_gam) |>
-  ggplot(aes(x1, x2, fill = pred)) +
-  geom_tile() +
-  scale_fill_viridis_c() +
-  labs(title = "GAM predicted surface (additive smooths)", fill = "ŷ") +
-  theme_minimal(base_size = 13)
+## Task 4: Visualise the smooths
+
+```{r task4, fig.width=10, fig.height=4}
+plot(mod_gam, pages = 1, shade = TRUE, col = "steelblue",
+     shade.col = rgb(0.27, 0.51, 0.71, 0.3))
+
+# s(log(carat)): steeply increasing curve — log(price) rises sharply
+#   with log(carat), especially for small diamonds, then more gradually.
+# s(depth): U-shaped or mildly curved — diamonds that are too shallow
+#   or too deep relative to their diameter are less valuable.
 ```
 
-## Reflection
+## Task 5: AIC comparison — GAM vs linear model
 
-edf = 1.02 for `s(x1)` means the estimated smooth is essentially a straight line — it has barely more complexity than a linear term. Yes, you could simplify: replace `s(x1)` with the linear term `x1` to reduce model complexity without meaningful loss of fit. A useful rule of thumb is: if edf < 1.5, the smooth is approximately linear and can be replaced with the corresponding fixed term.
+```{r task5}
+mod_lm <- lm(log(price) ~ log(carat) + depth + cut, data = diamonds)
+
+AIC(mod_lm, mod_gam)
+
+cat("ΔAIC:", round(AIC(mod_lm) - AIC(mod_gam), 1), "\n")
+
+# The GAM has lower AIC because s(log(carat)) captures the non-linear
+# shape of the carat-price relationship that a single log(carat) term
+# cannot fully describe. The penalty in REML prevents overfitting,
+# so the AIC improvement reflects genuine predictive improvement.
+```

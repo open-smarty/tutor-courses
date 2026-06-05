@@ -1,33 +1,33 @@
-# Task: Module 2, Lesson 3 — Attribute Chart Selection and Analysis
+# Task: Attribute Control Charts — p, np, c, and u Charts
 
 ## Objective
 
-Choose the correct attribute chart for three different scenarios, build each one in Python, and interpret the results.
-
-## Scenarios
-
-**Scenario A:** A customer service team receives between 80 and 120 calls per day. Each call is either resolved (pass) or unresolved (fail). You have 15 days of data.
-
-**Scenario B:** A software QA team reviews one release build per week. Each build is examined and the number of bugs found is recorded. You have 10 weeks of data.
-
-**Scenario C:** A data validation system checks different-sized data batches each hour. The number of records failing validation is recorded along with the batch size. You have 20 hours of data.
+Build and interpret both a p chart and a u chart from a simulated ETL pipeline dataset, demonstrating that you can select the right chart, compute variable control limits, and identify out-of-control batches.
 
 ## Instructions
 
-1. For each scenario, state which chart type (p, np, c, or u) is correct and why.
+1. **Set up your data.** Generate 20 batches with variable sizes uniformly distributed between 350 and 600 records. Use `np.random.default_rng(seed=42)` so results are reproducible.
 
-2. Generate realistic sample data using `numpy.random` for each scenario.
+2. **p Chart.**
+   - Assume a true proportion defective of 4%. Generate defective-item counts using the Binomial distribution.
+   - Compute p-bar from the pooled data.
+   - Compute per-subgroup UCL_i and LCL_i. Clip any negative LCL to 0.
+   - Plot the p chart with:
+     - A line connecting p_i values (with markers)
+     - A dashed green CL line
+     - Dashed red stepped UCL/LCL lines (they change across batches because n_i varies)
+     - Out-of-control points highlighted in red
 
-3. In a Python file called `task_attribute_charts.py`, build all three charts in one figure with three subplots.
+3. **u Chart.**
+   - Assume a true defect rate of 1.8 defects per 100 records (u_true = 0.018). Generate defect counts using the Poisson distribution.
+   - Compute u-bar from the pooled data.
+   - Compute per-subgroup UCL_i and LCL_i. Clip negatives to 0.
+   - Plot the u chart following the same conventions as above.
 
-4. For each chart:
-   - Compute and display the correct control limits.
-   - Identify and mark any out-of-control points.
-   - Print a one-sentence interpretation.
+4. **Interpretation.** Add a brief print statement (or comments) explaining:
+   - Why the control limits step up/down across batches
+   - Which batches, if any, are out of control and what that would mean in the ETL context
 
-## Criteria
+## Submission
 
-- Correct chart selected for each scenario with justification: 30%
-- Correct formulas used for each chart type: 40%
-- Charts are labeled and out-of-control points are identified: 20%
-- Interpretations are correct: 10%
+Submit your completed `exercise.py` file. The file must run without errors and produce both charts when executed.

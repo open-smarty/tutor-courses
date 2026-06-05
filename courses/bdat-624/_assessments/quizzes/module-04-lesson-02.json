@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "In the simple pure death process, the death rate when the population size is n is:",
+      "text": "In the pure death process with N0=100 cells and individual death rate μ=0.2/day, what is P(a specific cell is still alive at t=3 days)?",
       "options": [
-        "μ (constant, regardless of how many individuals remain)",
-        "nμ (each individual dies independently at rate μ, so n individuals contribute nμ in total)",
-        "μ/n (death rate slows as population grows)",
-        "n²μ (quadratically increasing with population)"
+        "1 - e^{-0.6} ≈ 0.451",
+        "e^{-0.6} ≈ 0.549",
+        "e^{-0.2} ≈ 0.819",
+        "(e^{-0.2})^{100}"
       ],
       "correct": 1,
-      "explanation": "The defining assumption of the simple pure death process is μₙ = nμ. Each of the n individuals dies independently at rate μ, so the aggregate death rate when the population is n is nμ. This is exactly analogous to λₙ = nλ in the Yule process, but acting as deaths rather than births."
+      "explanation": "Each cell's lifetime is Exp(μ) = Exp(0.2). P(survive to t=3) = P(T>3) = e^{-μt} = e^{-0.2×3} = e^{-0.6} ≈ 0.549. This is the individual survival probability p(t), the parameter of the Binomial distribution for the full population."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "X(t) | X(0) = j ~ Binomial(j, e^{−μt}) means:",
-      "options": [
-        "Each of the j initial individuals survives to time t independently, with probability e^{−μt}",
-        "The population grows following the binomial expansion theorem",
-        "Exactly j individuals die at the deterministic time t = 1/μ",
-        "The binomial parameter e^{−μt} increases over time"
-      ],
-      "correct": 0,
-      "explanation": "Because each individual dies at rate μ independently, the lifetime of each individual is Exp(μ) with survival function e^{−μt}. The number of individuals still alive at time t is therefore the count of successes (survivals) in j independent Bernoulli(e^{−μt}) trials — a Binomial(j, e^{−μt}) distribution. Note that e^{−μt} decreases over time (not increases), since more individuals die as time passes."
+      "type": "true-false",
+      "text": "In the pure death process starting with N0 individuals, N(t) follows a Binomial(N0, e^{-μt}) distribution.",
+      "correct": true,
+      "explanation": "Each of the N0 individuals survives to time t independently with probability p(t) = e^{-μt}. The number surviving is therefore the count of 'successes' in N0 independent Bernoulli trials with success probability p(t) — exactly Binomial(N0, e^{-μt})."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "In a pure death process starting at j = 100 individuals with death rate μ, the mean time to extinction equals ln(j)/μ = ln(100)/μ.",
-      "correct": false,
-      "explanation": "This statement is false. While E[X(t)] = 100·e^{−μt} reaches 1 at t = ln(100)/μ, this is the time at which we expect one survivor on average — not the exact time of extinction. The actual extinction event requires all 100 individuals to die, and its distribution is the maximum of 100 independent Exp(μ) random variables. The expected maximum is (1 + 1/2 + 1/3 + ... + 1/100)/μ ≈ 5.187/μ, which is much larger than ln(100)/μ ≈ 4.605/μ."
+      "type": "multiple-choice",
+      "text": "In the pure death process ODE: dP_n/dt = -(nμ)P_n + (n+1)μ P_{n+1}. The term (n+1)μ P_{n+1} represents:",
+      "options": [
+        "The rate of leaving state n (one cell dies, population goes from n to n-1)",
+        "The rate of entering state n from state n+1 (one death decreases population by 1)",
+        "The birth rate compensating for deaths",
+        "The probability that exactly n+1 cells die"
+      ],
+      "correct": 1,
+      "explanation": "The term +(n+1)μ P_{n+1} is a 'source' term: the process is in state n+1, and one death occurs (at rate (n+1)μ when n+1 cells are present), bringing the population to n. This is a 'flow in' to state n from state n+1."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "With μ = 0.2 per hour and j = 100 initial bacteria, at what time t is the expected surviving population E[X(t)] = 50?",
+      "text": "With N0=1000 cancer cells and μ=0.5/day, what is the expected number surviving after 10 days?",
       "options": [
-        "t = 1 hour",
-        "t = ln(2)/0.2 ≈ 3.47 hours",
-        "t = 50 hours",
-        "t = 100/μ = 500 hours"
+        "1000/10 = 100 cells",
+        "1000 × e^{-5} ≈ 6.74 cells",
+        "1000 × (1 - 0.5)^{10} ≈ 0.977 cells",
+        "1000 × e^{-0.5} ≈ 606 cells"
       ],
       "correct": 1,
-      "explanation": "Set je^{−μt} = j/2, which gives e^{−μt} = 1/2, so −μt = −ln 2, and t = ln(2)/μ = 0.693/0.2 ≈ 3.47 hours. This is the biological half-life of the population under constant per-capita mortality."
+      "explanation": "E[N(t)] = N0 × e^{-μt} = 1000 × e^{-0.5×10} = 1000 × e^{-5} ≈ 1000 × 0.00674 ≈ 6.74 cells. After 10 days of chemotherapy at rate 0.5/day, only about 7 cells are expected to survive."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "The expected extinction time in the pure death process starting with N0 individuals is (1/μ)×H_{N0}, where H_{N0} is the N0-th harmonic number. For N0=10 and μ=1, H_{10} ≈ 2.93. What is E[T_ext]?",
+      "options": [
+        "1/10 = 0.1",
+        "10/1 = 10",
+        "2.93",
+        "ln(10) ≈ 2.30"
+      ],
+      "correct": 2,
+      "explanation": "E[T_ext] = (1/μ) × H_{N0} = (1/1) × 2.93 = 2.93 time units. This is much longer than the individual expected lifetime 1/μ = 1, because the last survivor must outlive all other N0-1 individuals."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "The pure death process and the pure birth (Yule) process are mirror images: the birth process produces a negative binomial distribution while the death process produces a binomial distribution.",
+      "text": "The variance of N(t) in the pure death process is maximised at t = ln(2)/μ (when exactly half the population has died on average).",
       "correct": true,
-      "explanation": "True. In the Yule process (pure birth), X(t) | X(0) = j ~ NegBin(j, e^{−λt}) and the mean grows as je^{λt}. In the pure death process, X(t) | X(0) = j ~ Binomial(j, e^{−μt}) and the mean decays as je^{−μt}. Both stem from independent individual-level exponential events, but birth creates new individuals while death removes them. The mathematical duality is exact: replacing λ with −μ (and adjusting the direction of the parameter space) maps one into the other."
+      "explanation": "Var[N(t)] = N0 × p(t) × (1-p(t)) where p(t)=e^{-μt}. For a Binomial, variance np(1-p) is maximised at p=1/2, which occurs when e^{-μt}=1/2, i.e., t=ln(2)/μ. At this point, the population is most uncertain — some simulations will have many survivors, others few."
     }
   ]
 }

@@ -1,70 +1,99 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 3 Exercise"
-subtitle: "PCA for Dimensionality Reduction and Cluster Visualisation"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: PCA for Dimensionality Reduction and Cluster Visualisation"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Fit PCA pipeline
+```{r load-packages}
+library(tidyverse)
 
-Build a `recipes` PCA pipeline on `age`, `bmi`, `income`, `num_claims`, `claim_amount`, and `num_chronic_conditions`. Steps: impute medians for `bmi` and `income`, normalise all numeric predictors, apply PCA with `num_comp = 3`. `prep()` and `bake()` it.
-
-```{r task1}
-# YOUR CODE HERE
-# library(recipes)
-# pca_vars <- c("age", "bmi", "income", "num_claims",
-#               "claim_amount", "num_chronic_conditions")
-# pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
-#   step_impute_median(bmi, income) |>
-#   step_normalize(all_numeric_predictors()) |>
-#   step_pca(all_numeric_predictors(), num_comp = 3)
-# pca_prep   <- prep(pca_rec)
-# pca_scores <- bake(pca_prep, new_data = NULL)
-# head(pca_scores)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
 ```
 
-## Task 2 — Scree plot
+## Task 1: Run prcomp()
 
-Using `broom::tidy(pca_prep, number = ..., type = "variance")`, extract the percent variance per PC and plot a scree plot (bar chart with a line overlay).
-
-```{r task2}
-# YOUR CODE HERE
-# library(broom); library(ggplot2)
-# tidy(pca_prep, number = 3, type = "variance") |>
-#   filter(terms == "percent variance") |>
-#   ggplot(aes(x = component, y = value)) +
-#   geom_col(fill = "steelblue") +
-#   geom_line(group = 1, colour = "red") +
-#   labs(title = "Scree Plot", x = "PC", y = "% Variance Explained") +
-#   theme_minimal()
+```{r task1-prepare}
+# TODO: select age, bmi, income, num_claims, num_chronic_conditions
+# drop_na(), then scale()
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  NULL  # scale()
 ```
 
-## Task 3 — Score plot coloured by plan_tier
+```{r task1-pca}
+# TODO: run prcomp(clust_data, scale. = FALSE)  (data is already scaled)
+pca <- NULL
 
-Join `plan_tier` from `health_small` (using the same rows that entered PCA — omit NAs on `bmi`/`income`/`num_chronic_conditions` first). Plot PC1 vs PC2 coloured by `plan_tier`.
+# Print the summary: cumulative proportion of variance
+summary(pca)
+```
 
-```{r task3}
-# YOUR CODE HERE
-# library(dplyr)
-# plan <- health_small |>
-#   select(bmi, income, num_chronic_conditions, plan_tier) |>
-#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
-#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
-#   na.omit() |>
-#   pull(plan_tier)
-# pca_scores |>
-#   mutate(plan_tier = plan) |>
-#   ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
-#   geom_point(alpha = 0.2, size = 0.5) +
-#   labs(title = "PCA Score Plot by Plan Tier") +
-#   theme_minimal()
+## Task 2: Scree plot and variance explained
+
+```{r task2-scree}
+# TODO: compute Proportion of Variance Explained (PVE) for each PC
+# PVE_k = pca$sdev[k]^2 / sum(pca$sdev^2)
+pve <- NULL  # pca$sdev^2 / sum(pca$sdev^2)
+
+tibble(PC = 1:length(pve), PVE = pve, cumPVE = cumsum(pve)) |>
+  ggplot(aes(x = PC, y = PVE)) +
+  geom_col(fill = "steelblue") +
+  geom_line(aes(y = cumPVE), colour = "red", group = 1) +
+  geom_point(aes(y = cumPVE), colour = "red") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Scree Plot — Insurance Policyholders",
+       y = "Proportion of Variance Explained",
+       caption = "Red line = cumulative PVE") +
+  theme_minimal()
+```
+
+```{r task2-80pct}
+# TODO: how many PCs are needed to explain at least 80% of variance?
+# Hint: use cumsum(pve) >= 0.80
+num_pcs_80 <- NULL  # min(which(cumsum(pve) >= 0.80))
+cat("Number of PCs for 80% variance:", num_pcs_80, "\n")
+```
+
+## Task 3: Biplot — which variables drive PC1 and PC2?
+
+```{r task3-biplot}
+# TODO: create a biplot using biplot(pca, scale = 0, cex = 0.5)
+# scale = 0 ensures loadings and scores are on comparable scales
+```
+
+```{r task3-loadings}
+# TODO: print the loadings (rotation matrix) for PC1 and PC2
+# pca$rotation[, 1:2]
+# Which variables have the largest absolute loading on PC1?
+# Which variables have the largest absolute loading on PC2?
+pca$rotation[, 1:2]
+
+# PC1 is most influenced by:
+# PC2 is most influenced by:
+```
+
+## Task 4: Visualise k-means clusters in PCA space
+
+```{r task4-kmeans}
+# TODO: fit k-means with k = 4, nstart = 25 on clust_data
+set.seed(602)
+km <- NULL  # kmeans(clust_data, centers = 4, nstart = 25)
+```
+
+```{r task4-scatter}
+# TODO: project observations into PC1-PC2 space and colour by cluster
+# as.data.frame(pca$x[, 1:2]) |> mutate(cluster = factor(km$cluster)) |> ggplot(...)
+```
+
+```{r task4-interpret}
+# Are the clusters well-separated in PC1-PC2 space?
+# If two clusters overlap in the plot, does that mean the clustering failed?
+# What else could you check?
+# Answer (as a comment):
 ```

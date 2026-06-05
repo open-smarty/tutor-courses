@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "The rule {vision_cover} → {dental_cover} has lift = 2.1. What does this mean in a business context?",
+      "text": "To convert a data frame of binary (0/1) insurance flag columns into an arules transactions object, which function do you use?",
       "options": [
-        "Vision cover causes dental cover purchases",
-        "Policyholders with vision cover buy dental cover 2.1× more often than the average policyholder",
-        "21% of all policyholders have both vision and dental cover",
-        "The rule has 21% confidence"
+        "as(df, \"matrix\")",
+        "as(df, \"transactions\")",
+        "transactions(df)",
+        "arules::read.transactions(df)"
       ],
       "correct": 1,
-      "explanation": "Lift = 2.1 means this co-occurrence is 2.1 times more frequent than if the items were independent. It does NOT imply causation — it is a correlation. A natural confound is plan tier: Gold/Platinum holders are more likely to buy all add-ons."
+      "explanation": "as(df, \"transactions\") coerces a data frame of logical (or 0/1) columns into an arules transactions object. The columns become items and the rows become transactions."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "In arules, what does the %pin% operator do?",
+      "text": "In apriori(), setting minlen = 2 means:",
       "options": [
-        "Pins a rule to the top of the results",
-        "Matches items using partial item name strings",
-        "Computes the proportion of rules containing an item",
-        "Removes duplicate rules"
+        "Rules must have at least 2 items total (antecedent + consequent)",
+        "Rules must have at least 2 items in the antecedent",
+        "The minimum support is divided by 2",
+        "Only 2-itemset rules are returned (no longer rules)"
       ],
-      "correct": 1,
-      "explanation": "%pin% is the 'partial item name' match operator in arules. subset(rules, rhs %pin% 'dental') returns all rules where the right-hand side contains the string 'dental'."
+      "correct": 0,
+      "explanation": "minlen = 2 sets the minimum total number of items in a rule (antecedent ∪ consequent). This filters out trivial single-item 'rules' like {} → {dental_cover} that have no antecedent."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "When converting a data frame to an arules transactions object, you should include numeric variables like age and income to get richer rules.",
-      "correct": false,
-      "explanation": "The transactions class is a binary (presence/absence) structure. Numeric variables must be discretised (e.g. age < 40 = TRUE) before they can be included. Passing raw numerics would produce meaningless results or an error."
+      "type": "multiple-choice",
+      "text": "In the arulesViz scatter plot (method = 'scatter', shading = 'lift'), what do rules in the TOP-RIGHT corner of the plot represent?",
+      "options": [
+        "Rules with high lift but low confidence",
+        "Rules with high support but low confidence",
+        "Rules with high support AND high confidence",
+        "Rules with low support and low confidence"
+      ],
+      "correct": 2,
+      "explanation": "The x-axis is support and the y-axis is confidence. The top-right corner therefore contains rules that are both common (high support = they apply to many policyholders) and reliable (high confidence = the consequent is usually present when the antecedent is)."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "You find the rule {dental_cover, mental_cover} → {vision_cover} with confidence = 0.90. A product manager says 90% of policyholders who buy dental and mental cover also buy vision cover. Is this interpretation correct?",
+      "text": "You find the rule {vision_cover} → {dental_cover} with confidence = 0.74 and lift = 1.9. Which statement is most accurate?",
       "options": [
-        "No — confidence measures support divided by item frequency",
-        "Yes — confidence = P(vision | dental ∩ mental) = 0.90 in this transaction set",
-        "No — confidence only applies to single-item antecedents",
-        "Yes, and this also proves vision causes dental and mental purchases"
+        "74% of all policyholders hold dental cover",
+        "74% of policyholders with vision cover also hold dental cover, and this is 1.9× the base rate for dental",
+        "The rule applies to 74% of all transactions in the dataset",
+        "Vision cover causes policyholders to buy dental cover"
       ],
       "correct": 1,
-      "explanation": "Yes, the interpretation is correct. Confidence = P(consequent | antecedent) in the observed transaction data. However, correlation ≠ causation; the high confidence is likely explained by plan tier as a common cause."
+      "explanation": "Confidence = P(dental | vision) = 0.74 means 74% of vision holders also hold dental. Lift = 1.9 means they are 1.9× more likely to hold dental than a randomly chosen policyholder. Association rules describe co-occurrence, not causation."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "A high-lift association rule always implies a causal relationship between the antecedent and the consequent.",
+      "correct": false,
+      "explanation": "Association rules measure co-occurrence, not causation. A high lift means the items appear together more often than chance predicts, but this could be due to a common confounding variable (e.g., both are more common among Gold-tier policyholders) rather than a direct causal link."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Which arulesViz plot type is most useful for exploring many rules simultaneously (support vs confidence, coloured by lift)?",
+      "text": "You want to identify rules where dental_cover is the OUTCOME (consequent). Which arules code achieves this?",
       "options": [
-        "graph (network diagram)",
-        "scatter (two-key) plot",
-        "grouped matrix",
-        "item frequency plot"
+        "subset(rules, lhs %in% \"dental_cover=TRUE\")",
+        "subset(rules, rhs %in% \"dental_cover=TRUE\")",
+        "filter(rules, consequent == \"dental_cover\")",
+        "inspect(rules, side = \"rhs\", item = \"dental_cover\")"
       ],
       "correct": 1,
-      "explanation": "The scatter plot (method = 'scatter') maps support on the x-axis, confidence on the y-axis, and uses colour to encode lift. It is the most compact overview of a large rule set and makes the support-confidence-lift trade-off visible at a glance."
+      "explanation": "In arules, rhs refers to the right-hand side (consequent) of the rule. subset(rules, rhs %in% \"dental_cover=TRUE\") selects only rules where dental_cover=TRUE appears as the outcome, allowing you to study what predicts dental cover uptake."
     }
   ]
 }

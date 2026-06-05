@@ -1,88 +1,159 @@
 ---
-title: "BDAT 602 — Module 5, Lesson 2 Solution"
-subtitle: "Handling Class Imbalance"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Handling Class Imbalance"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
-set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
 ```
 
-## Task 1 — Baseline random forest (no correction)
-
-```{r task1}
-cat("Fraud rate:", round(mean(health_small$fraud_flag) * 100, 2), "%\n")
-
+```{r load-packages}
+library(tidyverse)
 library(randomForest)
+library(recipes)
+library(themis)
+library(pROC)
 
-rf_base <- randomForest(
-  as.factor(fraud_flag) ~ age + income + num_claims +
-    claim_amount + plan_tier,
-  data  = train |> dplyr::filter(!is.na(income)),
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
+```
+
+```{r split-data}
+set.seed(602)
+idx   <- sample(nrow(health_data), 0.80 * nrow(health_data))
+train <- health_data[idx, ]
+test  <- health_data[-idx, ]
+```
+
+## Task 1: Document class imbalance and the accuracy paradox
+
+```{r task1-imbalance}
+cat("Churn rate (train):", round(mean(train$churned), 3), "\n")
+cat("Churn rate (test): ", round(mean(test$churned),  3), "\n")
+```
+
+```{r task1-naive}
+naive_preds <- rep(0, nrow(test))
+naive_acc   <- mean(naive_preds == test$churned)
+cat("Naive 'always No' accuracy:", round(naive_acc, 3), "\n")
+cat("Recall of naive model:      0 (catches zero churners)\n")
+# ~82% accuracy but 0% recall — the accuracy paradox in action.
+```
+
+## Task 2: Class-weighted random forest
+
+```{r task2-rf-weighted}
+set.seed(602)
+rf_wt <- randomForest(
+  factor(churned) ~ age + plan_tier + income + num_claims + support_calls +
+                    auto_pay + customer_rating + deductible,
+  data       = train,
+  ntree      = 200,
+  classwt    = c("0" = 1, "1" = 5),
+  importance = TRUE
+)
+print(rf_wt)
+```
+
+```{r task2-compare-recall}
+prob_wt   <- predict(rf_wt, test, type = "prob")[, "1"]
+pred_wt   <- factor(ifelse(prob_wt > 0.5, 1, 0), levels = c(0, 1))
+cm_wt     <- table(Predicted = pred_wt, Actual = factor(test$churned))
+recall_wt <- cm_wt["1", "1"] / sum(cm_wt[, "1"])
+
+cat("Weighted RF recall at 0.5 threshold:", round(recall_wt, 3), "\n")
+# Significantly higher than the naive 0 — class weights help the model
+# identify churners even though they are a minority.
+```
+
+## Task 3: SMOTE oversampling
+
+```{r task3-smote-recipe}
+train_fac <- train |>
+  mutate(churned = factor(churned, levels = c(0, 1)))
+
+rec_smote <- recipe(
+  churned ~ age + plan_tier + income + num_claims + support_calls +
+            auto_pay + customer_rating + deductible,
+  data = train_fac
+) |>
+  step_impute_median(all_numeric_predictors()) |>
+  step_impute_mode(all_nominal_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_smote(churned, over_ratio = 1) |>
+  step_normalize(all_numeric_predictors())
+
+train_smote <- rec_smote |> prep(training = train_fac) |> bake(new_data = NULL)
+```
+
+```{r task3-check-balance}
+cat("Class distribution after SMOTE:\n")
+print(table(train_smote$churned))
+# Both classes should now have approximately equal counts.
+```
+
+## Task 4: Compare models with precision-recall
+
+```{r task4-rf-smote}
+set.seed(602)
+rf_smote <- randomForest(
+  churned ~ .,
+  data  = train_smote,
   ntree = 200
 )
 
-pred   <- predict(rf_base, test |> dplyr::filter(!is.na(income)))
-actual <- test$fraud_flag[!is.na(test$income)]
-cm     <- table(Predicted = pred, Actual = actual)
-print(cm)
-recall <- cm["1", "1"] / sum(cm[, "1"])
-cat("Recall (no correction):", round(recall, 3), "\n")
+test_fac   <- test |> mutate(churned = factor(churned, levels = c(0, 1)))
+prob_smote <- predict(rf_smote, test_fac, type = "prob")[, "1"]
 ```
 
-Recall is very low (often < 5%) — the model mostly predicts "no fraud" because the class is rare.
+```{r task4-f1-threshold}
+f1_at <- function(prob, truth, threshold) {
+  pred <- factor(ifelse(prob > threshold, 1, 0), levels = c(0, 1))
+  cm   <- table(pred, truth)
+  TP   <- cm["1", "1"]; FP <- cm["1", "0"]; FN <- cm["0", "1"]
+  P    <- if ((TP + FP) == 0) 0 else TP / (TP + FP)
+  R    <- if ((TP + FN) == 0) 0 else TP / (TP + FN)
+  if ((P + R) == 0) 0 else 2 * P * R / (P + R)
+}
 
-## Task 2 — Class-weighted random forest
+cat("Weighted RF F1 at 0.3:", round(f1_at(prob_wt,    factor(test$churned), 0.3), 3), "\n")
+cat("Weighted RF F1 at 0.5:", round(f1_at(prob_wt,    factor(test$churned), 0.5), 3), "\n")
+cat("SMOTE RF   F1 at 0.3:", round(f1_at(prob_smote, factor(test$churned), 0.3), 3), "\n")
+cat("SMOTE RF   F1 at 0.5:", round(f1_at(prob_smote, factor(test$churned), 0.5), 3), "\n")
+```
 
-```{r task2}
-rf_wtd <- randomForest(
-  as.factor(fraud_flag) ~ age + income + num_claims +
-    claim_amount + plan_tier,
-  data    = train |> dplyr::filter(!is.na(income)),
-  ntree   = 200,
-  classwt = c("0" = 1, "1" = 30)
+```{r task4-pr-curve}
+thresholds <- seq(0.05, 0.95, by = 0.05)
+
+pr_both <- bind_rows(
+  map_dfr(thresholds, function(thr) {
+    pred <- factor(ifelse(prob_wt > thr, 1, 0), levels = c(0, 1))
+    cm <- table(pred, factor(test$churned))
+    TP <- cm["1","1"]; FP <- cm["1","0"]; FN <- cm["0","1"]
+    P  <- if ((TP+FP)==0) 0 else TP/(TP+FP)
+    R  <- if ((TP+FN)==0) 0 else TP/(TP+FN)
+    tibble(threshold = thr, precision = P, recall = R, model = "Weighted RF")
+  }),
+  map_dfr(thresholds, function(thr) {
+    pred <- factor(ifelse(prob_smote > thr, 1, 0), levels = c(0, 1))
+    cm <- table(pred, factor(test$churned))
+    TP <- cm["1","1"]; FP <- cm["1","0"]; FN <- cm["0","1"]
+    P  <- if ((TP+FP)==0) 0 else TP/(TP+FP)
+    R  <- if ((TP+FN)==0) 0 else TP/(TP+FN)
+    tibble(threshold = thr, precision = P, recall = R, model = "SMOTE RF")
+  })
 )
 
-pred_w  <- predict(rf_wtd, test |> dplyr::filter(!is.na(income)))
-cm_w    <- table(Predicted = pred_w, Actual = actual)
-print(cm_w)
+ggplot(pr_both, aes(x = recall, y = precision, colour = model)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  labs(title = "Precision-Recall Curves: Weighted RF vs. SMOTE RF",
+       x = "Recall", y = "Precision") +
+  theme_minimal()
 
-recall_w <- cm_w["1", "1"] / sum(cm_w[, "1"])
-precis_w <- cm_w["1", "1"] / sum(cm_w["1", ])
-
-cat("Recall (weighted):   ", round(recall_w, 3), "\n")
-cat("Precision (weighted):", round(precis_w, 3), "\n")
+# Both models outperform the naive baseline (which achieves recall = 0).
+# SMOTE typically achieves slightly higher PR-AUC because it adds genuine
+# diversity to the minority class rather than just reweighting the loss.
+# The best threshold for F1 is typically around 0.25-0.40 for imbalanced churn data.
 ```
-
-With class weights, recall increases substantially but precision falls — the model now flags more true frauds but also more false alarms.
-
-## Task 3 — Threshold adjustment
-
-```{r task3}
-prob <- predict(rf_wtd,
-                test |> dplyr::filter(!is.na(income)),
-                type = "prob")[, "1"]
-
-threshold <- 0.15
-pred_thr  <- as.integer(prob >= threshold)
-cm_thr    <- table(Predicted = pred_thr, Actual = actual)
-print(cm_thr)
-
-recall_thr <- cm_thr["1", "1"] / sum(cm_thr[, "1"])
-precis_thr <- cm_thr["1", "1"] / sum(cm_thr["1", ])
-
-cat("Recall at 0.15:  ", round(recall_thr, 3), "\n")
-cat("Precision:       ", round(precis_thr, 3), "\n")
-```
-
-Lowering the threshold increases recall further but reduces precision. The operating threshold should be set based on the business cost ratio of false negatives (missed fraud) vs false positives (wasted investigation).

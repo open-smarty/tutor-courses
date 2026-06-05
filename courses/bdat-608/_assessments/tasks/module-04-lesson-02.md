@@ -1,27 +1,19 @@
-# Task: Module 4, Lesson 2 — Interaction on Two Continuous Predictors
+# Task: Interactions and Transformations
 
 ## Objective
 
-Demonstrate the additive vs interaction distinction with two continuous predictors using `sim4`.
+Compare additive and interaction specifications for the diamonds log-log model, visualise the difference using prediction grids, and assess whether the interaction is supported by AIC and residual diagnostics.
 
 ## Instructions
 
-Load `sim4` from `modelr`.
-
-1. Fit:
-   - `mod1_s4 <- lm(y ~ x1 + x2, data = sim4)` (additive)
-   - `mod2_s4 <- lm(y ~ x1 * x2, data = sim4)` (interaction)
-
-2. Create a 5×5 prediction grid using `data_grid()` with `seq_range(x1, n=5)` and `seq_range(x2, n=5)`. Call `gather_predictions()` to get predictions from both models.
-
-3. Plot the predicted surface as a tile heatmap (`geom_tile()`) faceted by model. Use `scale_fill_viridis_c()`.
-
-4. Plot a "slice" view: `aes(x1, pred, colour = x2, group = x2)` + `geom_line()`, faceted by model.
-
-5. Interpret the two plots in 3–4 sentences: what is the key visual difference between the additive and interaction surfaces?
-
-6. Compare AIC. Which model is preferred for `sim4`?
+1. Fit `mod_add = lm(log(price) ~ log(carat) + cut, data = diamonds)`.
+2. Fit `mod_int = lm(log(price) ~ log(carat) * cut, data = diamonds)`.
+3. Compare AIC. State which model is preferred and by how many AIC units.
+4. Create a `data_grid()` over `carat` (10 points) × all `cut` levels. Use `gather_predictions()` to get predictions from both models. Back-transform with `exp()`. Plot `price` vs `carat` coloured by `cut`, faceted by model. Describe whether the lines are parallel.
+5. Report and interpret the interaction coefficient `log(carat):cutIdeal`.
+6. Fit `mod_poly = lm(log(price) ~ poly(log(carat), 2) + cut)`. Is the degree-2 term significant? How does AIC compare to `mod_add`?
+7. Write a two-sentence recommendation: which model would you use for a production pricing tool, and why?
 
 ## Submission
 
-Submit the knitted HTML with both plots and your written interpretation.
+Knit to HTML. Required: the prediction grid plot, the AIC comparison table, and the written recommendation.

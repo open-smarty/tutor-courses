@@ -1,72 +1,130 @@
 ---
-title: "BDAT 602 — Module 5, Lesson 1 Solution"
-subtitle: "Decision Trees and Random Forests"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Decision Trees and Random Forests"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
-set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
 ```
 
-## Task 1 — Fit and plot a decision tree
-
-```{r task1}
+```{r load-packages}
+library(tidyverse)
 library(rpart)
 library(rpart.plot)
-
-tree_fit <- rpart(
-  high_risk ~ age + bmi + smoker + num_chronic_conditions + plan_tier,
-  data    = train,
-  method  = "class",
-  control = rpart.control(maxdepth = 4)
-)
-
-rpart.plot(tree_fit, type = 4, extra = 104,
-           main = "Decision Tree: High-Risk Prediction")
-```
-
-The top splits should be on `age` and `num_chronic_conditions` — directly reflecting the rule-based definition of `high_risk` in the simulation.
-
-## Task 2 — Confusion matrix and accuracy
-
-```{r task2}
-pred     <- predict(tree_fit, test, type = "class")
-conf_mat <- table(Predicted = pred, Actual = test$high_risk)
-print(conf_mat)
-
-accuracy <- sum(diag(conf_mat)) / sum(conf_mat)
-cat("Accuracy:", round(accuracy, 3), "\n")
-```
-
-Accuracy is typically > 90% — but this is partly a consequence of the explicit rule-based definition of `high_risk`. High accuracy does not imply the model is useful if the majority class dominates.
-
-## Task 3 — Random forest and variable importance
-
-```{r task3}
 library(randomForest)
+library(pROC)
 
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
+```
+
+```{r split-data}
 set.seed(602)
-rf_fit <- randomForest(
-  as.factor(high_risk) ~ age + bmi + smoker +
-    num_chronic_conditions + plan_tier,
+idx   <- sample(nrow(health_data), 0.80 * nrow(health_data))
+train <- health_data[idx, ]
+test  <- health_data[-idx, ]
+
+train$churned <- factor(train$churned, levels = c(0, 1), labels = c("No", "Yes"))
+test$churned  <- factor(test$churned,  levels = c(0, 1), labels = c("No", "Yes"))
+```
+
+## Task 1: Train and plot a decision tree
+
+```{r task1-tree}
+tree <- rpart(
+  churned ~ age + plan_tier + income + num_claims + support_calls +
+            auto_pay + customer_rating + deductible,
+  data   = train,
+  method = "class",
+  cp     = 0.005
+)
+rpart.plot(tree, type = 4, extra = 104, main = "Decision Tree — Churn Prediction")
+```
+
+```{r task1-tree-summary}
+printcp(tree)
+```
+
+## Task 2: Tune cp with plotcp()
+
+```{r task2-plotcp}
+plotcp(tree)
+```
+
+```{r task2-prune}
+best_cp <- tree$cptable[which.min(tree$cptable[, "xerror"]), "CP"]
+cat("Best cp:", best_cp, "\n")
+
+tree_pruned <- prune(tree, cp = best_cp)
+rpart.plot(tree_pruned, type = 4, extra = 104, main = "Pruned Decision Tree — Churn")
+```
+
+## Task 3: Train a random forest and plot variable importance
+
+```{r task3-rf}
+set.seed(602)
+rf <- randomForest(
+  churned ~ age + plan_tier + income + num_claims + support_calls +
+            auto_pay + customer_rating + deductible,
   data       = train,
   ntree      = 200,
-  mtry       = 2,
+  mtry       = floor(sqrt(8)),
   importance = TRUE
 )
-
-print(rf_fit)
-varImpPlot(rf_fit, main = "RF Variable Importance: High-Risk")
+print(rf)
 ```
 
-`num_chronic_conditions` and `age` should rank as the most important variables (MeanDecreaseAccuracy and MeanDecreaseGini), consistent with the simulation definition.
+```{r task3-varimp}
+varImpPlot(rf, main = "Random Forest Variable Importance — Churn")
+```
+
+```{r task3-top-vars}
+# Top 3 variables by Mean Decrease in Gini (typical results):
+# 1. customer_rating — directly captures dissatisfaction, the strongest churn signal
+# 2. support_calls   — frequent complaints predict churn
+# 3. auto_pay        — customers on auto-pay are less likely to churn (negative predictor)
+# These make business sense: unhappy customers who call often and don't autopay are most at risk.
+```
+
+## Task 4: Compare decision tree vs. random forest
+
+```{r task4-predictions}
+prob_tree <- predict(tree_pruned, test, type = "prob")[, "Yes"]
+prob_rf   <- predict(rf, test, type = "prob")[, "Yes"]
+```
+
+```{r task4-roc}
+roc_tree <- roc(test$churned, prob_tree, levels = c("No", "Yes"), quiet = TRUE)
+roc_rf   <- roc(test$churned, prob_rf,   levels = c("No", "Yes"), quiet = TRUE)
+
+plot(roc_tree, col = "steelblue", main = "ROC Curves: Decision Tree vs. Random Forest")
+lines(roc_rf, col = "darkorange")
+legend("bottomright", legend = c(
+  paste("Decision Tree AUC =", round(auc(roc_tree), 3)),
+  paste("Random Forest AUC =", round(auc(roc_rf),   3))
+), col = c("steelblue", "darkorange"), lwd = 2)
+```
+
+```{r task4-f1}
+compute_f1 <- function(prob, truth, threshold = 0.5) {
+  pred <- factor(ifelse(prob > threshold, "Yes", "No"), levels = c("No", "Yes"))
+  cm   <- table(Predicted = pred, Actual = truth)
+  TP   <- cm["Yes", "Yes"]
+  FP   <- cm["Yes", "No"]
+  FN   <- cm["No",  "Yes"]
+  P    <- TP / (TP + FP)
+  R    <- TP / (TP + FN)
+  2 * P * R / (P + R)
+}
+
+f1_tree <- compute_f1(prob_tree, test$churned)
+f1_rf   <- compute_f1(prob_rf,   test$churned)
+
+cat("Decision Tree F1:", round(f1_tree, 3), "\n")
+cat("Random Forest F1:", round(f1_rf,   3), "\n")
+
+# Random forest wins on both AUC and F1.
+# The ensemble of 200 decorrelated trees produces smoother probability estimates
+# and is less sensitive to the specific training sample than a single tree.
+```

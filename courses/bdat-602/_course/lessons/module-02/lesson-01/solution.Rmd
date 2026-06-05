@@ -1,56 +1,96 @@
 ---
-title: "BDAT 602 — Module 2, Lesson 1 Solution"
-subtitle: "Diagnosing and Handling Missing Values"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: Diagnosing and Handling Missing Values"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Count NAs
+```{r load-packages}
+library(tidyverse)
+library(naniar)
+library(tidymodels)
 
-```{r task1}
-colSums(is.na(health_small[, c("bmi", "income", "complaint_notes")]))
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-`bmi` has ~500 NAs (5%), `income` ~400 (4%), `complaint_notes` ~1,000 (10%).
+## Task 1: Visualise missingness
 
-## Task 2 — Median imputation with indicator
+```{r task1-vis-miss}
+vis_miss(health_data |> select(bmi, income, complaint_notes, days_since_last_claim))
+```
 
-```{r task2}
-library(dplyr)
+```{r task1-summary}
+cat("Total missing cells:", n_miss(health_data), "\n")
+cat("Overall % missing:  ", round(pct_miss(health_data), 2), "%\n")
+```
 
-bmi_median  <- median(health_small$bmi, na.rm = TRUE)
-health_clean <- health_small |>
-  mutate(
-    bmi_missing = as.integer(is.na(bmi)),
-    bmi         = if_else(is.na(bmi), bmi_median, bmi)
+## Task 2: Classify each missing variable
+
+```{r task2-classify}
+# bmi: MAR — the simulator links BMI missingness to point-of-sale data collection.
+#   Younger policyholders (who buy online without an in-person check-up) are more
+#   likely to have BMI unrecorded. Missingness depends on age (observed), not on
+#   BMI itself — so this is MAR.
+
+# income: MNAR — individuals with very high or very low incomes are more likely to
+#   decline to disclose. The probability of missingness is related to the income value
+#   itself (the missing variable), making this MNAR. Simple median imputation will
+#   underestimate average income.
+
+# complaint_notes: MCAR — 10% of records have no complaint note because no complaint
+#   was lodged. Whether a note is missing is unrelated to any other variable.
+#   (Structurally, this is "missingness by design" — no complaint = no note.)
+
+# days_since_last_claim: MCAR (structural) — records with num_claims = 0 have
+#   no claim date by definition. The additional 2% random missing among claimants
+#   is MCAR.
+```
+
+## Task 3: Build an imputation pipeline with recipes
+
+```{r task3-split}
+set.seed(602)
+split <- initial_split(health_data, prop = 0.80, strata = churned)
+train <- training(split)
+test  <- testing(split)
+cat("Train rows:", nrow(train), " | Test rows:", nrow(test), "\n")
+```
+
+```{r task3-recipe}
+rec <- recipe(churned ~ age + bmi + income + plan_tier + num_claims, data = train) |>
+  step_impute_median(income) |>
+  step_impute_knn(bmi, neighbors = 5)
+```
+
+```{r task3-prep-bake}
+rec_prepped   <- prep(rec, training = train)
+train_imputed <- bake(rec_prepped, new_data = train)
+test_imputed  <- bake(rec_prepped, new_data = test)
+```
+
+## Task 4: Verify imputation success
+
+```{r task4-verify}
+train_imputed |>
+  summarise(miss_bmi = sum(is.na(bmi)), miss_income = sum(is.na(income))) |>
+  mutate(dataset = "train") |>
+  bind_rows(
+    test_imputed |>
+      summarise(miss_bmi = sum(is.na(bmi)), miss_income = sum(is.na(income))) |>
+      mutate(dataset = "test")
   )
-
-colSums(is.na(health_clean[, c("bmi", "bmi_missing")]))
 ```
 
-`bmi` now has 0 NAs. `bmi_missing` has no NAs (it is a computed integer column).
+```{r task4-compare}
+before_median <- median(health_data$bmi, na.rm = TRUE)
+after_median  <- median(train_imputed$bmi, na.rm = TRUE)
 
-## Task 3 — recipes imputation
-
-```{r task3}
-library(recipes)
-
-impute_rec  <- recipe(claim_amount ~ ., data = health_small) |>
-  step_impute_median(income)
-
-impute_prep <- prep(impute_rec, training = health_small)
-health_imp  <- bake(impute_prep, new_data = health_small)
-
-sum(is.na(health_imp$income))
+cat("BMI median before imputation:", round(before_median, 2), "\n")
+cat("BMI median after imputation: ", round(after_median, 2), "\n")
+# The medians should be nearly identical because median imputation preserves
+# the central tendency, and kNN imputation borrows from similar records.
 ```
-
-After baking, `income` has **0** missing values. The median was learned from the training data in `prep()` and applied in `bake()` — no leakage.

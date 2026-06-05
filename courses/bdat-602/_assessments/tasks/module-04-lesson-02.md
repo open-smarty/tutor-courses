@@ -1,31 +1,21 @@
-# Task: Hierarchical vs k-Means Comparison
+# Task: Hierarchical Clustering and Dendrogram Analysis
 
 ## Objective
 
-Compare hierarchical clustering and k-means on the same data subsample and report which produces better-quality clusters.
+Apply agglomerative hierarchical clustering to insurance policyholder data, read and interpret a dendrogram, compare Ward and single linkage, and contrast the results with k-means.
 
 ## Instructions
 
-Use a random sample of 800 rows from `health_small` (`set.seed(602)`):
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-1. **Prepare** — Select `age`, `bmi`, `income`, `num_claims`. Impute medians. Scale. `na.omit()`.
+2. **Task 1 — Prepare**: Generate 5,000 rows from `simulate_bdat602()`. Select `age`, `bmi`, `income`, `num_claims`, `num_chronic_conditions`. Drop NAs and apply `scale()`.
 
-2. **k-Means** — Fit k = 3, `nstart = 25`. Record WCSS and average silhouette score.
+3. **Task 2 — Ward dendrogram**: Compute the Euclidean distance matrix with `dist()`. Fit `hclust(D, method = "ward.D2")`. Plot the dendrogram with `labels = FALSE, hang = -1`. Add a red dashed `abline()` at the height that gives approximately 4 clusters. In a comment, describe the major branches visible in the dendrogram.
 
-3. **Hierarchical (Ward.D2)** — Compute Euclidean distance matrix. Fit `hclust(., method = "ward.D2")`. Cut at k = 3. Record average silhouette score.
+4. **Task 3 — cutree() and comparison**: Extract 4 clusters with `cutree(hc, k = 4)` and print the cluster sizes. Also run `kmeans()` with k = 4 on the same scaled data. Compare cluster sizes between methods. In a comment, state which method produces more balanced clusters and why.
 
-4. **Hierarchical (Complete)** — Fit `hclust(., method = "complete")`. Cut at k = 3. Record average silhouette score.
-
-5. **Comparison table**:
-
-| Method | k | Avg Silhouette | Cluster sizes | Notes |
-|--------|---|----------------|---------------|-------|
-| k-Means | 3 | ? | ? | ? |
-| Ward.D2 | 3 | ? | ? | ? |
-| Complete | 3 | ? | ? | ? |
-
-6. **Recommendation** — Which method produced better-separated clusters? When would you prefer hierarchical over k-means for this dataset?
+5. **Task 4 — Single linkage**: Re-fit `hclust(D, method = "single")` and plot the dendrogram. Extract 4 clusters with `cutree()` and print their sizes. In a comment, describe the chaining effect and explain why it occurs (refer to the linkage definition).
 
 ## Submission
 
-Knit your Rmd with the comparison table and dendrogram (Ward.D2) visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. All interpretations (Tasks 2, 3, 4) must be written as R comments inside their respective code chunks.

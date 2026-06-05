@@ -1,60 +1,73 @@
 {
   "id": "module-02-lesson-02",
-  "title": "Quiz: Chapman-Kolmogorov Equations and Stationary Distributions",
+  "title": "Quiz: Chapman-Kolmogorov and Stationary Distributions",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "The Chapman-Kolmogorov equation P_{ij}^{(m+r)} = Σ_k P_{ik}^{(m)} · P_{kj}^{(r)} says:",
+      "text": "The Chapman-Kolmogorov equation P^(m+n)_{ij} = Σ_k P^(m)_{ik} · P^(n)_{kj} says:",
       "options": [
-        "The process must pass through every state k on the way from i to j",
-        "You sum over all possible intermediate states k at an intermediate time, capturing every possible path from i to j",
-        "The matrix product P · P is not a valid operation for stochastic matrices",
-        "Time-homogeneity is required for any n-step probability to exist"
+        "The chain must visit state k exactly once between steps m and n",
+        "The (m+n)-step probability from i to j equals the sum over all relay states k of the m-step probability from i to k times the n-step probability from k to j",
+        "The transition probabilities multiply by m+n",
+        "The chain can only make transitions at multiples of m and n"
       ],
       "correct": 1,
-      "explanation": "The CK equation says: to go from state i in m+r steps to state j, the process passes through some intermediate state k after m steps. Summing over all k accounts for every possible path through the state space. The process does not visit every state — it visits exactly one intermediate state k, but we do not know which one, so we sum over all possibilities."
+      "explanation": "The C-K equation decomposes a long journey (m+n steps from i to j) by conditioning on the state k visited at the midpoint (step m). You sum over all possible relay states k, multiplying the m-step probability of reaching k by the n-step probability of going from k to j."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "For a time-homogeneous Markov chain, the 5-step transition probability matrix P^(5) equals:",
-      "options": [
-        "5 times P (the scalar multiple 5P)",
-        "P + P + P + P + P (the sum of five copies of P)",
-        "P raised to the power 5 using matrix multiplication",
-        "The 5th eigenvalue of P arranged into a matrix"
-      ],
-      "correct": 2,
-      "explanation": "By the theorem proved in this lesson (by induction from the CK equation), the n-step transition matrix P^(n) equals the matrix P multiplied by itself n times: P^n. For n=5 this is P·P·P·P·P using matrix multiplication. Options (a) and (b) confuse matrix exponentiation with scalar multiplication; option (d) is not a defined operation."
+      "type": "true-false",
+      "text": "The stationary distribution π satisfies π P = π, meaning it is a left eigenvector of the TPM P with eigenvalue 1.",
+      "correct": true,
+      "explanation": "The equation πP = π written as a row vector × matrix equation is equivalent to P^T π^T = π^T (eigenvalue equation with eigenvalue 1 for P^T). So π is a left eigenvector of P (or equivalently, a right eigenvector of P^T) with eigenvalue 1."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "A stationary distribution π satisfies πP = π, and it is required that all entries of π are strictly positive.",
-      "correct": false,
-      "explanation": "False. The requirements for a stationary distribution are: (1) πP = π and (2) all entries are non-negative and sum to 1. Some entries can be zero — for example, if a chain has absorbing states or communicating classes that cannot be escaped. Strict positivity of all entries is a property of ergodic chains, not of stationary distributions in general."
+      "type": "multiple-choice",
+      "text": "If the stationary probability π_H = 0.60 for the Healthy state, what is the mean return time to the Healthy state?",
+      "options": [
+        "0.60 steps",
+        "1.67 steps",
+        "6.00 steps",
+        "60.0 steps"
+      ],
+      "correct": 1,
+      "explanation": "The ergodic theorem states π_i = 1 / E[return time to i]. Therefore E[return time to H] = 1/π_H = 1/0.60 ≈ 1.67 steps. If observations are weekly, a patient returns to the Healthy state on average every 1.67 weeks."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "We want P(sick at month 12 | patient was healthy at month 0). If state 0 = Healthy and state 1 = Sick, we compute:",
+      "text": "In the proof of Chapman-Kolmogorov, which property is used to drop the condition X_0=i from P(X_{m+n}=j | X_m=k, X_0=i)?",
       "options": [
-        "P_{01} multiplied by 12",
-        "The (0,1) entry of P^12 — i.e., [P^12]_{01}",
-        "One minus the (0,0) entry of P^12",
-        "The (1,0) entry of P^12 — i.e., [P^12]_{10}"
+        "The law of large numbers",
+        "Bayes' theorem",
+        "The Markov property (the future depends only on the present, not on the past)",
+        "Time-homogeneity of the transition probabilities"
       ],
-      "correct": 1,
-      "explanation": "We need the 12-step transition probability from state 0 to state 1, which is P_{01}^{(12)} = [P^12]_{01} — the (row 0, column 1) entry of P raised to the 12th power. Option (a) incorrectly scales the one-step probability. Option (c) gives the probability of NOT being healthy at month 12, which includes dead patients as well as sick ones. Option (d) reverses the direction."
+      "correct": 2,
+      "explanation": "Step 4 of the proof uses the Markov property: P(X_{m+n}=j | X_m=k, X_0=i) = P(X_{m+n}=j | X_m=k). Given the current state X_m=k, the earlier history X_0=i is irrelevant for the future."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "As n → ∞, the rows of P^n for an ergodic (irreducible, aperiodic, positive-recurrent) Markov chain:",
+      "options": [
+        "All converge to the zero vector",
+        "All converge to the same vector π (the stationary distribution), regardless of starting row",
+        "Diverge to infinity",
+        "Oscillate between two fixed vectors"
+      ],
+      "correct": 1,
+      "explanation": "For an ergodic chain, the rows of P^n converge to π as n → ∞. This means that regardless of where the chain started (which row / starting state), after enough steps the distribution over states approaches the unique stationary distribution π."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "A stable stochastic matrix is one where all rows are identical (each row equals the stationary distribution π).",
+      "text": "The Chapman-Kolmogorov equations imply that the n-step transition matrix is P^n (the n-th matrix power of the one-step TPM P).",
       "correct": true,
-      "explanation": "True. When a regular chain converges, P^n → π̃ where π̃ is a matrix with every row equal to the stationary distribution π. This matrix is called the stable matrix. The identical-rows property captures the long-run independence from starting state: after many steps, the probability of being in state j is π_j regardless of where you started."
+      "explanation": "Setting m=1 in C-K gives P^(1+n) = P^1 × P^n = P × P^n. By induction from P^1 = P: P^2 = P×P, P^3 = P²×P, ..., P^n = P×P×...×P (n times). So P^(n) = P^n as a matrix power."
     }
   ]
 }

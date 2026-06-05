@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "A classifier trained on fraud_flag (3% positive) predicts 'no fraud' for every record. Its accuracy is 97%. Its recall on fraud is:",
+      "text": "A fraud model achieves 98% accuracy on a dataset where 2% of claims are fraudulent. What is the most likely explanation?",
       "options": [
-        "97%",
-        "3%",
-        "0%",
-        "50%"
+        "The model has learned to detect fraud very effectively",
+        "The model always predicts 'not fraud', matching the 98% majority class",
+        "The model is overfitting to the training data",
+        "98% accuracy is too low for a fraud model"
       ],
-      "correct": 2,
-      "explanation": "Recall = TP / (TP + FN). If the model never predicts fraud, TP = 0, so recall = 0/(0 + all frauds) = 0%. The 97% accuracy is entirely from correctly labelling non-fraud records."
+      "correct": 1,
+      "explanation": "This is the accuracy paradox. When 98% of claims are legitimate, always predicting 'not fraud' gives 98% accuracy without detecting any fraud. Recall for the positive class is 0. Precision-recall metrics reveal this failure that accuracy hides."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "SMOTE generates synthetic minority samples by:",
+      "text": "SMOTE generates synthetic minority-class observations by:",
       "options": [
-        "Duplicating existing minority records exactly",
-        "Interpolating between a minority record and one of its k nearest minority neighbours",
-        "Removing the majority class records that are furthest from the decision boundary",
-        "Changing the classification threshold"
+        "Duplicating existing minority-class observations randomly",
+        "Interpolating between a minority-class point and one of its nearest minority-class neighbours",
+        "Sampling from a Gaussian distribution fitted to the minority class",
+        "Deleting majority-class observations at random"
       ],
       "correct": 1,
-      "explanation": "SMOTE (Synthetic Minority Over-sampling Technique) creates new synthetic minority samples by interpolating between an existing minority record and one of its k nearest minority neighbours. This produces more diverse synthetic examples than simple duplication."
+      "explanation": "SMOTE creates synthetic points as x' = xᵢ + δ(xₙ − xᵢ) where δ ~ Uniform(0,1) and xₙ is a randomly chosen kNN in the minority class. The synthetic point lies on the line segment between xᵢ and xₙ — interpolation, not duplication or Gaussian sampling."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "SMOTE oversampling should be applied to the entire dataset (train + test) before splitting.",
-      "correct": false,
-      "explanation": "SMOTE must be applied ONLY to the training set, after the train-test split. Applying it before the split would allow synthetic training points to be created from test observations, causing data leakage and inflated performance estimates."
+      "type": "multiple-choice",
+      "text": "You apply SMOTE to the FULL dataset (train + test) before splitting. What problem does this create?",
+      "options": [
+        "SMOTE cannot run on more than 50,000 rows",
+        "Data leakage: synthetic observations near test set points inflate evaluation performance",
+        "The majority class becomes underrepresented",
+        "The recipe pipeline cannot be prepped on SMOTE-augmented data"
+      ],
+      "correct": 1,
+      "explanation": "Applying SMOTE before splitting means some synthetic minority-class observations are created by interpolating between training and test set points. This leaks test set information into the training data, inflating the apparent performance. SMOTE must be applied only to the training set inside the recipe."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "Why is AUC-PR (Area Under the Precision-Recall Curve) preferred over AUC-ROC for rare event detection?",
+      "text": "Lowering the classification threshold from 0.5 to 0.2 for a churn model will:",
       "options": [
-        "AUC-PR is always larger than AUC-ROC",
-        "AUC-ROC can look optimistic when the negative class is very large; AUC-PR focuses on the minority class performance",
-        "AUC-PR does not require a threshold to compute",
-        "AUC-ROC only works for binary classifiers"
+        "Increase both precision and recall",
+        "Decrease both precision and recall",
+        "Increase recall and decrease precision",
+        "Decrease recall and increase precision"
       ],
-      "correct": 1,
-      "explanation": "AUC-ROC is affected by a large number of true negatives (which are easy to classify). With 97% negatives, a naïve classifier can achieve high AUC-ROC. AUC-PR focuses entirely on the precision and recall of the minority class, making it a better diagnostic for rare events."
+      "correct": 2,
+      "explanation": "A lower threshold means more observations are classified as 'churn'. This catches more genuine churners (higher recall) but also flags more non-churners incorrectly (lower precision). The precision-recall trade-off is fundamental to imbalanced classification."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "Setting classwt = c('0' = 1, '1' = 5) in randomForest means the model treats a missed churner as 5 times more costly than a false alarm.",
+      "correct": true,
+      "explanation": "Class weights in randomForest scale the contribution of each observation to the impurity calculation. Setting '1' = 5 means misclassifying a churner (class 1) costs 5 times as much as misclassifying a non-churner, pushing the model to correctly classify more minority-class observations."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Lowering the classification threshold from 0.5 to 0.2 will generally:",
+      "text": "The Precision-Recall (PR) curve is preferred over the ROC curve for imbalanced datasets because:",
       "options": [
-        "Increase both recall and precision",
-        "Decrease both recall and precision",
-        "Increase recall but decrease precision",
-        "Decrease recall but increase precision"
+        "PR-AUC is always higher than ROC-AUC",
+        "ROC-AUC is influenced by the large number of true negatives, making a poor model look good",
+        "PR curves can be plotted for any number of classes",
+        "ROC curves cannot be computed without a test set"
       ],
-      "correct": 2,
-      "explanation": "Lowering the threshold means more records are predicted positive — catching more actual positives (higher recall) but also more false positives (lower precision). The optimal threshold depends on the business cost of false negatives vs false positives."
+      "correct": 1,
+      "explanation": "ROC-AUC includes specificity = TN / (TN + FP). When there are very many true negatives (as in an imbalanced dataset), specificity is high even for a weak model, inflating ROC-AUC. PR-AUC focuses on the minority class (precision and recall) and is not inflated by the abundance of true negatives."
     }
   ]
 }

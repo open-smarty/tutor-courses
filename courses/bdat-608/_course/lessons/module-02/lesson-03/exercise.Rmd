@@ -1,69 +1,76 @@
 ---
-title: "BDAT 608 | Module 2, Lesson 3 — Closed-Form OLS with lm()"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Closed-Form OLS with lm()"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
+library(broom)
 ```
 
----
+## Task 1: Fit the linear model and decode summary()
 
-## Task 1 — Fit the Model
+```{r task1}
+data("diamonds", package = "ggplot2")
 
-```{r fit-model}
-# TODO: Fit sim1_mod <- lm(y ~ x, data = sim1)
-# Extract coef() and print summary()
+# TODO: Fit lm(price ~ carat, data = diamonds). Store as mod_linear.
+# Print summary(mod_linear).
+# In comments below, record:
+#   - intercept estimate
+#   - slope estimate
+#   - residual standard error
+#   - R²
+#   - F-statistic and its p-value
+
 ```
 
----
+## Task 2: Interpret the slope
 
-## Task 2 — Interpret R²
+```{r task2}
+# TODO: Extract the slope coefficient with coef(mod_linear)["carat"].
+# Write a plain-English interpretation in a comment.
+# e.g. "A 1-carat increase in diamond weight is associated with a $___
+#       increase in price, on average, holding nothing else constant."
 
-```{r r-squared}
-# TODO: Pull out the R-squared from summary(sim1_mod)$r.squared
-# Write an interpretation below as a comment.
 ```
 
----
+## Task 3: Fit the log-log model
 
-## Task 3 — Compare with optim()
+```{r task3}
+# TODO: Fit lm(log(price) ~ log(carat), data = diamonds).
+# Store as mod_loglog. Print summary().
+# Record the slope and R².
 
-```{r compare-optim}
-model1 <- function(a, data) a[1] + data$x * a[2]
-measure_distance <- function(mod, data) sqrt(mean((data$y - model1(mod, data))^2))
-
-best_optim <- optim(c(0, 0), measure_distance, data = sim1)
-
-# TODO: Print a comparison table of lm() vs optim() coefficients.
-# How close are they?
 ```
 
----
+## Task 4: Interpret the log-log slope (price elasticity)
 
-## Task 4 — Confidence Interval
+```{r task4}
+# TODO: Extract the slope from mod_loglog.
+# Write the interpretation: "A 1% increase in carat weight is associated
+# with a ___% increase in price."
+# This is the price elasticity of carat.
 
-```{r confint}
-# TODO: Compute a 95% confidence interval for all coefficients using confint().
-# Interpret the interval for the slope in one sentence.
 ```
 
----
+## Task 5: Compare models
 
-## Reflection
+```{r task5}
+# TODO: Print R² for both models side by side.
+# Write 2 sentences explaining why the log-log model fits better.
 
-<!-- In 2–3 sentences: why prefer lm() over optim() for OLS,
-     even though they give the same coefficient estimates? -->
+```
+
+## Task 6: Tidy the log-log model with broom
+
+```{r task6}
+# TODO: Use broom::tidy(mod_loglog) to get a clean coefficient table.
+# Use broom::glance(mod_loglog) to get model-level statistics.
+# Identify the coefficient with the largest t-value and explain what that means.
+
+```

@@ -1,30 +1,23 @@
-# Task: Outlier Analysis and Treatment Report
+# Task: Outlier Detection and Treatment
 
 ## Objective
 
-Detect, classify, and treat outliers in the health insurance dataset, then document your treatment decisions.
+Identify outliers in the health insurance dataset using two methods, visualise them, and apply appropriate treatment strategies.
 
 ## Instructions
 
-In your exercise Rmd, complete the following:
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-1. **Detection** — Apply the IQR rule to `bmi`, `income`, and `claim_amount`. For each variable, count and report the number of outliers flagged. Produce side-by-side box plots using `patchwork` (or base R `par(mfrow)`).
+2. **Task 1 — Detection**:
+   - Apply the **IQR rule** to `claim_amount` and `bmi`. Compute Q1, Q3, IQR, and both fences. Count and report the number of outliers for each variable.
+   - Apply the **Z-score method** (flag `|z| > 3`) to `claim_amount`. Compare the count with the IQR rule result. In a comment, explain which method gives more outliers and why.
 
-2. **Treatment decisions** — For each variable, choose and justify one treatment:
-   - `bmi`: biological plausibility range [10, 60] — use `pmax(10, pmin(60, bmi))`
-   - `income`: winsorise to the 1st–99th percentile
-   - `claim_amount`: do NOT remove — these are potential fraud signals; add a `high_claim_flag` column for claims above the 99th percentile
+3. **Task 2 — Box plots**: Create a `geom_boxplot()` for both `claim_amount` (non-zero values only) and `bmi`. The injected extreme values in `bmi` (values like 120, 150, 200) should appear as individual points beyond the whiskers.
 
-3. **Transformation** — Apply `log1p()` to `claim_amount` (for rows where `claim_amount > 0`). Produce a side-by-side histogram (raw vs log1p). Comment on the shape change.
+4. **Task 3 — Winsorisation**: Winsorise `claim_amount` at the 1st and 99th percentile by creating a new column `claim_amount_win`. Verify that `max(claim_amount_win)` equals p99.
 
-4. **Summary table** — Create a data frame summarising your treatment decisions:
-
-| Variable | Outliers flagged | Treatment chosen | Reason |
-|---|---|---|---|
-| bmi | ... | Winsorise [10, 60] | ... |
-| income | ... | Winsorise 1–99 pct | ... |
-| claim_amount | ... | Flag + log-transform | ... |
+5. **Task 4 — Log transformation**: Create `log_claim = log(claim_amount + 1)`. Plot side-by-side histograms of the raw and log-transformed claim amounts. Describe the change in distribution shape in a comment.
 
 ## Submission
 
-Knit your Rmd to HTML. The summary table must appear as a formatted markdown table.
+Submit the knitted `exercise.html` and `exercise.Rmd`. Your comparison of IQR vs. Z-score (Task 1) and distribution description (Task 4) must be written as R comments inside their respective code chunks.

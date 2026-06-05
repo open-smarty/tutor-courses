@@ -1,49 +1,25 @@
-# Task: The Pure Death Process
+# Task: Pure Death Process — Binomial Distribution and Extinction
 
-## Scenario
+## Objective
 
-A petri dish contains j = 200 bacteria. An antibiotic is added at time t = 0. Each bacterium dies independently at rate μ = 0.3 per hour (pure death process, μₙ = nμ). You will use the exact theory and simulation to assess antibiotic effectiveness.
+Compute the Binomial PMF for the pure death process at multiple time points, implement a Gillespie simulation, compare simulated distributions to theory, and estimate the extinction time distribution.
 
----
+## Instructions
 
-## Part (a) — Expected surviving fraction at t = 4 hours
+1. **Theoretical PMF.** For N0=200, μ=0.5, and t ∈ {1, 3, 5, 8} days, use `dbinom()` to compute P_n(t) = Binomial(N0, e^{-μt}) PMF. For each t, print E[N(t)]=N0×e^{-μt} and Var[N(t)]=N0×e^{-μt}×(1-e^{-μt}). Create a faceted bar chart (filter to `prob > 0.001` to reduce clutter).
 
-Use E[X(t) | X(0) = j] = je^{−μt}.
+2. **Gillespie simulation.** Implement `simulate_death(N0, mu, T_max)`. At each step, draw wait ~ Exp(n×μ), decrement n. Simulate 5 trajectories up to T_max=15 days with `set.seed(111)`. Plot as step functions with the theoretical mean N0×e^{-μt} overlaid as a dashed line.
 
-1. Compute the expected number of survivors at t = 4 hours.
-2. Express this as a fraction of the original 200. Show your working.
+3. **Distribution comparison.** Simulate 1000 processes with `set.seed(222)` and record N(3). Build a comparison bar chart (empirical frequency vs theoretical `dbinom(..., prob=e^{-0.5×3})`). Focus the x-axis on the plausible range (where theoretical probability > 0.001).
 
----
-
-## Part (b) — Expected surviving fraction at t = 8 hours
-
-Repeat the calculation for t = 8 hours.
-
-Show that the expected surviving count at t = 8 is approximately the square of e^{−μ×4} times the original count — and explain why this makes sense in terms of the survival probability for each bacterium.
-
----
-
-## Part (c) — Variance of the surviving count at t = 4 hours
-
-Use Var[X(t) | X(0) = j] = je^{−μt}(1 − e^{−μt}).
-
-1. Compute the variance at t = 4 hours.
-2. Compute the standard deviation.
-3. Interpret: is the variability large or small relative to the mean surviving count? What does this say about the predictability of antibiotic effectiveness across replicate experiments?
-
----
-
-## Part (d) — Simulation: empirical 5th percentile of X(4)
-
-In R, simulate 500 independent pure death process realisations with j = 200 and μ = 0.3 for t = 0 to 10 hours. Use the exact next-event algorithm.
-
-1. Extract the population at t = 4 for each realisation.
-2. Compute the empirical 5th percentile of this distribution.
-3. Interpret the result: with 95% probability, how few bacteria survive by t = 4 hours? (i.e., there is a 5% chance the count is at or below this value.)
-4. Compare the 5th percentile to the theoretical 5th percentile of Binomial(200, e^{−0.3 × 4}). Use R's `qbinom()` function.
-
----
+4. **Extinction time.** Simulate 500 complete processes with `set.seed(333)` and record when the last cell dies. Plot a histogram with the theoretical PDF f(t) = N0×μ×e^{-μt}×(1-e^{-μt})^{N0-1} overlaid. Compute and print: theoretical E[T_ext] = H_{N0}/μ versus simulated mean. Write a sentence comparing the expected extinction time to the individual expected lifetime 1/μ.
 
 ## Submission
 
-Submit your R code (as a `.R` file) and written answers for parts (a), (b), (c), and (d). Ensure your code produces clearly labelled output for the simulation in part (d).
+Submit your completed `exercise.R`. Requirements:
+- Theoretical PMF bar chart (faceted)
+- Trajectory plot with mean overlay
+- Distribution comparison plot at t=3
+- Extinction time histogram with theoretical PDF
+- Theoretical vs simulated E[T_ext] printed with interpretation
+- Pass `npm run check -- bdat-624 module-04 lesson-02`

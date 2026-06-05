@@ -2,171 +2,129 @@
 
 ## Goal
 
-By the end of this lesson you will be able to write the Kolmogorov equations for the linear birth-death process, derive the mean population E[X(t)] = ie^{(λ−μ)t}, compute the probability of ultimate extinction for both sub- and super-critical processes, state the effect of immigration, and use simulation to verify theoretical extinction probabilities.
+Define the linear birth-death process, introduce the PGF approach to derive key quantities, prove the extinction probability formula, and interpret the death-to-birth ratio ρ = μ/λ as the fundamental threshold parameter.
 
 ## Concept
 
-### Motivation
+### Motivation: Competing Birth and Death
 
-Births and deaths rarely occur in isolation. A viral population in the bloodstream is produced by infected cells (births) and simultaneously cleared by the immune system (deaths). A rumour spreads through a network (births) and is forgotten (deaths). The **birth-death process** combines both mechanisms and asks: what wins — growth or decay? And even when growth dominates on average, can the population still go extinct by bad luck?
+The Yule process only grows; the pure death process only declines. Real biological populations do both simultaneously: bacteria divide AND die; cancer cells proliferate AND are cleared by the immune system; viral particles infect new cells AND are degraded. The **linear birth-death process** combines both forces.
 
----
+The outcome — growth or extinction — depends on which force dominates. This competition is captured by a single ratio: ρ = μ/λ.
 
-### Notation and setup
+### Model Definition
 
-> **Notation:** λₙ — birth rate when population is n. For the linear process: λₙ = nλ.
+> **Notation block:**
+> - λₙ = nλ — birth rate when n individuals are present (each individual contributes λ independently); read "lambda sub n"
+> - μₙ = nμ — death rate when n individuals are present (each individual dies at rate μ independently); read "mu sub n"
+> - ρ = μ/λ — the **death-to-birth ratio**; read "rho"; the fundamental threshold parameter
 
-> **Notation:** μₙ — death rate when population is n. For the linear process: μₙ = nμ.
+Both birth and death rates are proportional to n — each of the n individuals independently gives birth at rate λ and independently dies at rate μ. This is called the **linear** birth-death process because both rates are linear in n.
 
-> **Notation:** State 0 is the **absorbing state**: λ₀ = μ₀ = 0. Once the population reaches 0, it stays there.
+The ODE system is:
 
-> **Notation:** i = X(0) — the initial population size.
+$$\frac{dP_n}{dt} = \lambda(n-1)P_{n-1} - (\lambda+\mu)nP_n + \mu(n+1)P_{n+1}, \quad n \geq 1$$
 
-> **Notation:** ρ = μ/λ — the **death-to-birth ratio**. This single number determines the long-run fate of the process.
+$$\frac{dP_0}{dt} = \mu P_1$$
 
----
+with P₁(0) = 1 (start with one individual), Pₙ(0) = 0 for n ≥ 2.
 
-### The four postulates
+### Probability Generating Function Approach
 
-These are the infinitesimal assumptions that define the birth-death process:
+Rather than solving the ODE system directly (which requires methods beyond this course for the full distribution), we use the **probability generating function (PGF)**.
 
-1. P(one birth in (t, t+Δt] | X(t)=n) = λₙΔt + o(Δt)
-2. P(one death in (t, t+Δt] | X(t)=n) = μₙΔt + o(Δt)
-3. P(no change in (t, t+Δt] | X(t)=n) = 1 − λₙΔt − μₙΔt + o(Δt)
-4. Births and deaths in (t, t+Δt] are conditionally independent given X(t)
+> **Notation block:**
+> - G(s, t) = Σₙ₌₀^∞ Pₙ(t) sⁿ — the PGF of N(t); read "G of s and t"
+> - ∂G/∂t — partial derivative of G with respect to t; the PGF is a function of two variables: s (dummy) and t (time)
+> - ∂G/∂s — partial derivative of G with respect to s; this gives E[N(t)] when evaluated at s=1 (after multiplying by appropriate factors)
 
----
+Multiplying the ODE by sⁿ and summing over all n leads to the **PDE** (partial differential equation):
 
-### The Kolmogorov forward equations
+$$\frac{\partial G}{\partial t} = (\lambda s - \mu)(s - 1) \frac{\partial G}{\partial s}$$
 
-Applying the same infinitesimal argument as in Lessons 1 and 2, but now with both births and deaths:
+This is a first-order linear PDE in s and t. Its derivation involves:
 
-$$P_n'(t) = -({\lambda_n + \mu_n})P_n(t) + \lambda_{n-1}P_{n-1}(t) + \mu_{n+1}P_{n+1}(t) \tag{8.1}$$
+1. Multiply each ODE (for Pₙ) by sⁿ and sum over n=0,1,2,...
+2. Recognise that Σₙ n Pₙ sⁿ⁻¹ = ∂G/∂s
+3. Use index shifts to collect like terms
 
-For the linear process (λₙ = nλ, μₙ = nμ):
+**Solving the PDE (outline).** The PDE ∂G/∂t = (λs-μ)(s-1) ∂G/∂s is solved by the **method of characteristics**: transform to characteristic curves along which the PDE becomes an ODE. The full solution (starting from G(s,0) = s — one individual) is:
 
-$$P_n'(t) = -n(\lambda + \mu)P_n(t) + (n-1)\lambda P_{n-1}(t) + (n+1)\mu P_{n+1}(t) \tag{8.2}$$
+$$G(s, t) = \left[\frac{\mu(s-1) - (\mu s - \lambda)\,e^{(\lambda-\mu)t}}{\lambda(s-1) - (\mu s - \lambda)\,e^{(\lambda-\mu)t}}\right] \quad \text{for } \lambda \neq \mu$$
 
-(For n = 1, the term μ₁P₁(t) = μP₁(t) flows down to state 0. For n = 0, only the inflow μP₁(t) matters since state 0 is absorbing.)
+From this, P₀(t) = G(0, t) gives the extinction probability by time t, and letting t → ∞ gives the long-run extinction probability.
 
----
+### Deriving the Extinction Probability
 
-### The mean — deriving E[X(t)]
+The extinction probability q = P(eventual extinction | X₀ = 1) is the limit of P₀(t) as t → ∞.
 
-> **Notation:** m(t) = E[X(t) | X(0) = i] — the mean population at time t.
+Setting s = 0 in the PGF formula:
 
-We derive the ODE for m(t) by computing d/dt Σ n P_n(t):
+$$P_0(t) = G(0,t) = \frac{-\mu(1) - (-\mu)\,e^{(\lambda-\mu)t}}{\lambda(-1) - (-\mu)\,e^{(\lambda-\mu)t}} = \frac{\mu(e^{(\lambda-\mu)t} - 1)}{\lambda e^{(\lambda-\mu)t} - \mu}$$
 
-$$m'(t) = \sum_{n=0}^{\infty} n P_n'(t)$$
+Let's simplify by considering the three cases.
 
-Substituting (8.2) and rearranging (each sum telescopes — students may verify this as an exercise):
+**Case 1: λ < μ (ρ = μ/λ > 1 — deaths exceed births).** As t → ∞, e^{(λ-μ)t} → 0 (since λ-μ < 0). Therefore:
 
-$$m'(t) = (\lambda - \mu) m(t)$$
+$$P_0(\infty) = \lim_{t\to\infty} \frac{\mu(e^{(\lambda-\mu)t}-1)}{\lambda e^{(\lambda-\mu)t} - \mu} = \frac{\mu(0-1)}{\lambda\cdot 0 - \mu} = \frac{-\mu}{-\mu} = 1$$
 
-This is a simple first-order linear ODE with solution:
+Extinction is certain. ✓
 
-$$\boxed{m(t) = E[X(t) \mid X(0) = i] = ie^{(\lambda - \mu)t}} \tag{8.3}$$
+**Case 2: λ > μ (ρ < 1 — births exceed deaths).** As t → ∞, e^{(λ-μ)t} → ∞ (since λ-μ > 0). Divide numerator and denominator by e^{(λ-μ)t}:
 
-Here's the key insight: the **intrinsic growth rate** is (λ − μ). Three regimes:
+$$P_0(\infty) = \lim_{t\to\infty} \frac{\mu(1 - e^{-(λ-μ)t})}{\lambda - \mu e^{-(λ-μ)t}} = \frac{\mu \cdot 1}{\lambda - \mu \cdot 0} = \frac{\mu}{\lambda} = \rho$$
 
-- If **λ > μ** (supercritical): m(t) → ∞ exponentially. On average the population grows without bound.
-- If **λ = μ** (critical): m(t) = i. The expected population is constant — but this does not mean the process is stable. Randomness still drives it toward 0.
-- If **λ < μ** (subcritical): m(t) → 0 exponentially. The average population declines.
+> **Notation block:**
+> - ρ = μ/λ — the extinction probability when λ > μ (supercritical); read "rho equals mu over lambda"
 
-Note: the mean alone does not tell the full story. Even in the supercritical case, *individual realisations* can still go extinct.
+**Extinction probability from 1 individual: q = min(1, ρ) = min(1, μ/λ).**
 
----
+If there are n₀ individuals initially (not 1), and all lineages are independent:
 
-### Extinction probability
+$$q_{n_0} = q^{n_0} = \left(\frac{\mu}{\lambda}\right)^{n_0} \quad \text{(if } \lambda > \mu \text{)}$$
 
-One of the most important results in the theory of birth-death processes concerns the **probability of ultimate extinction** — the probability that the population eventually reaches 0.
+because all n₀ lineages must independently go extinct.
 
-Let q_i = P(eventual extinction | X(0) = i).
+> **Annotation:** This uses the key insight that each of the n₀ initial individuals starts an independent branching process, and all must go extinct for the whole population to go extinct.
 
-By the independent branching structure of the linear birth-death process (each individual in the initial population contributes an independent sub-process):
+Here's the key insight: the death-to-birth ratio ρ = μ/λ is the **fundamental threshold**:
+- ρ < 1 (λ > μ): population likely survives, extinction probability = ρ < 1
+- ρ = 1 (λ = μ): extinction certain despite equal rates (borderline critical)
+- ρ > 1 (μ > λ): extinction certain
 
-$$q_i = q_1^i$$
+### Mean and Variance
 
-so it suffices to find q_1.
+From the PGF, differentiating with respect to s and evaluating at s=1:
 
-Solving the generating function equation for q_1 yields:
+$$\mathrm{E}[N(t)] = e^{(\lambda-\mu)t}$$
 
-$$q_1 = \begin{cases} 1 & \text{if } \lambda \leq \mu \\ \mu/\lambda & \text{if } \lambda > \mu \end{cases}$$
+$$\mathrm{Var}[N(t)] = \frac{\lambda+\mu}{\lambda-\mu} e^{(\lambda-\mu)t}(e^{(\lambda-\mu)t}-1) \quad \text{for } \lambda \neq \mu$$
 
-Therefore:
+When λ > μ: the mean grows exponentially at net rate (λ-μ). When λ < μ: the mean decays to 0.
 
-$$\boxed{q_i = \begin{cases} 1 & \text{if } \lambda \leq \mu \\ (\mu/\lambda)^i & \text{if } \lambda > \mu \end{cases}} \tag{8.4}$$
+When λ = μ: E[N(t)] = 1 (mean constant!) but Var[N(t)] = 2λt → ∞. The population is on average unchanged but increasingly variable — it either explodes or goes extinct.
 
-Using our notation ρ = μ/λ:
+### Connection to Epidemic Models
 
-- If ρ ≥ 1 (subcritical or critical): extinction is **certain**.
-- If ρ < 1 (supercritical): extinction probability is ρⁱ, which is less than 1 but positive.
+The Kermack-McKendrick SIR model has a basic reproduction number R₀ = β/γ (contact rate over recovery rate). This is exactly 1/ρ = λ/μ in our notation. The threshold:
+- R₀ > 1 (ρ < 1): epidemic possible, P(extinction) = 1/R₀ = ρ
+- R₀ < 1 (ρ > 1): epidemic dies out with probability 1
 
-Here's the key insight: even when births dominate deaths (λ > μ), a small initial population can still go extinct by bad luck. With i = 1, the extinction probability is μ/λ — the ratio of the death rate to the birth rate. Starting with more individuals (larger i) reduces the extinction probability multiplicatively: with i = 10 and ρ = 0.6, the probability is (0.6)^{10} ≈ 0.006.
-
----
-
-### The critical case (λ = μ) — a subtle warning
-
-When λ = μ, the expected population stays at i forever. Yet the extinction probability is 1 — the process *will* eventually go extinct with probability 1. This seems paradoxical.
-
-The resolution: the distribution of X(t) becomes highly skewed as t increases. Most realisations go to 0, but the few that survive grow very large — and those rare survivors dominate the mean. The mean is not a reliable summary of a critical birth-death process.
-
----
-
-### Linear birth-death with immigration
-
-Add a constant immigration rate ε > 0, so that λₙ = nλ + ε for all n ≥ 0. The key changes are:
-
-- State 0 is no longer absorbing: immigrants arrive at rate ε even when n = 0.
-- Extinction probability = 0 for any ε > 0.
-
-The mean becomes:
-
-$$E[X(t) \mid X(0) = i] = \begin{cases} \dfrac{\varepsilon}{\lambda - \mu}\bigl(e^{(\lambda-\mu)t} - 1\bigr) + ie^{(\lambda-\mu)t} & \text{if } \lambda \neq \mu \\[6pt] \varepsilon t + i & \text{if } \lambda = \mu \end{cases} \tag{8.5}$$
-
-When λ < μ (subcritical with immigration), the process reaches a **stationary distribution** — it fluctuates around a positive mean rather than going extinct. Immigration rescues the population.
-
----
+The birth-death process gives the stochastic foundation for the deterministic epidemic threshold.
 
 ## Example
 
-### HIV infection dynamics
+**Epidemic initiation: one infected individual, ρ = 0.5 and ρ = 1.5.**
 
-An HIV infection begins with i = 3 infected cells. Each infected cell produces new virions (modelled as births) at rate λ = 1.5 per day, and each infected cell is destroyed by the immune response (deaths) at rate μ = 1.0 per day.
+**Scenario 1: R₀ = 2 (λ=2, μ=1, ρ=0.5).** Extinction probability from 1 infected: q = ρ = 0.5. Probability of a major epidemic = 1-0.5 = 50%.
 
-**Intrinsic growth rate:** λ − μ = 0.5 per day.
+**Scenario 2: R₀ = 0.67 (λ=2, μ=3, ρ=1.5).** Extinction probability = 1 (certain). No epidemic possible — the disease burns out.
 
-**Expected infected cells at day 5:**
-$$E[X(5)] = 3 e^{0.5 \times 5} = 3e^{2.5} \approx 36.4 \text{ cells}$$
-
-**Extinction probability:**
-$$q_3 = (\mu/\lambda)^3 = (1.0/1.5)^3 = (2/3)^3 \approx 0.296$$
-
-So about 30% of infections starting with 3 cells go extinct naturally (immune system wins the early battle). The remaining 70% grow on average.
-
-**Effect of antiretroviral treatment** doubling the death rate to μ = 3.0 per day (with λ = 1.5 unchanged):
-$$\rho = 3.0/1.5 = 2 > 1$$
-
-The process becomes subcritical. Extinction is now certain with probability 1. Treatment tips the balance from supercritical to subcritical, guaranteeing eventual viral clearance.
-
----
+**Scenario 3: ρ=0.5 but starting with n₀=3 infected cases (e.g., three simultaneous introductions).** Extinction probability = ρ³ = 0.5³ = 0.125. Only 12.5% chance of extinction — P(major epidemic) = 87.5%.
 
 ## Task
 
-Open `exercise.R`. You will:
-
-1. Simulate 300 supercritical birth-death trajectories (X(0)=5, λ=0.4, μ=0.3) and plot with theoretical mean.
-2. Simulate 300 critical trajectories (λ=μ=0.3) and measure the fraction going extinct by t=30.
-3. Simulate 300 subcritical trajectories (λ=0.3, μ=0.4) and measure the fraction going extinct.
-4. Verify the theoretical extinction probability (μ/λ)^5 = (0.75)^5 for the supercritical case.
-5. Add immigration (ε=0.5) to the subcritical case and show extinction becomes rare.
-
-Fill in every `# TODO:` marker and run the check:
-
-```
-npm run check -- bdat-624 module-04 lesson-03
-```
+See `exercise.R`. You will simulate birth-death processes for ρ=0.5, 1.0, and 1.5 with 500 replicates each, empirically estimate the extinction probability, and compare to the theoretical formula.
 
 ## Check
 
@@ -176,4 +134,4 @@ npm run check -- bdat-624 module-04 lesson-03
 
 ## Reflection
 
-In the critical birth-death process (λ = μ), every individual realisation eventually goes extinct (probability 1), yet the expected population remains constant at i for all time. How can both statements be true simultaneously? Think about what the distribution of X(t) looks like as t → ∞ — specifically, does the distribution become more concentrated around its mean, or more spread out? How does this connect to the concept of a "heavy-tailed" distribution?
+The linear birth-death process has extinction probability ρ = μ/λ when ρ < 1. This was derived assuming the process starts from a single individual (X₀ = 1). Now consider a hospital outbreak starting with X₀ = 5 infectious cases (not 1). Using the independence argument, the extinction probability is ρ⁵. If the infection control team intervenes and raises μ (by isolating cases faster), but λ stays fixed, how does the extinction probability change as μ increases from μ = λ/2 to μ = λ? Plot q = min(1, μ/λ)^5 as a function of μ/λ ∈ [0, 1.5] and identify the critical point where extinction becomes certain.

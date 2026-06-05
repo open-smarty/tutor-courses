@@ -1,66 +1,79 @@
 {
   "id": "module-03-lesson-01",
-  "title": "Quiz: Market Basket Analysis and Apriori",
+  "title": "Quiz: Market Basket Analysis and the Apriori Algorithm",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "The rule {bread, butter} → {milk} has support = 0.12. This means:",
+      "text": "A transaction database has 200 transactions. The itemset {dental, vision} appears in 50 of them. What is supp({dental, vision})?",
       "options": [
-        "12% of transactions contain bread, butter, and milk together",
-        "12% of transactions that contain bread and butter also contain milk",
-        "Milk appears in 12% of all transactions",
-        "The rule is correct 12% of the time"
+        "50",
+        "0.25",
+        "0.50",
+        "0.10"
       ],
-      "correct": 0,
-      "explanation": "Support is the fraction of all transactions containing the complete itemset (bread ∩ butter ∩ milk). It is NOT the conditional probability — that is confidence."
+      "correct": 1,
+      "explanation": "Support = number of transactions containing the itemset / total transactions = 50 / 200 = 0.25. Support is always a proportion between 0 and 1."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Lift = 1 for a rule means:",
+      "text": "supp({dental}) = 0.40, supp({dental, vision}) = 0.30. What is conf(dental → vision)?",
       "options": [
-        "The rule has perfect confidence",
-        "The antecedent and consequent are statistically independent",
-        "The rule occurs in fewer transactions than expected",
-        "The rule should be discarded because it is incorrect"
+        "0.30",
+        "0.75",
+        "0.12",
+        "1.33"
       ],
       "correct": 1,
-      "explanation": "Lift = confidence / support(consequent). If lift = 1, the confidence equals the unconditional probability of the consequent — meaning knowing the antecedent provides no additional information. The items are independent."
+      "explanation": "conf(dental → vision) = supp({dental, vision}) / supp({dental}) = 0.30 / 0.40 = 0.75. This means that 75% of transactions containing dental also contain vision."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "The Apriori principle states: if an itemset is frequent, all of its subsets are also frequent.",
-      "correct": true,
-      "explanation": "This is the anti-monotone property. If {bread, butter, milk} is frequent (above minSupport), then {bread, butter}, {bread, milk}, and {butter, milk} must also be frequent. Apriori uses the contrapositive: if a subset is infrequent, its supersets cannot be frequent."
+      "type": "multiple-choice",
+      "text": "A rule has confidence = 0.80 and supp({vision}) = 0.80. What is the lift of the rule X → vision?",
+      "options": [
+        "1.60",
+        "0.64",
+        "1.00",
+        "0.80"
+      ],
+      "correct": 2,
+      "explanation": "lift = conf / supp(consequent) = 0.80 / 0.80 = 1.00. Lift = 1 means X and vision are statistically independent — knowing X tells you nothing extra about vision beyond its base rate."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "What does the `transactions` class in the arules package store internally?",
+      "text": "The anti-monotone (Apriori) property states that if an itemset X is infrequent, then:",
       "options": [
-        "A data frame with one row per item purchased",
-        "A sparse binary matrix of transaction × item presence/absence",
-        "A list of character vectors, one per transaction",
-        "A CSV file on disk"
+        "All subsets of X are also infrequent",
+        "All supersets of X are also infrequent",
+        "All rules derived from X have low confidence",
+        "X cannot appear as the consequent of any rule"
       ],
       "correct": 1,
-      "explanation": "The transactions class is a sparse binary matrix where rows are transactions and columns are items. A 1 indicates the item was present in that transaction. Sparse representation is efficient because most entries are 0 (an item not purchased)."
+      "explanation": "If supp(X) < min_supp, then for any superset Y ⊃ X, every transaction containing Y also contains X, so supp(Y) ≤ supp(X) < min_supp. This allows Apriori to prune all supersets of infrequent itemsets without scanning them."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "A rule with lift = 2.5 means the co-occurrence of X and Y is 2.5 times more frequent than if they were statistically independent.",
+      "correct": true,
+      "explanation": "Lift = P(X ∩ Y) / (P(X) × P(Y)). If X and Y were independent, P(X ∩ Y) = P(X) × P(Y) and lift = 1. Lift = 2.5 means they co-occur 2.5 times as often as independence would predict."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Setting minSupport very low (e.g. 0.0001) in Apriori will:",
+      "text": "You run Apriori with min_supp = 0.05 and find 10,000 frequent itemsets. Why might you want to also set a minimum confidence threshold when generating rules?",
       "options": [
-        "Produce fewer rules with higher confidence",
-        "Eliminate the need to check lift",
-        "Produce an exponentially large number of candidate itemsets, making computation slow",
-        "Make the algorithm run faster by pruning more branches"
+        "Confidence filters out rules with low support",
+        "Without a confidence threshold, trivial rules like 'if A then A' are generated",
+        "High support alone does not guarantee a useful rule — confidence measures the conditional strength of the relationship",
+        "Confidence and support are identical metrics"
       ],
       "correct": 2,
-      "explanation": "The Apriori pruning relies on infrequent itemsets having infrequent supersets. With a very low minSupport threshold, almost all itemsets are 'frequent', so almost no pruning occurs, and the number of candidate itemsets grows exponentially."
+      "explanation": "An itemset can be frequent (high support) but the rule X → Y might still have low confidence if Y is rarely present when X is. Confidence = P(Y|X) measures how reliably Y follows X, filtering out weak or unreliable associations."
     }
   ]
 }

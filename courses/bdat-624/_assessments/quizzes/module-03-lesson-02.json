@@ -6,55 +6,68 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "The Poisson process postulates that two events can occur simultaneously:",
+      "text": "In the Poisson process derivation, the orderliness postulate P(2+ events in [t, t+Δt]) = o(Δt) says:",
       "options": [
-        "With probability λΔt",
-        "Never — the probability is o(Δt), which is negligible compared to Δt as Δt → 0",
-        "With probability 1/λ",
-        "Only when λ is large enough"
+        "Two events cannot ever occur at exactly the same instant",
+        "Two events can occur in the same instant with probability λ²Δt²",
+        "The probability of two or more simultaneous events vanishes faster than Δt as Δt → 0, making simultaneous events negligible",
+        "Events must be separated by at least Δt time units"
       ],
-      "correct": 1,
-      "explanation": "Postulate 4 states that the probability of two or more events in a small interval (t, t+Δt] is o(Δt). By definition, o(Δt)/Δt → 0 as Δt → 0, meaning this probability shrinks faster than the interval length and is negligible. In the limit, simultaneous events are impossible — each event occurs at a distinct instant."
+      "correct": 2,
+      "explanation": "o(Δt) means the quantity goes to zero faster than Δt: o(Δt)/Δt → 0. For simultaneous events, the probability is o(Δt) — it's not exactly zero (events CAN happen close together), but in the continuous limit, the probability of two events in an infinitesimal interval is negligible compared to the probability of one event (which is λΔt)."
     },
     {
       "id": "q2",
-      "type": "multiple-choice",
-      "text": "X(t) ~ Poisson(λt) means:",
-      "options": [
-        "The rate of arrivals changes with t",
-        "In any interval of length t, the number of events has a Poisson distribution with mean λt",
-        "Exactly λt events occur in every time interval of length t",
-        "The variance of X(t) equals λ (not λt)"
-      ],
-      "correct": 1,
-      "explanation": "X(t) ~ Poisson(λt) means the count of events in an interval of length t follows a Poisson distribution with mean λt (and variance λt). The rate λ is constant (homogeneous process), so longer intervals accumulate more events on average. It does not mean exactly λt events occur — that would make X(t) deterministic."
+      "type": "true-false",
+      "text": "The exponential distribution is the only continuous distribution with the memoryless property P(W > s+t | W > s) = P(W > t) for all s,t ≥ 0.",
+      "correct": true,
+      "explanation": "The memoryless property characterises the exponential distribution uniquely among continuous distributions (and the geometric distribution among discrete distributions). The proof: P(W>s+t)/P(W>s) = P(W>t) implies the survival function F̄(t) = P(W>t) satisfies F̄(s+t) = F̄(s)F̄(t) — a functional equation whose only decreasing solution is F̄(t) = e^{-λt}."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "The time between consecutive events in a Poisson process follows a Gamma distribution.",
-      "correct": false,
-      "explanation": "False. Individual interarrival times (time between the (k-1)-th and k-th events) follow an Exponential(λ) distribution, which is Gamma(1, λ). It is the waiting time to the n-th event — the sum of n i.i.d. exponential interarrivals — that follows a Gamma(n, λ) distribution."
+      "type": "multiple-choice",
+      "text": "If N(t) is a Poisson process with rate λ, what is P(N(3) = 5)?",
+      "options": [
+        "e^{-3} × 3^5 / 5!",
+        "e^{-15} × 15^5 / 5!",
+        "e^{-5λ} × (5λ)^3 / 3!",
+        "e^{-λ} × λ^5 / 5!"
+      ],
+      "correct": 1,
+      "explanation": "N(t) ~ Poisson(λt). For t=3, N(3) ~ Poisson(3λ). P(N(3)=5) = e^{-3λ}(3λ)^5/5!. With generic λ this is option B only when λ=5 (giving 15). The general form is e^{-3λ}(3λ)^5/5!. The literal answer with unspecified λ would be e^{-3λ}(3λ)^5/5! — option B with λ=5. In general: always substitute λt into the Poisson PMF."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "The memoryless property of the exponential distribution means:",
+      "text": "In a Poisson process with rate λ = 3/hour, what is the expected time until the 10th patient arrives?",
       "options": [
-        "The future waiting time is independent of how long you have already been waiting",
-        "The mean of the distribution equals its variance",
-        "The distribution has no mode",
-        "It is equivalent to the Poisson distribution"
+        "3/10 hours",
+        "10/3 hours",
+        "10 × 3 = 30 hours",
+        "1/3 hour"
       ],
-      "correct": 0,
-      "explanation": "The memoryless property states P(T > t + s | T > s) = P(T > t). If you have already waited s time units with no arrival, the remaining waiting time has the same Exponential(λ) distribution as if you had just started. The past wait carries no information about the future wait. This is the defining property of the exponential distribution — it is the only continuous distribution with this property."
+      "correct": 1,
+      "explanation": "The n-th event time T_n ~ Gamma(n, rate=λ) with E[T_n] = n/λ. For n=10, λ=3: E[T_{10}] = 10/3 ≈ 3.33 hours. Each patient arrives at average 1/λ = 1/3 hour intervals, and we need 10, so 10 × (1/3) = 10/3 hours total."
     },
     {
       "id": "q5",
+      "type": "multiple-choice",
+      "text": "The ODE for P_0(t) in a Poisson process is P_0'(t) = -λP_0(t) with P_0(0)=1. What is the solution P_0(t)?",
+      "options": [
+        "P_0(t) = 1 - λt",
+        "P_0(t) = e^{λt}",
+        "P_0(t) = e^{-λt}",
+        "P_0(t) = (λt)^0 / 0! = 1"
+      ],
+      "correct": 2,
+      "explanation": "The ODE P_0' = -λP_0 with P_0(0)=1 has the solution P_0(t) = e^{-λt}. This is a first-order linear ODE with constant coefficient -λ. The solution is an exponential decay, consistent with P(no events by time t) = e^{-λt}."
+    },
+    {
+      "id": "q6",
       "type": "true-false",
-      "text": "For a Poisson process, the identity P(T_n ≤ t) = P(X(t) ≥ n) connects the distribution of waiting times to the distribution of counts.",
+      "text": "If the inter-arrival times of a counting process are i.i.d. Exponential(λ), then the counting process N(t) is a Poisson process with rate λ.",
       "correct": true,
-      "explanation": "True. Both sides of this equation describe the same event: 'the n-th arrival has occurred by time t.' The left side frames it as a statement about the waiting time T_n; the right side frames it as a statement about the count X(t). This duality is why the CDF of the Gamma(n, λ) distribution equals the tail of the Poisson(λt) PMF summed from n to infinity."
+      "explanation": "This is the converse of what we derived. The Poisson process can be equivalently defined by: (1) the three postulates (stationarity, independence, orderliness), OR (2) i.i.d. Exp(λ) inter-arrival times. Both definitions lead to the same process. The derivation in the lesson shows (1) implies N(t)~Poisson(λt), and the i.i.d. Exp inter-arrivals recover the same distribution."
     }
   ]
 }

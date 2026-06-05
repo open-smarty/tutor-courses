@@ -1,84 +1,83 @@
 ---
-title: "BDAT 608 | Module 1, Lesson 2 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Setting Up the R Modelling Environment"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Install Packages
-
-```{r install, eval=FALSE}
-install.packages(c(
-  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
-  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
-  "glmnet", "broom", "hexbin"
-))
+```{r install-packages, eval=FALSE}
+install.packages(c("tidyverse", "modelr", "broom"))
 ```
 
-## Task 2 — Load Libraries
-
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-library(splines)
-library(ggfortify)
-library(caret)
-library(mice)
-library(cvAUC)
-library(mgcv)
-library(rpart)
-library(rpart.plot)
-library(nycflights13)
-library(MASS)
-library(glmnet)
 library(broom)
-
-select <- dplyr::select
-filter <- dplyr::filter
 ```
 
-## Task 3 — Global Option
+## Task 1: Inspect diamonds
 
-```{r global-option}
-options(na.action = na.warn)
+```{r task1}
+data("diamonds", package = "ggplot2")
+
+glimpse(diamonds)
+summary(diamonds)
+
+# Answers from the output:
+# Rows: 53,940
+# Columns: 10
+# Median price: $2,401
 ```
 
-## Task 4 — Package Check
+## Task 2: Scatter plot with geom_smooth
 
-```{r package-check}
-required_packages <- c(
-  "tidyverse", "modelr", "ggfortify", "caret", "mice", "cvAUC",
-  "mgcv", "rpart", "rpart.plot", "nycflights13", "MASS",
-  "glmnet", "broom", "hexbin"
-)
-package_check <- sapply(required_packages, requireNamespace, quietly = TRUE)
-print(package_check)
-```
-
-All entries should be `TRUE`. If any are `FALSE`, run the install chunk above.
-
-## Task 5 — Explore sim1
-
-```{r explore-sim1}
-data("sim1", package = "modelr")
-glimpse(sim1)
-```
-
-```{r first-plot}
-ggplot(sim1, aes(x, y)) +
-  geom_point(size = 3, colour = "#1B3A6B") +
-  labs(title = "sim1: Ready to model") +
+```{r task2}
+ggplot(diamonds, aes(x = carat, y = price, colour = cut)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title   = "Diamond price vs carat by cut",
+    x       = "Carat (weight)",
+    y       = "Price (USD)",
+    colour  = "Cut quality"
+  ) +
   theme_minimal()
+
+# Interpretation: The fitted lines (one per cut level) all slope upward,
+# confirming that heavier diamonds cost more regardless of cut quality.
+# The lines are roughly parallel, suggesting the effect of cut is mostly
+# an intercept shift — Ideal diamonds command a higher base price
+# at any given carat weight, compared to Fair diamonds.
 ```
 
-## Reflection
+## Task 3: Filter with the pipe
 
-`options(na.action = na.warn)` makes R emit a warning whenever `lm()` (or any modelling function) silently drops rows with `NA` values before fitting. Without it, the warning is suppressed: you might call `lm(y ~ x, data = df)` on a dataset with 50 rows but get a model fitted on only 43 rows — without any indication. The practical danger is that predictions and residuals will have the wrong number of rows, causing misalignment when you try to merge them back with the original data.
+```{r task3}
+large_diamonds <- diamonds |>
+  filter(carat > 2)
+
+nrow(large_diamonds)
+
+# There are 1,655 diamonds with carat > 2 — just over 3% of the full dataset.
+```
+
+## Task 4: Summarise by cut
+
+```{r task4}
+diamonds |>
+  group_by(cut) |>
+  summarise(
+    mean_price   = mean(price),
+    median_price = median(price),
+    n            = n()
+  ) |>
+  arrange(desc(mean_price))
+
+# Counterintuitive finding: 'Fair' cut diamonds have a HIGHER mean price
+# than 'Ideal' cut diamonds. This is because cut is confounded with carat —
+# Fair-cut diamonds tend to be heavier (more carat) and therefore more
+# expensive on raw price. To see the pure effect of cut on price,
+# we need to control for carat size. This is exactly what regression does.
+```

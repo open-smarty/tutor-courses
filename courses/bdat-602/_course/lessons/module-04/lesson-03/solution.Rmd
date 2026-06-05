@@ -1,77 +1,105 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 3 Solution"
-subtitle: "PCA for Dimensionality Reduction and Cluster Visualisation"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: PCA for Dimensionality Reduction and Cluster Visualisation"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Fit PCA pipeline
+```{r load-packages}
+library(tidyverse)
 
-```{r task1}
-library(recipes)
-library(dplyr)
-
-pca_vars <- c("age", "bmi", "income", "num_claims",
-              "claim_amount", "num_chronic_conditions")
-
-pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
-  step_impute_median(bmi, income) |>
-  step_normalize(all_numeric_predictors()) |>
-  step_pca(all_numeric_predictors(), num_comp = 3)
-
-pca_prep   <- prep(pca_rec)
-pca_scores <- bake(pca_prep, new_data = NULL)
-
-head(pca_scores)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
 ```
 
-## Task 2 — Scree plot
+## Task 1: Run prcomp()
 
-```{r task2}
-library(broom)
-library(ggplot2)
+```{r task1-prepare}
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  scale()
+```
 
-tidy(pca_prep, number = 3, type = "variance") |>
-  filter(terms == "percent variance") |>
-  ggplot(aes(x = component, y = value)) +
+```{r task1-pca}
+pca <- prcomp(clust_data, scale. = FALSE)
+summary(pca)
+```
+
+## Task 2: Scree plot and variance explained
+
+```{r task2-scree}
+pve <- pca$sdev^2 / sum(pca$sdev^2)
+
+tibble(PC = 1:length(pve), PVE = pve, cumPVE = cumsum(pve)) |>
+  ggplot(aes(x = PC, y = PVE)) +
   geom_col(fill = "steelblue") +
-  geom_line(group = 1, colour = "red") +
-  geom_point(colour = "red") +
-  labs(title = "Scree Plot: PCA on Health Insurance Variables",
-       x = "Principal Component", y = "% Variance Explained") +
+  geom_line(aes(y = cumPVE), colour = "red", group = 1) +
+  geom_point(aes(y = cumPVE), colour = "red", size = 2) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Scree Plot — Insurance Policyholders",
+       y = "Proportion of Variance Explained",
+       caption = "Red line = cumulative PVE") +
   theme_minimal()
 ```
 
-PC1 typically explains ~30–40% of variance (capturing the utilisation/cost dimension), PC2 ~20% (capturing premium/income), and PC3 ~15%.
-
-## Task 3 — Score plot coloured by plan_tier
-
-```{r task3}
-plan <- health_small |>
-  select(bmi, income, num_chronic_conditions, plan_tier) |>
-  mutate(
-    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
-    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
-  ) |>
-  na.omit() |>
-  pull(plan_tier)
-
-pca_scores |>
-  mutate(plan_tier = plan) |>
-  ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
-  geom_point(alpha = 0.15, size = 0.5) +
-  labs(title = "PCA Score Plot by Plan Tier",
-       colour = "Plan Tier") +
-  theme_minimal()
+```{r task2-80pct}
+num_pcs_80 <- min(which(cumsum(pve) >= 0.80))
+cat("Number of PCs for 80% variance:", num_pcs_80, "\n")
+cat("Cumulative PVE by PC:\n")
+round(cumsum(pve), 3)
+# Typically PC1 + PC2 explain ~70-80%, and 3 PCs reach ~90%.
 ```
 
-Platinum and Gold policyholders should separate along PC1 (higher utilisation) and PC2 (higher income/premium), while Bronze clusters at lower PC1 scores.
+## Task 3: Biplot — which variables drive PC1 and PC2?
+
+```{r task3-biplot}
+biplot(pca, scale = 0, cex = 0.4,
+       main = "Biplot — Insurance Policyholder Features")
+```
+
+```{r task3-loadings}
+round(pca$rotation[, 1:2], 3)
+
+# PC1 is most influenced by num_claims and num_chronic_conditions (high positive loadings)
+# and age (also positive). PC1 broadly represents "health utilisation and age":
+# policyholders with high PC1 scores are older with more conditions and more claims.
+
+# PC2 is most influenced by income (high positive loading) and bmi (negative loading).
+# PC2 broadly represents "income vs. health risk": high PC2 = high income, low BMI;
+# low PC2 = low income, high BMI.
+```
+
+## Task 4: Visualise k-means clusters in PCA space
+
+```{r task4-kmeans}
+set.seed(602)
+km <- kmeans(clust_data, centers = 4, nstart = 25)
+```
+
+```{r task4-scatter}
+as.data.frame(pca$x[, 1:2]) |>
+  mutate(cluster = factor(km$cluster)) |>
+  ggplot(aes(x = PC1, y = PC2, colour = cluster)) +
+  geom_point(alpha = 0.3, size = 0.5) +
+  labs(title = "k-Means Clusters in PCA Space (PC1 vs PC2)",
+       x = "PC1 (Health Utilisation / Age)",
+       y = "PC2 (Income vs BMI Risk)") +
+  theme_minimal() +
+  guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))
+```
+
+```{r task4-interpret}
+# The clusters show reasonable (though not perfect) separation in PC1-PC2 space.
+# Some overlap is expected: k-means operates in 5-dimensional space; projecting
+# to 2D loses 15-30% of variance depending on the dataset. Two clusters that
+# overlap in PC1-PC2 may be separated in PC3 or PC4.
+# Additional checks:
+# 1. Silhouette scores per cluster (a cluster with low mean silhouette is poorly defined)
+# 2. Profile tables (do the cluster means differ meaningfully on key variables?)
+# 3. PCA plot in PC1-PC3 or PC2-PC3 space
+# Overlap in a 2D PCA plot does NOT mean the clustering has failed.
+```

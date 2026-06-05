@@ -1,63 +1,117 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 1 Exercise"
-subtitle: "k-Means Clustering"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: k-Means Clustering"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Prepare scaled clustering matrix
+```{r load-packages}
+library(tidyverse)
+library(cluster)  # for silhouette()
 
-From `health_small`, select `age`, `bmi`, `income`, `num_claims`, and `claim_amount`. Impute `bmi` and `income` with their medians, then Z-score scale all five columns using `scale()`. Remove any rows still containing NAs. Store the result as a numeric matrix `hc_mat`.
-
-```{r task1}
-# YOUR CODE HERE
-# library(dplyr)
-# hc_df <- health_small |>
-#   select(age, bmi, income, num_claims, claim_amount) |>
-#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
-#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
-#   na.omit()
-# hc_mat <- scale(hc_df)
-# dim(hc_mat)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+# Use 50,000 rows for speed
+health_data <- simulate_bdat602(n = 50000, seed = 602)
 ```
 
-## Task 2 — Fit k-Means with k = 4
+## Task 1: Prepare and scale clustering features
 
-Run `kmeans()` with `centers = 4` and `nstart = 25`. Print the cluster sizes and total WCSS.
+```{r task1-prepare}
+# TODO: select age, bmi, income, num_claims, num_chronic_conditions
+# Drop rows with any NA, then scale() all columns
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  NULL  # replace NULL with scale()
 
-```{r task2}
-# YOUR CODE HERE
-# set.seed(602)
-# km4 <- kmeans(hc_mat, centers = 4, nstart = 25)
-# km4$size
-# km4$tot.withinss
+# Print dimensions to verify
+dim(clust_data)
 ```
 
-## Task 3 — Cluster profile
+```{r task1-check-scale}
+# TODO: verify that all columns now have mean ≈ 0 and sd ≈ 1
+apply(clust_data, 2, mean) |> round(4)
+apply(clust_data, 2, sd)   |> round(4)
+```
 
-Join cluster assignments back to the rows of `health_small` used in Task 1 (same `na.omit()` rows). Compute per-cluster average `claim_amount` and fraud rate (`mean(fraud_flag) * 100`).
+## Task 2: Elbow plot — choose k
 
-```{r task3}
-# YOUR CODE HERE
-# library(dplyr)
-# hc_labeled <- health_small |>
-#   select(age, bmi, income, num_claims, claim_amount, fraud_flag, plan_tier) |>
-#   mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
-#          income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
-#   na.omit() |>
-#   mutate(cluster = as.factor(km4$cluster))
-# hc_labeled |>
-#   group_by(cluster) |>
-#   summarise(avg_claim   = round(mean(claim_amount), 0),
-#             fraud_pct   = round(mean(fraud_flag) * 100, 2),
-#             n           = n())
+```{r task2-elbow}
+# TODO: compute WCSS for k = 1 to 10 using kmeans(..., nstart = 25)
+# Store results in a vector called wcss
+set.seed(602)
+wcss <- sapply(1:10, function(k) NULL)  # replace NULL with kmeans call
+
+# TODO: plot WCSS vs k using ggplot2
+tibble(k = 1:10, wcss = wcss) |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_line() + geom_point(size = 2) +
+  labs(title = "Elbow Method for Optimal k",
+       x = "Number of clusters (k)", y = "Within-Cluster Sum of Squares") +
+  theme_minimal()
+```
+
+```{r task2-choose-k}
+# Based on the elbow plot, which k do you choose? Why?
+# Answer (as a comment):
+chosen_k <- NULL  # replace with your chosen integer
+```
+
+## Task 3: Fit k-means
+
+```{r task3-fit}
+set.seed(602)
+# TODO: fit kmeans with chosen_k and nstart = 25
+km <- NULL  # kmeans(clust_data, centers = chosen_k, nstart = 25)
+
+# Print WCSS of the best run
+cat("WCSS:", km$tot.withinss, "\n")
+cat("Cluster sizes:", km$size, "\n")
+```
+
+```{r task3-silhouette}
+# TODO: compute the silhouette score for your clustering
+# sil <- silhouette(km$cluster, dist(clust_data))
+# mean(sil[, "sil_width"])  -- report the mean silhouette score
+# If the dataset is large, sample 5000 rows first for dist()
+set.seed(42)
+idx <- sample(nrow(clust_data), min(5000, nrow(clust_data)))
+sil <- NULL  # silhouette(km$cluster[idx], dist(clust_data[idx, ]))
+cat("Mean silhouette score:", round(mean(sil[, "sil_width"]), 3), "\n")
+```
+
+## Task 4: Profile clusters and assign labels
+
+```{r task4-profile}
+# TODO: add km$cluster as a column to the non-NA rows of health_data
+# Then group_by(cluster) and summarise age, bmi, income, num_claims,
+# num_chronic_conditions, and the proportion who smoke (mean(smoker))
+
+health_clustered <- health_data |>
+  drop_na(age, bmi, income, num_claims, num_chronic_conditions) |>
+  mutate(cluster = factor(NULL))  # replace NULL with km$cluster
+
+cluster_profile <- health_clustered |>
+  group_by(cluster) |>
+  summarise(
+    n                = n(),
+    avg_age          = NULL,  # mean(age)
+    avg_bmi          = NULL,
+    avg_income       = NULL,
+    avg_claims       = NULL,
+    pct_smoker       = NULL   # mean(smoker) * 100
+  )
+
+print(cluster_profile)
+```
+
+```{r task4-labels}
+# Based on the profile table above, assign a descriptive label to each cluster:
+# Cluster 1: "..."
+# Cluster 2: "..."
+# Cluster 3: "..."
+# (and more if your chosen_k > 3)
 ```

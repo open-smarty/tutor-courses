@@ -1,163 +1,122 @@
-# Lesson 2: Handling Class Imbalance
+# Lesson 12: Handling Class Imbalance
 
 ## Goal
 
-Explain why class imbalance degrades standard classifiers, apply SMOTE and class-weight adjustment to the fraud detection problem, and evaluate models with precision-recall AUC instead of accuracy.
+After this lesson you can diagnose class imbalance, apply SMOTE oversampling and class-weight adjustment, evaluate imbalanced classifiers with the precision-recall curve, and make an informed choice between threshold adjustment and resampling.
 
 ## Concept
 
-### The Imbalance Problem
+### The accuracy paradox
 
-The `fraud_flag` target has ~3% positive cases. A classifier that predicts "no fraud" for every record achieves 97% accuracy — but has zero recall on fraud. This is the **accuracy paradox**.
+Consider predicting `churned` where only 18% of policyholders churn. A model that predicts "No churn" for every record achieves 82% accuracy with zero false negatives and zero true positives. This is the **accuracy paradox**: accuracy is a misleading metric when the positive class is rare.
 
-Metrics that matter for imbalanced problems:
+**Why?** Accuracy = $(TP + TN) / N$. When $TN$ is huge and $TP = 0$, accuracy looks good but the model is useless for the business objective (identifying churners).
 
-| Metric | Formula | What it measures |
-|--------|---------|----------------|
-| **Precision** | $\frac{TP}{TP + FP}$ | Of flagged cases, how many are truly fraud? |
-| **Recall** | $\frac{TP}{TP + FN}$ | Of actual frauds, how many did we catch? |
-| **F1** | $\frac{2 \cdot P \cdot R}{P + R}$ | Harmonic mean of precision and recall |
-| **AUC-ROC** | Area under ROC curve | Discrimination ability across all thresholds |
-| **AUC-PR** | Area under precision-recall curve | Better than AUC-ROC for rare events |
+**Better metric**: the Precision-Recall curve. Precision = $TP/(TP+FP)$ (what fraction of your alerts are real?), Recall = $TP/(TP+FN)$ (what fraction of real cases do you catch?). Plot Precision vs. Recall at all classification thresholds. A good model has high area under the PR curve (PR-AUC).
 
----
+### SMOTE: Synthetic Minority Over-sampling Technique
 
-### Remedies for Class Imbalance
+SMOTE creates synthetic observations in the minority class (churners) rather than duplicating existing ones (which just creates exact copies).
 
-| Remedy | Mechanism | When to use |
-|--------|----------|------------|
-| **SMOTE** | Synthetic oversampling of minority class | Moderate imbalance (<10:1) |
-| **Random oversampling** | Duplicate minority records | Simple baseline |
-| **Random undersampling** | Remove majority records | Large datasets where you can afford data loss |
-| **Class weights** | Penalise minority misclassification more | Works directly in many algorithms |
-| **Threshold adjustment** | Lower classification threshold below 0.5 | Post-hoc, does not require retraining |
+**Step-by-step** for one minority-class point $\mathbf{x}_i$:
+1. Find the $k = 5$ nearest neighbours of $\mathbf{x}_i$ among all minority-class points. Call them $\mathbf{x}_{n_1}, \ldots, \mathbf{x}_{n_5}$.
+2. Pick one neighbour $\mathbf{x}_n$ at random.
+3. Generate a synthetic point:
+$$\mathbf{x}' = \mathbf{x}_i + \delta \cdot (\mathbf{x}_n - \mathbf{x}_i), \quad \delta \sim \text{Uniform}(0, 1)$$
+The synthetic point lies somewhere on the line segment between $\mathbf{x}_i$ and its chosen neighbour — not an exact copy, but a plausible interpolation.
 
-**Critical rule:** apply all sampling remedies on the **training set only** — never on the test set.
+4. Repeat until the minority class has the desired size.
 
----
-
-### SMOTE with themis
-
-`themis` extends `recipes` with sampling steps:
+In the `recipes` package: `themis::step_smote(outcome_column, over_ratio = 1)` (over\_ratio = 1 means balance classes 1:1). **Apply SMOTE only to the training set** — never to the test set.
 
 ```r
 library(recipes)
 library(themis)
-library(dplyr)
-source("R/simulate_bdat602_data.R")
 
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+rec_smote <- recipe(churned ~ ., data = train) |>
+  step_impute_median(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_smote(churned, over_ratio = 1) |>
+  step_normalize(all_numeric_predictors())
 
-set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
-
-fraud_vars <- c("age", "employment_type", "claim_amount",
-                "num_claims", "weekend_claim", "income",
-                "plan_tier", "fraud_flag")
-
-train_sub <- train |>
-  select(all_of(fraud_vars)) |>
-  mutate(
-    income       = if_else(is.na(income), median(income, na.rm=TRUE), income),
-    weekend_claim = if_else(is.na(weekend_claim), FALSE, weekend_claim),
-    fraud_flag   = as.factor(fraud_flag)
-  )
-
-smote_rec <- recipe(fraud_flag ~ ., data = train_sub) |>
-  step_dummy(employment_type, plan_tier) |>
-  step_normalize(all_numeric_predictors()) |>
-  step_smote(fraud_flag, over_ratio = 0.5)  # bring minority to 50% of majority
-
-smote_prep    <- prep(smote_rec, training = train_sub)
-train_smoted  <- bake(smote_prep, new_data = NULL)
-
-table(train_smoted$fraud_flag)
+train_smote <- rec_smote |> prep(training = train) |> bake(new_data = NULL)
+# Check new class balance:
+table(train_smote$churned)
 ```
 
----
+### Class weights in randomForest
 
-### Class Weights in randomForest
+An alternative to resampling is to penalise misclassification of the minority class more heavily during training:
 
 ```r
-library(randomForest)
-
-n_total  <- sum(!is.na(train$fraud_flag))
-n_fraud  <- sum(train$fraud_flag == 1, na.rm = TRUE)
-n_normal <- n_total - n_fraud
-
-# Weight: inverse of class frequency
-class_wts <- c("0" = 1, "1" = n_normal / n_fraud)
-
-set.seed(602)
 rf_weighted <- randomForest(
-  as.factor(fraud_flag) ~ age + income + num_claims +
-    claim_amount + plan_tier,
-  data       = train |> filter(!is.na(income)),
-  ntree      = 300,
-  classwt    = class_wts,
+  factor(churned) ~ age + plan_tier + income + num_claims + support_calls,
+  data     = train,
+  ntree    = 200,
+  classwt  = c("0" = 1, "1" = 5),  # penalise missing churners 5×
   importance = TRUE
 )
 ```
 
----
+The class weight ratio should reflect the inverse of the class frequency: if 18% are churners, a weight of ~5:1 (non-churn:churn) approximately balances the effective cost.
 
-### Evaluating with Precision-Recall
+### Threshold adjustment
+
+Both SMOTE and class weights produce a model that assigns higher probabilities to the minority class. But you can also simply lower the classification threshold. Instead of predicting "churn" when $P(\text{churn}) > 0.5$, predict "churn" when $P(\text{churn}) > 0.2$. This increases recall (catches more real churners) at the cost of lower precision (more false alarms).
+
+**Precision-recall curve**: sweep the threshold from 0 to 1, compute precision and recall at each value, and plot. Choose the threshold that maximises the F1 score (or whichever trade-off the business requires).
 
 ```r
 library(pROC)
-
-# Probability predictions
-prob_pred <- predict(rf_weighted,
-                     test |> filter(!is.na(income)),
-                     type = "prob")[, "1"]
-
-actual <- as.numeric(as.character(
-  test$fraud_flag[!is.na(test$income)]
-))
-
-# ROC curve
-roc_obj <- roc(actual, prob_pred)
-cat("AUC-ROC:", round(auc(roc_obj), 3), "\n")
-plot(roc_obj, main = "ROC Curve: Fraud Detection")
-```
-
----
-
-### Threshold Adjustment
-
-```r
-# Default threshold = 0.5 (optimised for accuracy, not recall)
-# Lower it to catch more fraud at the cost of more false positives
-threshold <- 0.20
-pred_adj  <- as.integer(prob_pred >= threshold)
-
-conf_adj <- table(Predicted = pred_adj, Actual = actual)
-recall_adj <- conf_adj["1", "1"] / sum(conf_adj[, "1"])
-prec_adj   <- conf_adj["1", "1"] / sum(conf_adj["1", ])
-
-cat("Recall at threshold", threshold, ":", round(recall_adj, 3), "\n")
-cat("Precision:                         ", round(prec_adj,   3), "\n")
+pr_curve <- pr.curve(
+  scores.class0 = prob_rf_imbalanced,
+  weights.class0 = as.integer(test$churned) - 1  # convert to 0/1
+)
+plot(pr_curve)
 ```
 
 ## Example
 
 ```r
-# Before and after SMOTE: class distribution in training set
-cat("Before SMOTE — fraud rate:", round(mean(train$fraud_flag)*100, 2), "%\n")
-cat("After SMOTE  — fraud rate:", round(mean(train_smoted$fraud_flag == "1")*100, 2), "%\n")
+library(tidyverse)
+library(randomForest)
+library(themis)
+library(tidymodels)
+library(pROC)
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
+
+# Split
+set.seed(602)
+idx   <- sample(nrow(health_data), 0.80 * nrow(health_data))
+train <- health_data[idx, ]
+test  <- health_data[-idx, ]
+
+# Show class imbalance
+cat("Churn rate in training set:", mean(train$churned), "\n")
+
+# Class-weighted random forest
+rf_wt <- randomForest(
+  factor(churned) ~ age + plan_tier + income + num_claims + support_calls +
+                    auto_pay + customer_rating + deductible,
+  data     = train,
+  ntree    = 200,
+  classwt  = c("0" = 1, "1" = 5),
+  importance = TRUE
+)
+
+# Evaluate at threshold 0.3
+prob_wt <- predict(rf_wt, test, type = "prob")[, "1"]
+pred_wt <- factor(ifelse(prob_wt > 0.3, 1, 0), levels = c(0, 1))
+cm <- table(Predicted = pred_wt, Actual = test$churned)
+print(cm)
 ```
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Report the fraud rate in `health_small`. Fit a random forest to predict `fraud_flag` **without** any imbalance correction. Report the recall on the test set.
-2. Refit with `classwt = c("0" = 1, "1" = 30)`. Report the new recall and precision. Has recall improved?
-3. Adjust the classification threshold to 0.15. Report the precision-recall trade-off.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) document the churn rate and show that a naive "always No" model achieves high accuracy; (2) train a class-weighted random forest and compare recall to the unweighted version; (3) apply SMOTE via `themis::step_smote()` in a `recipes` pipeline; (4) compare models with precision-recall curves and F1 scores at multiple thresholds.
 
 ## Check
 
@@ -167,4 +126,4 @@ npm run check -- bdat-602 module-05 lesson-02
 
 ## Reflection
 
-You lower the threshold to 0.10 and achieve 85% recall on fraud but precision falls to 12%. An operations team can investigate 200 cases per week. The insurer processes 50,000 new claims per week. Calculate how many false alarms the team would receive and explain why precision matters in this operational context.
+SMOTE generates synthetic minority-class observations by interpolating between existing ones. This assumes the minority class forms connected, convex regions in feature space. When might this assumption fail for insurance data, and what could go wrong?

@@ -1,71 +1,119 @@
 ---
-title: "BDAT 602 — Module 6, Lesson 2 Exercise"
-subtitle: "Topic Modelling with LDA"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Topic Modelling with LDA"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Build the DTM
+```{r load-packages}
+library(tidyverse)
+library(tidytext)
+library(topicmodels)
 
-Repeat the tokenisation pipeline from Lesson 1 (filter non-NA complaints, tokenise, remove stop words, filter nchar > 2, cast to DTM). Report the DTM dimensions.
-
-```{r task1}
-# YOUR CODE HERE
-# library(tidytext); library(dplyr)
-# data("stop_words")
-# complaints <- health_small |>
-#   filter(!is.na(complaint_notes)) |>
-#   mutate(doc_id = row_number())
-# dtm <- complaints |>
-#   unnest_tokens(word, complaint_notes) |>
-#   anti_join(stop_words, by = "word") |>
-#   filter(nchar(word) > 2) |>
-#   count(doc_id, word) |>
-#   cast_dtm(document = doc_id, term = word, value = n)
-# dim(dtm)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+# Use 20,000 rows for speed (LDA on 100k rows takes several minutes)
+health_data <- simulate_bdat602(n = 20000, seed = 602)
 ```
 
-## Task 2 — Fit LDA and plot top words
+```{r prepare-words}
+# Prepare cleaned word counts (same as Lesson 1)
+complaints <- health_data |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = row_number())
 
-Fit `LDA(dtm, k = 4, control = list(seed = 602))`. Extract the beta matrix with `tidy(..., matrix = "beta")`. Plot the top 6 words per topic using faceted bar charts.
+word_counts <- complaints |>
+  unnest_tokens(word, complaint_notes) |>
+  anti_join(stop_words, by = "word") |>
+  count(doc_id, word)
 
-```{r task2}
-# YOUR CODE HERE
-# library(topicmodels)
-# set.seed(602)
-# lda_fit <- LDA(dtm, k = 4, control = list(seed = 602))
-# beta_mat <- tidy(lda_fit, matrix = "beta")
-# beta_mat |>
-#   group_by(topic) |>
-#   slice_max(beta, n = 6) |>
-#   ggplot(aes(x = reorder(term, beta), y = beta)) +
-#   geom_col(fill = "steelblue") +
-#   facet_wrap(~ topic, scales = "free_y") +
-#   coord_flip() +
-#   labs(title = "Top 6 Words per LDA Topic", x = NULL) +
-#   theme_minimal()
+cat("Unique documents:", n_distinct(word_counts$doc_id), "\n")
+cat("Unique terms:    ", n_distinct(word_counts$word), "\n")
 ```
 
-## Task 3 — Topic prevalence
+## Task 1: Build the Document-Term Matrix (DTM)
 
-Extract the gamma matrix. Compute average gamma per topic. Which topic is most prevalent in the corpus?
+```{r task1-dtm}
+# TODO: convert word_counts to a DTM using cast_dtm(doc_id, word, n)
+dtm <- NULL  # word_counts |> cast_dtm(...)
 
-```{r task3}
-# YOUR CODE HERE
-# gamma_mat <- tidy(lda_fit, matrix = "gamma")
-# gamma_mat |>
-#   group_by(topic) |>
-#   summarise(avg_gamma = round(mean(gamma), 3)) |>
-#   arrange(desc(avg_gamma))
+# Inspect the DTM
+dtm
+# Report: how many documents? how many terms? what is the sparsity?
 ```
 
-**Most prevalent topic:** ___
+## Task 2: Fit a 5-topic LDA model
+
+```{r task2-lda}
+# TODO: fit LDA with k = 5, method = "Gibbs"
+# control = list(seed = 602, iter = 500, burnin = 100)
+# This may take 1-2 minutes
+lda5 <- NULL  # LDA(dtm, k = 5, method = "Gibbs", control = list(...))
+```
+
+## Task 3: Extract and visualise word-topic probabilities (beta)
+
+```{r task3-beta}
+# TODO: use tidy(lda5, matrix = "beta") to get word-topic probabilities
+topics_beta <- NULL  # tidy(lda5, matrix = "beta")
+
+# Show the top 5 words for each topic
+topics_beta |>
+  group_by(topic) |>
+  slice_max(beta, n = 5) |>
+  ungroup()
+```
+
+```{r task3-plot}
+# TODO: plot the top 10 words per topic as a faceted bar chart
+# Use reorder_within() and scale_x_reordered() for clean labels
+```
+
+```{r task3-label-topics}
+# Based on the top words, assign a human-readable label to each topic:
+# Topic 1: "..."
+# Topic 2: "..."
+# Topic 3: "..."
+# Topic 4: "..."
+# Topic 5: "..."
+```
+
+## Task 4: Document-topic probabilities and perplexity
+
+```{r task4-gamma}
+# TODO: extract document-topic probabilities with tidy(lda5, matrix = "gamma")
+doc_topics <- NULL  # tidy(lda5, matrix = "gamma")
+
+# Which topic is most prevalent (highest mean gamma)?
+doc_topics |>
+  group_by(topic) |>
+  summarise(mean_gamma = mean(gamma)) |>
+  arrange(desc(mean_gamma))
+```
+
+```{r task4-perplexity}
+# TODO: compute perplexity for K = 3, 4, 5, 6, 7
+# Use iter = 200, burnin = 50 for speed
+# Plot K vs. perplexity and identify the best K
+
+perp_values <- sapply(3:7, function(k) {
+  mod <- LDA(dtm, k = k, method = "Gibbs",
+             control = list(seed = 602, iter = 200, burnin = 50))
+  perplexity(mod)
+})
+
+tibble(K = 3:7, perplexity = perp_values) |>
+  ggplot(aes(x = K, y = perplexity)) +
+  geom_line() + geom_point(size = 2) +
+  labs(title = "LDA Perplexity vs. Number of Topics",
+       x = "Number of Topics (K)", y = "Perplexity") +
+  theme_minimal()
+```
+
+```{r task4-best-k}
+# Which K minimises perplexity (or shows an elbow)?
+# Does your chosen K match the 5 template categories in the simulator?
+# Answer (as a comment):
+```

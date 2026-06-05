@@ -1,74 +1,55 @@
 ---
-title: "BDAT 608 | Module 3, Lesson 1 — Predictions and Residuals with modelr"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Predictions and Residuals with modelr"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-sim1_mod <- lm(y ~ x, data = sim1)
 ```
 
----
-
-## Task 1 — Prediction Grid
-
-```{r prediction-grid}
-# TODO: Use data_grid(x) to build a prediction grid,
-# then add predictions from sim1_mod.
-grid <- sim1 |>
-  data_grid(x) |>
-  add_predictions(# TODO: model name)
-
-print(grid)
+```{r fit-model}
+data("diamonds", package = "ggplot2")
+mod_loglog <- lm(log(price) ~ log(carat), data = diamonds)
 ```
 
----
+## Task 1: Create a prediction grid and overlay on scatter
 
-## Task 2 — Plot Data and Fitted Line
+```{r task1}
+# TODO: Create a data_grid() with 200 evenly spaced carat values.
+# Use add_predictions(mod_loglog, var = "log_pred") to attach log(price) predictions.
+# Add a column pred = exp(log_pred) to back-transform to the price scale.
+# Plot: scatter of price vs carat (alpha = 0.05) + geom_line() of pred vs carat.
 
-```{r fitted-line-plot}
-# TODO: Create a plot with:
-# - geom_point for the observed sim1 data (colour = "#1B3A6B")
-# - geom_line for the fitted predictions from `grid` (colour = "#C9A84C")
-# - appropriate axis label: y = expression(y ~ "/" ~ hat(y))
 ```
 
----
+## Task 2: Attach residuals and plot vs log(carat)
 
-## Task 3 — Residual Distribution
+```{r task2}
+# TODO: Use add_residuals(mod_loglog, var = "resid") on the diamonds data.
+# Store as diamonds_r.
+# Plot resid (y) vs log(carat) (x). Add a horizontal reference line at 0.
 
-```{r residual-distribution}
-# TODO: Add residuals to sim1 using add_residuals(sim1_mod).
-# Then plot a frequency polygon (geom_freqpoly, binwidth = 0.5) of the residuals.
-# Add a dashed vertical line at x = 0.
-sim1 <- sim1 |> add_residuals(# TODO)
 ```
 
----
+## Task 3: Colour residual plot by cut
 
-## Task 4 — Residuals vs x
+```{r task3}
+# TODO: Repeat the plot from Task 2 but add colour = cut to aes().
+# Describe in a comment: do residuals cluster by cut?
+# Which cut has the most negative residuals?
 
-```{r residuals-vs-x}
-# TODO: Plot residuals vs x.
-# Use geom_ref_line(h = 0) to add a horizontal reference at zero.
-# Is there a visible pattern? Write your answer as a comment.
 ```
 
----
+## Task 4: Mean residual per cut level
 
-## Reflection
+```{r task4}
+# TODO: Use group_by(cut) |> summarise(mean_resid = mean(resid))
+# on diamonds_r. Arrange in descending order.
+# Which cut has the highest mean residual? Write an interpretation.
 
-<!-- What would a curved band in the residuals-vs-x plot mean? What would you do? -->
+```

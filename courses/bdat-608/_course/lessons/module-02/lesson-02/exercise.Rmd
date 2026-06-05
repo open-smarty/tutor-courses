@@ -1,88 +1,65 @@
 ---
-title: "BDAT 608 | Module 2, Lesson 2 — Search Strategies and Numerical Optimisation"
-author: "Your Name"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Exercise: Search Strategies and Numerical Optimisation"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
+
 data("sim1", package = "modelr")
-
-model1 <- function(a, data) a[1] + data$x * a[2]
-measure_distance <- function(mod, data) sqrt(mean((data$y - model1(mod, data))^2))
-sim1_dist <- function(a1, a2) measure_distance(c(a1, a2), sim1)
 ```
 
----
+## Task 1: RMSE function for sim1
 
-## Task 1 — Random Search (500 candidates)
+```{r task1}
+# TODO: Write rmse_sim1(b0, b1) that:
+# 1. Computes pred <- b0 + b1 * sim1$x
+# 2. Computes resid <- sim1$y - pred
+# 3. Returns sqrt(mean(resid^2))
+# Test it: rmse_sim1(0, 0) should give the RMSE of a flat-zero model.
 
-```{r random-search}
-set.seed(7)
-# TODO: Generate 500 random models with a1 in [-20, 40] and a2 in [-5, 5].
-# Compute dist for each and store in a tibble called `models`.
-models <- tibble(
-  a1 = runif(500, -20, 40),
-  a2 = # TODO
-) |>
-  mutate(dist = # TODO
-  )
 ```
 
-```{r top10-plot}
-# TODO: Plot sim1 scatter + top 10 lines (ranked by dist), coloured by -dist.
-# Use scale_colour_viridis_c(guide = "none").
+## Task 2: Grid search
+
+```{r task2}
+# TODO: Create a grid:
+#   b0 = seq(-5, 20, length = 25)
+#   b1 = seq(1,  3,  length = 25)
+# Use expand.grid() and then mutate() with map2_dbl to add rmse.
+# Report the row with minimum rmse using slice_min().
+
 ```
 
----
+## Task 3: Numerical optimisation with optim()
 
-## Task 2 — RMSE Landscape
+```{r task3}
+# TODO: Write a wrapper rmse_vec(params) that extracts params[1] and params[2]
+# as b0 and b1 and calls rmse_sim1().
+# Then call optim(c(0, 0), rmse_vec, method = "BFGS").
+# Print par, value, and convergence.
 
-```{r rmse-landscape}
-# TODO: Plot a1 vs a2 from `models`, coloured by dist.
-# Use scale_colour_viridis_c(name = "RMSE").
-# Add a title "RMSE landscape over (intercept, slope)".
 ```
 
----
+## Task 4: Compare to lm()
 
-## Task 3 — optim()
+```{r task4}
+# TODO: Fit lm(y ~ x, data = sim1).
+# Print coef() side by side with the grid-search best and optim() result.
+# Which is closest to lm()?
 
-```{r optim-fit}
-# TODO: Use optim() with par = c(0, 0) and fn = measure_distance to fit sim1.
-# Print the intercept, slope, and minimum RMSE.
-best <- optim(
-  par  = c(0, 0),
-  fn   = measure_distance,
-  data = sim1
-)
-# print(best$par)
-# print(best$value)
 ```
 
----
+## Task 5: Visualise the grid search
 
-## Task 4 — Comparison
+```{r task5}
+# TODO: Plot b0 (x) vs b1 (y) from the grid, coloured by rmse.
+# Use scale_fill_viridis_c() or scale_colour_viridis_c().
+# Optionally add a red point at the optim() solution.
 
-```{r comparison}
-# TODO: Find the row in `models` with the minimum dist.
-# How close is it to best$par? Print the comparison.
 ```
-
----
-
-## Reflection
-
-<!-- In 2–3 sentences: what is the risk of poor starting values for optim()?
-     How would you mitigate it? -->

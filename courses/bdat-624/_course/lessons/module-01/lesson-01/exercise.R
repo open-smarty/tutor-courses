@@ -1,138 +1,119 @@
-# BDAT 624 — Module 1, Lesson 1
-# Exercise: Simulating the Four Types of Stochastic Processes
-#
-# Instructions: Complete each TODO section below.
-# After finishing, run: npm run check -- bdat-624 module-01 lesson-01
-
+# Required packages
+library(markovchain)
 library(ggplot2)
-library(dplyr)
-library(gridExtra)
 
-set.seed(42)  # for reproducibility — do not change this line
-
-# ============================================================
-# TYPE I: Discrete Time, Discrete State
-# Random walk on {0, 1, 2, ...} — absorbing barrier at 0
-# Simulates patient disease severity score (0 = recovered/absorbed)
-# ============================================================
-
-n_steps <- 50
-start_state <- 5
-
-# TODO 1: Simulate the random walk.
-# - Create a vector `rw` of length (n_steps + 1), initialised to NA.
-# - Set rw[1] <- start_state
-# - For each step i in 2:(n_steps + 1):
-#     Draw a step of +1 or -1 with equal probability (hint: sample(c(-1, 1), 1))
-#     The new state is rw[i-1] + step, BUT it cannot go below 0 (absorbing barrier).
-#     If the new value would be < 0, set rw[i] <- 0; otherwise use the new value.
-#     Once the state reaches 0, it stays at 0 for all future steps.
-rw <- rep(NA, n_steps + 1)
-# --- your code here ---
-
-
-df_rw <- data.frame(step = 0:n_steps, state = rw)
+# Scenario: A patient moves between three clinical states — Healthy (H),
+# Sick (S), and Recovered (R). Each week the patient's state is recorded.
+# We model this as a discrete-time, discrete-state stochastic process.
 
 # ============================================================
-# TYPE II: Continuous Time, Discrete State
-# Poisson arrivals — number of patients arriving at an ED over 24 hours
+# Part 1: Classify four stochastic processes
 # ============================================================
+# For each process below, write a comment giving:
+#   (a) index set T (discrete or continuous; describe the unit)
+#   (b) state space S (discrete or continuous; describe the values)
+#   (c) type (one of: DT-DS, DT-CS, CT-DS, CT-CS)
 
-# Average arrival rate: lambda = 6 patients per hour
-lambda_per_hour <- 6
-hours <- 24
+# Process A: Number of new HIV diagnoses reported monthly in a district
+# T: ?
+# S: ?
+# Type: ?
 
-# TODO 2: Simulate Poisson arrivals.
-# - Generate a vector `arrivals` of length `hours` using rpois().
-#   Each element is the number of arrivals in that hour.
-# - Compute `cum_arrivals` as the cumulative sum of `arrivals`.
-# - Create a data frame `df_pois` with columns:
-#     hour: 1:hours
-#     cumulative: cum_arrivals
-arrivals <- NULL       # replace NULL
-cum_arrivals <- NULL   # replace NULL
-# --- your code here ---
+# Process B: Patient systolic blood pressure recorded every 5 minutes
+# T: ?
+# S: ?
+# Type: ?
 
-df_pois <- data.frame(hour = 1:hours, cumulative = cum_arrivals)
+# Process C: Whether a patient is alive or dead — can change at any instant
+# T: ?
+# S: ?
+# Type: ?
 
-# ============================================================
-# TYPE III: Discrete Time, Continuous State
-# Weekly body weight fluctuations over one year (52 weeks)
-# Starting weight: 75 kg; weekly fluctuation ~ N(0, 0.8) kg
-# ============================================================
-
-n_weeks <- 52
-start_weight <- 75
-sd_weekly <- 0.8
-
-# TODO 3: Simulate weekly weight.
-# - Create a vector `weight` of length (n_weeks + 1).
-# - Set weight[1] <- start_weight
-# - For each week i in 2:(n_weeks + 1), add a draw from rnorm(1, mean=0, sd=sd_weekly)
-#   to the previous weight.
-weight <- rep(NA, n_weeks + 1)
-# --- your code here ---
-
-df_weight <- data.frame(week = 0:n_weeks, kg = weight)
+# Process D: Viral load (copies/mL) in a patient's blood, measured continuously
+# T: ?
+# S: ?
+# Type: ?
 
 # ============================================================
-# TYPE IV: Continuous Time, Continuous State
-# Brownian motion approximation — blood pressure fluctuation
-# Use cumsum of 1000 iid N(0,1) increments scaled to a plausible range
+# Part 2: Define a 3-state health Markov chain
 # ============================================================
+# States: Healthy (H), Sick (S), Recovered (R)
+# Transition probabilities (one-step, per week):
+#   From H: stay H with prob 0.85, become S with prob 0.15, become R with prob 0
+#   From S: stay S with prob 0.40, become H with prob 0.10, become R with prob 0.50
+#   From R: stay R with prob 0.70, become H with prob 0.30, become S with prob 0
 
-n_points <- 1000
-bm_increments <- rnorm(n_points, mean = 0, sd = 1)
+# TODO: Create the transition matrix as a 3x3 numeric matrix
+# Rows must sum to 1; label rows and columns with state names
+trans_matrix <- matrix(
+  c(# H     S     R
+    # TODO: fill in the probabilities from the description above
+    NA,   NA,   NA,   # from H
+    NA,   NA,   NA,   # from S
+    NA,   NA,   NA    # from R
+  ),
+  nrow = 3, byrow = TRUE,
+  dimnames = list(c("H", "S", "R"), c("H", "S", "R"))
+)
 
-# TODO 4: Construct the Brownian motion path.
-# - Set `bm_path` as cumsum(bm_increments).
-# - Shift and scale so the starting point is 120 (mmHg) and the
-#   standard deviation of bm_path is approximately 15:
-#     bm_path <- 120 + 15 * (bm_path / sd(bm_path))
-# - Create a data frame `df_bm` with columns:
-#     t: seq(0, 24, length.out = n_points)   (time in hours)
-#     bp: bm_path
-bm_path <- NULL  # replace NULL
-# --- your code here ---
-
-df_bm <- data.frame(t = seq(0, 24, length.out = n_points), bp = bm_path)
-
-# ============================================================
-# PLOTTING — combine all four into a 2x2 grid
-# ============================================================
-
-# TODO 5: Create four ggplot objects (p1, p2, p3, p4) and arrange them.
-# Requirements for each plot:
-#   p1 (Type I):  x = step (0 to 50), y = state (integer).
-#                 Use geom_step(). Title: "Type I: Discrete Time, Discrete State".
-#                 x-label: "Step", y-label: "Severity Score"
-#   p2 (Type II): x = hour, y = cumulative arrivals.
-#                 Use geom_step(). Title: "Type II: Continuous Time, Discrete State".
-#                 x-label: "Hour of Day", y-label: "Cumulative Arrivals"
-#   p3 (Type III):x = week, y = weight in kg.
-#                 Use geom_line(). Title: "Type III: Discrete Time, Continuous State".
-#                 x-label: "Week", y-label: "Body Weight (kg)"
-#   p4 (Type IV): x = t (hours), y = bp (mmHg).
-#                 Use geom_line(). Title: "Type IV: Continuous Time, Continuous State".
-#                 x-label: "Time (hours)", y-label: "Blood Pressure (mmHg)"
-# All plots: add theme_minimal() and a descriptive subtitle if you wish.
-
-p1 <- NULL  # replace with ggplot(...)
-p2 <- NULL
-p3 <- NULL
-p4 <- NULL
-
-# --- your code here ---
-
-# Display the grid
-grid.arrange(p1, p2, p3, p4, nrow = 2)
+# TODO: Verify that each row sums to 1 (use rowSums)
+rowSums(trans_matrix)
 
 # ============================================================
-# REFLECTION (no code needed — answer as a comment)
+# Part 3: Create a markovchain object and simulate
 # ============================================================
-# After looking at your four plots, answer:
-# Which plot shows the most "predictable" long-run behaviour? Why?
-# Which would be hardest to model with a deterministic equation? Why?
+# TODO: Use new("markovchain", ...) to create the chain object
+# Hint: arguments are states, byrow, transitionMatrix, name
+health_mc <- new("markovchain",
+  states = c("H", "S", "R"),
+  byrow  = TRUE,
+  transitionMatrix = trans_matrix,
+  name = "Health Chain"
+)
 
-# YOUR ANSWER:
-#
+# TODO: Print a summary of the chain
+print(health_mc)
+
+# TODO: Simulate a trajectory of 100 steps starting from state "H"
+# Use markovchain::markovchainSequence() or rmarkovchain()
+set.seed(42)
+trajectory <- markovchainSequence(
+  n     = 100,
+  markovchain = health_mc,
+  t0    = "H"
+)
+
+# ============================================================
+# Part 4: Visualise the trajectory
+# ============================================================
+# TODO: Convert trajectory to a data frame with columns: step (1:100) and state
+traj_df <- data.frame(
+  step  = 1:100,
+  state = trajectory
+)
+
+# TODO: Plot the trajectory using ggplot2 — use geom_point() and geom_line()
+# Color by state. Add informative title and axis labels.
+ggplot(traj_df, aes(x = step, y = state, color = state, group = 1)) +
+  geom_point(size = 2) +
+  geom_line(alpha = 0.4) +
+  labs(
+    title = "100-Step Simulation of 3-State Health Markov Chain",
+    x     = "Week",
+    y     = "Health State",
+    color = "State"
+  ) +
+  theme_minimal()
+
+# ============================================================
+# Part 5: Summary statistics on the trajectory
+# ============================================================
+# TODO: Compute the proportion of time spent in each state
+# (this is the empirical stationary distribution for this sample path)
+state_counts <- table(trajectory)
+state_props  <- state_counts / length(trajectory)
+print(state_props)
+
+# TODO: Write one sentence in a comment interpreting the proportion
+# of time spent in state "S" (Sick). Is this consistent with the
+# transition probabilities you set?

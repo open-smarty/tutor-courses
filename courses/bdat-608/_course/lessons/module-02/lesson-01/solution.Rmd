@@ -1,79 +1,92 @@
 ---
-title: "BDAT 608 | Module 2, Lesson 1 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Loss Functions — RMSE and MAE"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
 ```
 
-## Task 1 — Implement Loss Functions
+```{r sample-data}
+set.seed(42)
+d100 <- diamonds |> slice_sample(n = 100)
+```
 
-```{r loss-functions}
-model1 <- function(a, data) {
-  a[1] + data$x * a[2]
-}
+## Task 1: Implement RMSE and MAE
 
-measure_distance <- function(mod, data) {
-  resid <- data$y - model1(mod, data)
+```{r task1}
+rmse_fn <- function(b0, b1, data) {
+  pred  <- b0 + b1 * data$carat
+  resid <- data$price - pred
   sqrt(mean(resid^2))
 }
 
-measure_mae <- function(mod, data) {
-  resid <- data$y - model1(mod, data)
+mae_fn <- function(b0, b1, data) {
+  pred  <- b0 + b1 * data$carat
+  resid <- data$price - pred
   mean(abs(resid))
 }
 ```
 
-## Task 2 — Compare Candidates on sim1
+## Task 2: Evaluate at a candidate parameter pair
 
-```{r compare-candidates}
-candidates <- list(c1 = c(7, 1.5), c2 = c(5, 2.0), c3 = c(4, 2.0))
+```{r task2}
+cat("RMSE at (-2000, 7000):", round(rmse_fn(-2000, 7000, d100), 2), "\n")
+cat("MAE  at (-2000, 7000):", round(mae_fn( -2000, 7000, d100), 2), "\n")
 
-results_sim1 <- tibble(
-  candidate = names(candidates),
-  intercept = sapply(candidates, `[`, 1),
-  slope     = sapply(candidates, `[`, 2),
-  RMSE      = sapply(candidates, measure_distance, data = sim1),
-  MAE       = sapply(candidates, measure_mae,      data = sim1)
-)
-print(results_sim1)
+# RMSE >= MAE always holds because squaring amplifies large residuals.
+# The gap between them indicates the presence of some large errors
+# (diamonds whose price is far from the linear prediction).
 ```
 
-**Lowest RMSE on sim1:** candidate `c3` (intercept = 4, slope = 2) has the lowest RMSE and MAE among these three. The true OLS fit is approximately intercept = 4.22, slope = 2.05, so `c3` is closest.
+## Task 3: Random search over 250 parameter pairs
 
-## Task 3 — Heavy-Tailed Noise
+```{r task3}
+set.seed(7)
+search <- tibble(
+  b0 = runif(250, -5000, 0),
+  b1 = runif(250,  5000, 12000)
+) |>
+  mutate(rmse = map2_dbl(b0, b1, rmse_fn, data = d100))
 
-```{r heavy-tailed}
-set.seed(42)
-sim1a <- tibble(
-  x = rep(1:10, each = 3),
-  y = x * 1.5 + 6 + rt(length(x), df = 2)
-)
-
-results_sim1a <- tibble(
-  candidate = names(candidates),
-  RMSE      = sapply(candidates, measure_distance, data = sim1a),
-  MAE       = sapply(candidates, measure_mae,      data = sim1a)
-)
-print(results_sim1a)
+head(search)
 ```
 
-Under heavy-tailed noise the two criteria may rank candidates differently because Student-$t$(df=2) occasionally produces extreme values that inflate RMSE much more than MAE.
+## Task 4: Report the best pair
 
-## Reflection
+```{r task4}
+best_random <- search |> slice_min(rmse, n = 1)
+print(best_random)
 
-RMSE and MAE measure "closeness" differently: RMSE squares each residual (amplifying large errors), while MAE takes the absolute value (treating all magnitudes linearly). A candidate with one very large residual will have a high RMSE but a moderate MAE. Therefore the "best" candidate depends on the loss — different loss functions define different optimal parameters. The loss function is not a neutral technical choice; it encodes an assumption about what kind of error matters more.
+# Compare to the OLS solution for reference
+ols_mod <- lm(price ~ carat, data = d100)
+ols_rmse <- sqrt(mean(residuals(ols_mod)^2))
+cat("OLS RMSE:", round(ols_rmse, 2), "\n")
+cat("Random search best RMSE:", round(best_random$rmse, 2), "\n")
+# OLS always wins — it uses the mathematical optimum, not random luck.
+```
+
+## Task 5: Heatmap of the loss surface
+
+```{r task5}
+ggplot(search, aes(x = b0, y = b1, colour = rmse)) +
+  geom_point(size = 2) +
+  scale_colour_viridis_c(name = "RMSE") +
+  labs(
+    title    = "RMSE over the (b0, b1) parameter space — 250 random samples",
+    subtitle = "Low RMSE (dark) forms a narrow valley. OLS finds the exact minimum.",
+    x        = expression(beta[0] ~ "(intercept)"),
+    y        = expression(beta[1] ~ "(slope)")
+  ) +
+  theme_minimal()
+
+# Interpretation: The low-RMSE region (dark purple) forms a curved valley
+# running diagonally across the parameter space. Many combinations of b0
+# and b1 give similar RMSE — this is because the two parameters are
+# correlated. OLS analytically finds the exact bottom of this valley.
+```

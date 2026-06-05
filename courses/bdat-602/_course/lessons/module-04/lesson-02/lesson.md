@@ -1,133 +1,113 @@
-# Lesson 2: Hierarchical Clustering
+# Lesson 9: Hierarchical Clustering
 
 ## Goal
 
-Explain how hierarchical clustering builds a dendrogram, compare linkage methods, cut the dendrogram to obtain a flat partition, and compare hierarchical clusters to k-means clusters on the same data.
+After this lesson you can explain agglomerative hierarchical clustering, compare linkage criteria, read a dendrogram, cut it to extract flat clusters, and articulate the practical trade-offs between hierarchical and k-means clustering.
 
 ## Concept
 
-### How Hierarchical Clustering Works
+### The agglomerative approach
 
-Hierarchical clustering (agglomerative) starts with every observation in its own cluster and merges pairs bottom-up:
+Hierarchical clustering builds a tree (dendrogram) of cluster merges. The agglomerative variant starts with $n$ singleton clusters (each data point is its own cluster) and repeatedly merges the two closest clusters until only one remains.
 
-1. Compute pairwise distances between all observations
-2. Merge the two closest clusters
-3. Recompute distances (based on linkage rule)
-4. Repeat until one cluster remains
+**Algorithm**:
+1. Compute the distance matrix $D$ where $D_{ij} = d(\mathbf{x}_i, \mathbf{x}_j)$.
+2. Merge the two clusters with the smallest inter-cluster distance.
+3. Update $D$ using the chosen linkage criterion.
+4. Repeat until all points are in one cluster.
 
-The result is a **dendrogram** — a tree diagram showing the merge sequence and heights.
+The full merge history is stored as a dendrogram. You then "cut" the dendrogram at a chosen height to get a flat partition.
 
----
+### Distance metrics
 
-### Linkage Methods
+**Euclidean distance** (straight-line):
+$$d(\mathbf{x}, \mathbf{y}) = \sqrt{\sum_{j=1}^{p} (x_j - y_j)^2}$$
 
-The linkage rule determines how the distance between two clusters is computed after a merge:
+Appropriate when variables are measured on the same scale (or after scaling) and differences in each dimension are equally meaningful.
 
-| Linkage | Distance = | Shape bias | Use when |
-|---------|-----------|-----------|---------|
-| **Single** | Minimum pairwise | Long chains | Detecting outliers |
-| **Complete** | Maximum pairwise | Compact, equal-radius | General purpose |
-| **Average** | Mean pairwise | Balanced | General purpose |
-| **Ward.D2** | Minimises within-cluster variance | Compact, equal-size | Most clustering tasks |
+**Manhattan distance** (city-block):
+$$d(\mathbf{x}, \mathbf{y}) = \sum_{j=1}^{p} |x_j - y_j|$$
 
-Ward.D2 tends to produce the most interpretable, equal-sized clusters and is the default recommendation.
+Less sensitive to large differences in a single dimension than Euclidean, making it more robust to outliers in high-dimensional data.
 
----
+### Linkage criteria
 
-### Running Hierarchical Clustering
+The linkage criterion determines how the distance between two *clusters* is computed from pairwise point distances.
 
-```r
-library(dplyr)
-source("R/simulate_bdat602_data.R")
+| Linkage | Distance between clusters A and B | Behaviour |
+|---|---|---|
+| Single | $\min_{a \in A, b \in B} d(a, b)$ | Tends to "chain" — long, stringy clusters |
+| Complete | $\max_{a \in A, b \in B} d(a, b)$ | Compact, similar-sized clusters |
+| Average | $\frac{1}{|A||B|} \sum_{a,b} d(a, b)$ | Compromise between single and complete |
+| Ward | Minimise the increase in total WCSS after the merge | Produces compact, equal-sized clusters — usually the best default |
 
-health_small  <- simulate_bdat602(n = 10000, seed = 602)
+**Ward's method** is analogous to k-means in its objective: it merges the two clusters whose combination results in the smallest increase in the total within-cluster variance. It consistently produces the most interpretable clusters for continuous data.
 
-# Use a 1,000-row subsample for speed (full 10k × 10k distance matrix is large)
-set.seed(602)
-hc_sub <- health_small |>
-  slice_sample(n = 1000) |>
-  select(age, bmi, income, num_claims, claim_amount) |>
-  mutate(bmi    = if_else(is.na(bmi),    median(bmi,    na.rm=TRUE), bmi),
-         income = if_else(is.na(income), median(income, na.rm=TRUE), income)) |>
-  na.omit()
+### Reading the dendrogram
 
-hc_scaled <- scale(hc_sub)
-dist_mat  <- dist(hc_scaled, method = "euclidean")
-
-hc_ward    <- hclust(dist_mat, method = "ward.D2")
-hc_complete <- hclust(dist_mat, method = "complete")
-```
-
----
-
-### Plotting the Dendrogram
+The y-axis of a dendrogram is the distance (or dissimilarity) at which two clusters were merged. A horizontal line cut at height $h$ separates the tree into clusters: count the number of vertical lines crossing the cut — that is the number of clusters.
 
 ```r
-plot(hc_ward, labels = FALSE, hang = -1,
-     main = "Dendrogram: Ward.D2 Linkage",
-     xlab = "", ylab = "Height")
+hc <- hclust(dist(data_scaled), method = "ward.D2")
+plot(hc, labels = FALSE, main = "Ward Dendrogram — Insurance Policyholders")
+abline(h = 25, col = "red", lty = 2)  # cut at height 25 → 4 clusters
 
-# Add a horizontal cut line at height h
-abline(h = 8, col = "red", lty = 2)
+clusters <- cutree(hc, k = 4)
 ```
 
-Cut at a specified number of clusters:
+### Comparison: hierarchical vs. k-means
 
-```r
-clusters_hc <- cutree(hc_ward, k = 4)
-table(clusters_hc)
-```
+| Property | k-means | Hierarchical |
+|---|---|---|
+| k specified upfront | Yes | No (choose after seeing dendrogram) |
+| Deterministic | No (random init) | Yes |
+| Time complexity | O(nkTd) — fast | O(n² log n) time, O(n²) memory |
+| Scalability | Millions of rows | ~10,000 rows before memory limits |
+| Cluster shape | Spherical | Arbitrary |
 
----
-
-### Comparing to k-Means
-
-```r
-library(cluster)
-
-# Silhouette for hierarchical (Ward, k=4)
-sil_hc <- silhouette(clusters_hc, dist_mat)
-cat("HC silhouette:", round(mean(sil_hc[, 3]), 3), "\n")
-
-# k-Means on same subsample
-set.seed(602)
-km_sub <- kmeans(hc_scaled, centers = 4, nstart = 25)
-sil_km <- silhouette(km_sub$cluster, dist_mat)
-cat("KM silhouette:", round(mean(sil_km[, 3]), 3), "\n")
-```
-
-On compact, well-separated clusters k-means and Ward linkage typically agree closely. Hierarchical clustering has the advantage of producing a dendrogram that reveals the cluster merge history.
-
----
-
-### When to Use Hierarchical vs k-Means
-
-| Aspect | k-Means | Hierarchical |
-|--------|---------|-------------|
-| k required up front | Yes | No (cut after) |
-| Scalability | Fast on large datasets | Slow for $n > 10,000$ |
-| Dendrogram | No | Yes |
-| Cluster shape | Convex | Any |
-| Reproducibility | Depends on seed | Deterministic |
+**Practical conclusion**: use k-means for large datasets, hierarchical for smaller datasets where you want to explore the full cluster structure visually before committing to k.
 
 ## Example
 
 ```r
-# Compare cluster labels
-table(KMeans = km_sub$cluster, HC = clusters_hc)
+library(tidyverse)
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 5000, seed = 602)  # small for hclust
+
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  scale()
+
+# Compute distance matrix and fit
+D  <- dist(clust_data, method = "euclidean")
+hc <- hclust(D, method = "ward.D2")
+
+# Plot dendrogram
+plot(hc, labels = FALSE, hang = -1,
+     main = "Ward.D2 Dendrogram — Insurance Policyholders",
+     xlab = "", sub = "")
+abline(h = 30, col = "red", lty = 2)  # cut → ~4 clusters
+
+# Extract cluster labels
+clusters <- cutree(hc, k = 4)
+table(clusters)
+
+# Profile
+health_data |>
+  drop_na(age, bmi, income, num_claims, num_chronic_conditions) |>
+  mutate(cluster = factor(clusters)) |>
+  group_by(cluster) |>
+  summarise(avg_age = mean(age), avg_bmi = mean(bmi), avg_claims = mean(num_claims))
 ```
 
-This contingency table shows how much the two methods agree. High off-diagonal counts indicate the methods disagree on some observations.
+The dendrogram makes it visually clear where natural breaks in the data occur — without having to pre-specify k.
 
 ## Task
 
-Open `exercise.Rmd` and complete the three marked chunks:
-
-1. Take a 500-row sample of `health_small`, prepare a 3-variable scaled matrix (`age`, `bmi`, `num_claims`), and compute the Euclidean distance matrix.
-2. Fit hierarchical clustering with Ward.D2 linkage. Plot the dendrogram with `labels = FALSE`.
-3. Cut the dendrogram at `k = 3`. Print the cluster sizes.
-
-Knit the document. All chunks must run without errors.
+Open `exercise.Rmd` and complete the four tasks: (1) prepare the data (scale 5,000 rows); (2) fit hierarchical clustering with Ward linkage and plot the dendrogram; (3) cut the tree at k = 4 and compare cluster sizes to k-means; (4) re-run with single linkage and describe how the dendrogram shape changes (chaining effect).
 
 ## Check
 
@@ -137,4 +117,4 @@ npm run check -- bdat-602 module-04 lesson-02
 
 ## Reflection
 
-Why is it impractical to apply hierarchical clustering directly to the full 500,000-row health insurance dataset? Describe a practical strategy that uses hierarchical clustering's insights while remaining computationally feasible.
+Hierarchical clustering is deterministic (no random initialisation), yet two analysts running it on different random samples of the same population may get different dendrograms. Why? Does this make hierarchical clustering unreliable?

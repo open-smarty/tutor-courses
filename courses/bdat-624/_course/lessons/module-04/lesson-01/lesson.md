@@ -2,206 +2,164 @@
 
 ## Goal
 
-By the end of this lesson you will be able to write down the differential equations for the Yule process, solve them step-by-step using the integrating factor method, recognise the negative binomial distribution as the exact solution, and compute the mean and variance of population size at any time t.
+Derive the Yule (pure birth) process by solving its ODE system with an integrating factor, find the probability distribution Pₙ(t), compute the mean and variance of the population, and simulate bacterial growth.
 
 ## Concept
 
-### Why the Poisson process is not enough
+### Motivation: Population Growth in Continuous Time
 
-In the Poisson process, events arrive at a constant rate λ regardless of how many have already arrived. But consider a bacterial colony: the more bacteria present, the more divisions happen per unit time. The rate of new arrivals depends on the current state. This is the key departure that motivates the **Yule process** — a continuous-time birth process where the birth rate grows with population size.
+In a bacterial culture, each cell divides independently: it does not wait for its neighbours, and it does not die (in this idealised model). Division happens at random times — not at fixed clock intervals. How do we model this in continuous time?
 
----
+The **Yule process** (also called the pure birth process) is the continuous-time analogue of the geometric distribution. It starts with one individual, and each individual gives birth at rate λ (independently). As the population grows, so does the total birth rate — because there are more individuals producing offspring.
 
-### Notation and setup
+This is the simplest continuous-time Markov chain with a countably infinite state space S = {0, 1, 2, 3, ...}.
 
-> **Notation:** X(t) — the population size at time t. We always write X(t) ∈ {j, j+1, j+2, ...} because only births occur (no deaths, no immigration).
+### Model Definition
 
-> **Notation:** X(0) = j — the initial population. In most problems j = 1 (a single founding individual), but the theory holds for any positive integer j.
+> **Notation block:**
+> - N(t) — population size at time t; a continuous-time process taking values in {1, 2, 3, ...}
+> - λ — **individual birth rate**: each individual gives birth at rate λ per unit time; read "lambda"
+> - λₙ = nλ — **state-dependent birth rate**: when there are n individuals, the total rate of a new birth is nλ (each of n individuals contributes λ); read "lambda sub n"
+> - Pₙ(t) = P(N(t) = n) — probability of having exactly n individuals at time t; read "P sub n of t"
 
-> **Notation:** λₙ — the birth rate when the current population size is n. This is the instantaneous rate at which the next birth occurs given that there are currently n individuals.
+**The Yule assumption:** When the population is of size n, a new birth occurs at instantaneous rate nλ. No deaths occur.
 
-> **Notation:** P_n(t) = P(X(t) = n) — the probability that the population equals exactly n at time t.
+### The ODE System
 
-> **Notation:** "Pure birth" — births only; no deaths. The population can never decrease.
+Using the same "short interval" argument as for the Poisson process:
 
----
+For n ≥ 2, in a small time interval [t, t+Δt]:
+- P(N(t+Δt) = n) = P(N(t) = n) × P(no birth in [t,t+Δt] | n individuals) + P(N(t) = n-1) × P(one birth in [t,t+Δt] | n-1 individuals)
 
-### The Yule process: λₙ = nλ
+> **Notation block:**
+> - o(Δt) — terms negligible compared to Δt (probability of 2+ births in a tiny interval)
+> - e^{-nλΔt} ≈ 1 - nλΔt for small Δt (probability of no birth given n individuals present)
 
-In the **Yule process** (also called the linear pure birth process), each individual reproduces independently at rate λ. When there are n individuals, the total birth rate is:
+The ODE system (taking Δt → 0) is:
 
-$$\lambda_n = n\lambda$$
+$$\frac{dP_n(t)}{dt} = -n\lambda P_n(t) + (n-1)\lambda P_{n-1}(t), \quad n \geq 2$$
 
-This is the defining property of the Yule process: the aggregate rate is proportional to the current population size.
+$$\frac{dP_1(t)}{dt} = -\lambda P_1(t)$$
 
----
+with initial condition P₁(0) = 1 (we start with exactly 1 individual) and Pₙ(0) = 0 for n ≥ 2.
 
-### Setting up the differential equations
+### Solving P₁(t)
 
-Consider what happens in a short interval (t, t + Δt]. The population can be in state n at time t + Δt in exactly two ways:
+The equation for n=1 is:
 
-1. It was in state n at time t, and no birth occurred in (t, t+Δt].
-2. It was in state n−1 at time t, and exactly one birth occurred in (t, t+Δt].
+$$P_1'(t) = -\lambda P_1(t), \quad P_1(0) = 1$$
 
-Writing these probabilities out (using the definition of λₙ for infinitesimal intervals):
+This is identical to the P₀ equation in the Poisson derivation. The solution is:
 
-$$P_n(t + \Delta t) = P_n(t)\bigl[1 - \lambda_n \Delta t + o(\Delta t)\bigr] + P_{n-1}(t)\bigl[\lambda_{n-1}\Delta t + o(\Delta t)\bigr]$$
+$$P_1(t) = e^{-\lambda t}$$
 
-Rearranging, dividing by Δt, and taking the limit Δt → 0:
+Interpretation: the probability of still having only 1 individual at time t is e^{-λt} — the first birth hasn't happened yet.
 
-$$P_n'(t) = \lambda_{n-1}P_{n-1}(t) - \lambda_n P_n(t) \tag{6.1}$$
+### Solving for General Pₙ(t) by Integrating Factor
 
-This is the **Kolmogorov forward equation** for the pure birth process.
+We use induction. Suppose we have already solved for Pₙ₋₁(t). The ODE for Pₙ is:
 
-For the Yule process (λₙ = nλ), equation (6.1) becomes:
+$$\frac{dP_n}{dt} + n\lambda P_n = (n-1)\lambda P_{n-1}(t)$$
 
-$$P_n'(t) = (n-1)\lambda P_{n-1}(t) - n\lambda P_n(t) \tag{6.2}$$
+> **Notation block:**
+> - Integrating factor — a function μ(t) = e^{nλt} that, when multiplied to both sides of the ODE, converts the left side into a perfect derivative d/dt[μ(t)Pₙ(t)]
 
----
+**Step 1: Multiply both sides by e^{nλt}:**
 
-### Solving the ODEs — integrating factor method
+$$e^{n\lambda t} \frac{dP_n}{dt} + n\lambda e^{n\lambda t} P_n = (n-1)\lambda e^{n\lambda t} P_{n-1}(t)$$
 
-**Initial conditions:** the process starts at population j, so:
+**Step 2: Recognise the left side as a perfect derivative:**
 
-$$P_j(0) = 1, \qquad P_n(0) = 0 \text{ for } n \neq j$$
+$$\frac{d}{dt}\!\left[e^{n\lambda t} P_n(t)\right] = (n-1)\lambda e^{n\lambda t} P_{n-1}(t)$$
 
----
+**Step 3: Substitute Pₙ₋₁(t) using the inductive hypothesis.**
 
-**Step 1: Solve for P_j(t).**
+We claim (and verify by induction) that:
 
-When n = j, equation (6.2) reduces to:
+$$P_{n-1}(t) = e^{-\lambda t}(1 - e^{-\lambda t})^{n-2}, \quad n \geq 2$$
 
-$$P_j'(t) = -j\lambda P_j(t)$$
+> **Notation:** (1 - e^{-λt})^{n-2} — a power of (1 - e^{-λt}); this factor represents the probability that at least n-1 births have occurred given the geometric structure of the Yule process.
 
-(The P_{j-1}(t) term vanishes because starting at j, we cannot reach state j−1 in a pure birth process.)
+Substituting:
 
-Separate variables:
+$$\frac{d}{dt}\!\left[e^{n\lambda t} P_n(t)\right] = (n-1)\lambda e^{n\lambda t} \cdot e^{-\lambda t}(1 - e^{-\lambda t})^{n-2} = (n-1)\lambda e^{(n-1)\lambda t}(1-e^{-\lambda t})^{n-2}$$
 
-$$\frac{P_j'(t)}{P_j(t)} = -j\lambda$$
+**Step 4: Integrate.** Let u = 1 - e^{-λt}, so du = λe^{-λt}dt, and e^{(n-1)λt} = (1-u)^{-(n-1)} e^{λt}... 
 
-Integrate both sides with respect to t:
+Let's use a direct substitution. Write e^{(n-1)λt}(1-e^{-λt})^{n-2} = (e^{λt} - 1)^{n-2}. Let v = e^{λt} - 1, dv = λe^{λt}dt.
 
-$$\ln P_j(t) = -j\lambda t + C$$
+Actually the clearest route: integrate by recognising that:
 
-Apply the initial condition P_j(0) = 1, so ln(1) = 0 = C. Therefore:
+$$\frac{d}{dt}(1 - e^{-\lambda t})^{n-1} = (n-1)(1-e^{-\lambda t})^{n-2} \cdot \lambda e^{-\lambda t}$$
 
-$$\boxed{P_j(t) = e^{-j\lambda t}} \tag{6.3}$$
+So:
 
----
+$$\int (n-1)\lambda e^{(n-1)\lambda t}(1-e^{-\lambda t})^{n-2} \, dt = e^{n\lambda t}(1-e^{-\lambda t})^{n-1} + C$$
 
-**Step 2: Solve for P_{j+1}(t).**
+(This can be verified by differentiating the right side: d/dt[e^{nλt}(1-e^{-λt})^{n-1}] = nλe^{nλt}(1-e^{-λt})^{n-1} + e^{nλt}(n-1)(1-e^{-λt})^{n-2}λe^{-λt}.)
 
-Set n = j+1 in equation (6.2):
-
-$$P_{j+1}'(t) = j\lambda P_j(t) - (j+1)\lambda P_{j+1}(t)$$
-
-Substituting P_j(t) = e^{-jλt} and rearranging to standard linear form:
-
-$$P_{j+1}'(t) + \lambda(j+1)P_{j+1}(t) = j\lambda e^{-j\lambda t} \tag{linear first-order ODE}$$
-
-Use the **integrating factor** I(t) = e^{λ(j+1)t}. Multiply both sides by I(t):
-
-$$e^{\lambda(j+1)t}P_{j+1}'(t) + \lambda(j+1)e^{\lambda(j+1)t}P_{j+1}(t) = j\lambda e^{\lambda t}$$
-
-The left side is the derivative of a product (by the product rule in reverse):
-
-$$\frac{d}{dt}\Bigl[e^{\lambda(j+1)t} P_{j+1}(t)\Bigr] = j\lambda e^{\lambda t}$$
-
-Integrate both sides with respect to t:
-
-$$e^{\lambda(j+1)t} P_{j+1}(t) = je^{\lambda t} + C$$
-
-Apply the initial condition P_{j+1}(0) = 0: at t = 0, j·1 + C = 0, so C = −j.
+**Step 5: Apply initial condition.** At t=0, e^{nλ·0}Pₙ(0) = 0. The constant C = 0 (since (1-e⁰)^{n-1} = 0).
 
 Therefore:
 
-$$e^{\lambda(j+1)t} P_{j+1}(t) = j\bigl(e^{\lambda t} - 1\bigr)$$
+$$e^{n\lambda t} P_n(t) = e^{n\lambda t}(1 - e^{-\lambda t})^{n-1}$$
 
-$$P_{j+1}(t) = je^{-\lambda(j+1)t}\bigl(e^{\lambda t} - 1\bigr)$$
+$$\boxed{P_n(t) = e^{-\lambda t}(1 - e^{-\lambda t})^{n-1}, \quad n = 1, 2, 3, \ldots} \quad \blacksquare$$
 
-Factor out e^{−λt} from the bracket:
+Here's the key insight: this is a **Geometric distribution** with success probability p = e^{-λt}. Setting p(t) = e^{-λt}, we have:
 
-$$\boxed{P_{j+1}(t) = je^{-j\lambda t}\bigl(1 - e^{-\lambda t}\bigr)} \tag{6.4}$$
+$$P_n(t) = p(t) \cdot (1 - p(t))^{n-1}$$
 
----
+which is exactly the Geometric(p(t)) PMF for n ≥ 1. As t increases, p(t) = e^{-λt} decreases toward 0, meaning the population is increasingly likely to be large.
 
-### The general pattern — negative binomial distribution
+### Mean and Variance
 
-Continuing the integrating factor argument for P_{j+2}(t), P_{j+3}(t), and so on, we find by induction (each step uses the previously solved P_{j+k-1}(t)):
+For a Geometric(p) distribution on {1, 2, 3, ...}:
+- Mean: 1/p
+- Variance: (1-p)/p²
 
-$$P_{j+k}(t) = \binom{j+k-1}{j-1} e^{-j\lambda t}\bigl(1 - e^{-\lambda t}\bigr)^k, \qquad k = 0, 1, 2, \ldots$$
+With p(t) = e^{-λt}:
 
-Equivalently, writing n = j + k:
+$$\mathrm{E}[N(t)] = e^{\lambda t}$$
 
-$$\boxed{P_n(t) = \binom{n-1}{j-1} e^{-j\lambda t}\bigl(1 - e^{-\lambda t}\bigr)^{n-j}, \qquad n = j, j+1, j+2, \ldots} \tag{6.5}$$
+$$\mathrm{Var}[N(t)] = e^{\lambda t}(e^{\lambda t} - 1)$$
 
-Here's the key insight: this is precisely the **negative binomial distribution**. If we let p = e^{−λt}, then we can write:
+> **Notation block:**
+> - E[N(t)] = e^{λt} — exponential growth of the expected population; the mean doubles every ln(2)/λ time units
+> - Var[N(t)] = e^{λt}(e^{λt}-1) — variance grows as e^{2λt} for large t; the population is highly variable
 
-$$P_n(t) = \binom{n-1}{j-1} p^j (1-p)^{n-j}$$
+The variance grows faster than the mean (it grows as e^{2λt} while the mean grows as e^{λt}). This captures the fact that Yule processes are "bursty" — sometimes they explode, sometimes they die out early.
 
-which is NegBin(j, p) — the probability that the j-th "success" occurs on trial n, where each trial succeeds with probability p = e^{−λt}.
+### Simulating the Yule Process (Gillespie Algorithm)
 
-Biological reading: think of p = e^{−λt} as the probability that a given lineage has not yet produced a birth by time t. Then "we need j surviving original lineages among the n total individuals" matches the negative binomial structure exactly.
+Rather than drawing from the distribution directly, we can simulate the process step by step:
 
----
+1. **Start** with n = 1 individual at t = 0.
+2. **Wait time:** When in state n, the time until the next birth is Exponential(nλ) (since nλ is the total rate).
+3. **Birth event:** Add 1 to the population: n → n+1.
+4. **Repeat** until time T is exceeded.
 
-### Mean and variance
-
-Using the negative binomial moments (or by differentiating the probability generating function):
-
-$$E[X(t) \mid X(0) = j] = \frac{j}{p} = j \cdot e^{\lambda t} \tag{6.6}$$
-
-$$\operatorname{Var}[X(t) \mid X(0) = j] = j \cdot \frac{1-p}{p^2} = je^{\lambda t}(e^{\lambda t} - 1) \tag{6.7}$$
-
-Here's the key insight: the expected population grows **exponentially** at rate λ. A colony of j bacteria started at time 0 has expected size j·e^{λt} at time t. The population doubles on average every t* = ln(2)/λ time units — this is the **doubling time**.
-
-Note also that Var[X(t)] grows faster than E[X(t)]: the process becomes increasingly variable over time. Individual trajectories can deviate wildly from the mean.
-
----
+This is the **Gillespie algorithm** (or kinetic Monte Carlo), widely used in systems biology.
 
 ## Example
 
-### Bacterial colony doubling time
+**Bacterial cell division.**
 
-Suppose a single bacterium (j = 1) divides at rate λ = 0.5 divisions per hour.
+Parameters: λ = 0.3/hour (each cell divides at rate 0.3 per hour), starting with n₀ = 1 cell.
 
-**Mean population at t = 4 hours:**
-$$E[X(4)] = 1 \cdot e^{0.5 \times 4} = e^2 \approx 7.39$$
+At t = 2 hours:
+- p(2) = e^{-0.3×2} = e^{-0.6} ≈ 0.5488
+- E[N(2)] = e^{0.6} ≈ 1.822 cells (expected population is 1.82)
+- P(N(2) = 1) = 0.5488 (still only 1 cell — first division hasn't happened)
+- P(N(2) = 2) = 0.5488 × 0.4512 ≈ 0.2477
+- P(N(2) = 3) = 0.5488 × 0.4512² ≈ 0.1117
+- Var[N(2)] = e^{0.6}(e^{0.6}-1) ≈ 1.822 × 0.822 ≈ 1.497
 
-On average, about 7 or 8 bacteria after 4 hours.
-
-**Doubling time:**
-$$t^* = \frac{\ln 2}{\lambda} = \frac{0.693}{0.5} \approx 1.39 \text{ hours}$$
-
-**Distribution at t = 2:**
-$$p = e^{-0.5 \times 2} = e^{-1} \approx 0.368$$
-
-X(2) | X(0) = 1 follows NegBin(1, 0.368) = Geometric(0.368). So:
-
-$$P(X(2) = n) = (1 - 0.368)^{n-1} \times 0.368 = (0.632)^{n-1} \times 0.368, \quad n = 1, 2, 3, \ldots$$
-
-**Effect of doubling λ to 1.0:**
-$$E[X(4) \mid \lambda = 1.0] = e^{4} \approx 54.6$$
-
-versus ≈ 7.4 at λ = 0.5. Doubling the division rate increases the 4-hour expected population sevenfold.
-
----
+At t = 10 hours: E[N(10)] = e^{3} ≈ 20.1. Starting from 1 cell, we expect about 20 cells after 10 hours.
 
 ## Task
 
-Open `exercise.R`. You will:
-
-1. Simulate 100 Yule process trajectories (X(0) = 1, λ = 0.5) until t = 10 using the exact next-event simulation algorithm.
-2. Plot all trajectories in grey, overlay the mean trajectory (red) and theoretical E[X(t)] = e^{λt} (blue dashed).
-3. At t = 6, plot the distribution of X(6) and overlay the theoretical NegBin(1, e^{−3}) PMF.
-4. Verify E[X(t)] ≈ e^{λt} at t = 2, 4, 6, 8.
-5. Explore: double λ to 1.0 and plot both mean trajectories on the same graph.
-
-Fill in every `# TODO:` marker and run the check:
-
-```
-npm run check -- bdat-624 module-04 lesson-01
-```
+See `exercise.R`. You will simulate the Yule process using a Gillespie algorithm for λ = 0.3/hour, compare the simulated population distribution to the theoretical Geometric(e^{-λt}), and plot mean population growth against the theoretical e^{λt} curve.
 
 ## Check
 
@@ -211,4 +169,4 @@ npm run check -- bdat-624 module-04 lesson-01
 
 ## Reflection
 
-The mean of X(t) grows as je^{λt}, but real bacterial populations hit a carrying capacity — they do not grow indefinitely. In the Yule model, what structural assumption causes unbounded growth, and how would you modify the process to introduce a carrying capacity? Think about what change to λₙ would slow growth as n approaches some maximum K. (You do not need to solve the new ODEs — just describe the modification and what qualitative change you would expect in the mean trajectory.)
+The Yule process assumes each individual gives birth at the same rate λ — independent of population density. In biology, this is rarely true: cells compete for nutrients, viral particles face a limited number of susceptible cells, and bacterial populations experience crowding. The **logistic growth model** adds a carrying capacity K by making the net birth rate depend on n: effective rate = λn(1 - n/K). How would you modify the Yule ODE to include carrying capacity? Can the resulting system still be solved analytically? What happens to the stationary distribution when n > K?

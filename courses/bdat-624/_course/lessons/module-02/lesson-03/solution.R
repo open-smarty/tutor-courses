@@ -1,157 +1,129 @@
-# BDAT 624 — Module 2, Lesson 3 — SOLUTION
-# State Classification — Recurrence, Transience, and Ergodicity
-
+# SOLUTION: Module 02 Lesson 03 — State Classification, Recurrence, Ergodicity
 library(markovchain)
-library(expm)
+library(ggplot2)
+library(dplyr)
 
-# -----------------------------------------------------------------------
-# Chain A: alternating chain
-# -----------------------------------------------------------------------
-
-P_alt <- matrix(
-  c(0, 1,
-    1, 0),
-  nrow = 2, byrow = TRUE,
-  dimnames = list(c("s0", "s1"), c("s0", "s1"))
+# ============================================================
+# Task 1: 5-state chain with two absorbing states
+# ============================================================
+states_5 <- c("S1","S2","S3","S4","S5")
+P5 <- matrix(
+  c(0.0, 0.6, 0.4, 0.0, 0.0,
+    0.3, 0.0, 0.0, 0.7, 0.0,
+    0.5, 0.0, 0.0, 0.0, 0.5,
+    0.0, 0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 0.0, 1.0),
+  nrow = 5, byrow = TRUE,
+  dimnames = list(states_5, states_5)
 )
 
-alt_mc <- new("markovchain",
-              transitionMatrix = P_alt,
-              name = "Alternating Chain")
+cat("Row sums:\n"); print(rowSums(P5))
 
-# -----------------------------------------------------------------------
-# Chain B: 3-state regular chain from Lesson 2
-# -----------------------------------------------------------------------
+mc5 <- new("markovchain",
+  states = states_5, byrow = TRUE,
+  transitionMatrix = P5, name = "5-State Chain"
+)
 
-P_reg <- matrix(
-  c(0,   2/3, 1/3,
-    3/8, 1/8, 1/2,
-    1/2, 1/2, 0),
+cat("\nIs irreducible:", is.irreducible(mc5), "\n")
+# Not irreducible: S4 and S5 are absorbing states that cannot reach S1, S2, S3.
+# Multiple communicating classes exist.
+
+cat("\nCommunicating classes:\n")
+print(communicatingClasses(mc5))
+# Expected: {S1, S2, S3} (all communicate via 2-step paths) + {S4} + {S5}
+# Note: S1↔S2 (S1→S2 direct; S2→S1 direct); S1↔S3 similarly; S2↔S3 via S1.
+
+cat("\nRecurrent classes:\n"); print(recurrentClasses(mc5))
+# {S4} and {S5} are recurrent (absorbing = trivially recurrent)
+
+cat("\nTransient classes:\n"); print(transientClasses(mc5))
+# {S1, S2, S3}: transient because from S2 and S3 you can reach S4 or S5,
+# but S4 and S5 cannot return to S1/S2/S3. Once absorbed, no return.
+
+# ============================================================
+# Task 2: Ergodic chain
+# ============================================================
+P_erg <- matrix(
+  c(0.5, 0.3, 0.2,
+    0.4, 0.2, 0.4,
+    0.1, 0.6, 0.3),
   nrow = 3, byrow = TRUE,
-  dimnames = list(c("s0", "s1", "s2"), c("s0", "s1", "s2"))
+  dimnames = list(c("A","B","C"), c("A","B","C"))
 )
 
-reg_mc <- new("markovchain",
-              transitionMatrix = P_reg,
-              name = "3-State Regular Chain")
-
-# -----------------------------------------------------------------------
-# Part 1: Irreducibility and period
-# -----------------------------------------------------------------------
-
-cat("Alternating chain irreducible?", is.irreducible(alt_mc), "\n")  # TRUE
-cat("Regular chain irreducible?    ", is.irreducible(reg_mc), "\n")  # TRUE
-
-cat("Alternating chain period:", period(alt_mc), "\n")  # 2
-cat("Regular chain period:    ", period(reg_mc), "\n")  # 1
-
-# -----------------------------------------------------------------------
-# Part 2: Non-convergence of the alternating chain
-# -----------------------------------------------------------------------
-
-cat("\n--- Powers of the alternating chain ---\n")
-for (n in c(2, 4, 6, 8)) {
-  cat("\nP_alt ^", n, ":\n")
-  print(P_alt %^% n)
-}
-# Even powers: identity matrix I
-# Odd powers: P_alt itself
-
-cat("\nP_alt^3:\n"); print(P_alt %^% 3)   # = P_alt
-cat("\nP_alt^5:\n"); print(P_alt %^% 5)   # = P_alt
-
-# Conclusion: P_alt^n alternates between I and P_alt — no convergence.
-
-# -----------------------------------------------------------------------
-# Part 3: Convergence of the regular chain
-# -----------------------------------------------------------------------
-
-cat("\nStationary distribution of regular chain:\n")
-pi_reg <- steadyStates(reg_mc)
-print(round(pi_reg, 4))
-# Expected: s0=0.3, s1=0.4, s2=0.3
-
-cat("\nP_reg^50:\n")
-P50 <- P_reg %^% 50
-print(round(P50, 4))
-# All rows ≈ (0.3, 0.4, 0.3)
-
-cat("\nMax row deviation from stationary dist at n=50:",
-    max(abs(P50 - rep(1, 3) %o% pi_reg)), "\n")
-
-# -----------------------------------------------------------------------
-# Part 4: Reflecting random walk on {0, 1, ..., 10}
-# -----------------------------------------------------------------------
-
-n_states <- 11
-states_rw <- as.character(0:10)
-
-P_rw <- matrix(0, nrow = n_states, ncol = n_states,
-               dimnames = list(states_rw, states_rw))
-
-# Reflecting boundaries
-P_rw["0",  "1"]  <- 1.0
-P_rw["10", "9"]  <- 1.0
-
-# Interior states
-for (i in 1:9) {
-  s <- as.character(i)
-  P_rw[s, as.character(i - 1)] <- 0.5
-  P_rw[s, as.character(i + 1)] <- 0.5
-}
-
-cat("\nRow sums of P_rw:\n")
-print(rowSums(P_rw))   # all 1
-
-rw_mc <- new("markovchain",
-             transitionMatrix = P_rw,
-             name = "Reflecting Random Walk")
-
-# Simulate 1000 steps starting from state "5"
-set.seed(99)
-rw_sim <- rmarkovchain(n = 1000, object = rw_mc, t0 = "5")
-
-# Empirical visit frequency
-emp_freq <- table(rw_sim) / length(rw_sim)
-emp_freq_vec <- as.numeric(emp_freq[states_rw])
-emp_freq_vec[is.na(emp_freq_vec)] <- 0
-names(emp_freq_vec) <- states_rw
-
-cat("\nEmpirical visit frequency (1000 steps):\n")
-print(round(emp_freq_vec, 4))
-
-# Theoretical stationary distribution from steadyStates()
-pi_rw_mc <- steadyStates(rw_mc)[1, ]   # single row
-cat("\nStationary distribution (steadyStates):\n")
-print(round(pi_rw_mc, 4))
-
-# Analytic formula: pi_0 = pi_10 = 1/20; pi_i = 1/10 for i=1..9
-N <- 10
-pi_theory <- c(1/(2*N), rep(1/N, N-1), 1/(2*N))
-names(pi_theory) <- states_rw
-cat("\nStationary distribution (analytic formula):\n")
-print(round(pi_theory, 4))
-
-# Plot comparison
-bp <- barplot(
-  emp_freq_vec,
-  col   = "grey75",
-  names.arg = states_rw,
-  xlab  = "State",
-  ylab  = "Probability / Frequency",
-  main  = "Reflecting random walk: empirical vs. theoretical stationary distribution",
-  ylim  = c(0, max(emp_freq_vec, pi_theory) * 1.3),
-  border = NA
+mc_erg <- new("markovchain",
+  states = c("A","B","C"), byrow = TRUE,
+  transitionMatrix = P_erg, name = "Ergodic Chain"
 )
-points(bp, pi_theory, col = "firebrick", pch = 19, cex = 1.4)
-lines(bp,  pi_theory, col = "firebrick", lwd = 2, lty = 2)
-legend("top",
-       legend = c("Empirical (1000 steps)", "Theoretical (analytic)"),
-       col    = c("grey60", "firebrick"),
-       pch    = c(15, 19), lty = c(NA, 2), lwd = c(NA, 2),
-       bty    = "n", horiz = TRUE)
 
-# Note: boundary states 0 and 10 have half the stationary probability of
-# interior states, because the walk bounces back immediately from the boundary.
-cat("\nNote: pi(0) = pi(10) =", round(pi_theory["0"], 4),
-    "= half of interior pi =", round(pi_theory["1"], 4), "\n")
+cat("\nErgodic chain — is irreducible:", is.irreducible(mc_erg), "\n")
+# TRUE: all states communicate (non-zero entries allow any pair to reach each other)
+
+cat("Period:", period(mc_erg), "\n")
+# Period 1 (aperiodic). Reason: state A has a self-loop (P_AA = 0.5 > 0),
+# which means A can return to itself in 1 step. gcd{1, 2, 3,...} = 1.
+# A self-loop guarantees aperiodicity for any state that has one.
+
+cat("\nStationary distribution:\n")
+pi_erg <- steadyStates(mc_erg)
+print(round(pi_erg, 4))
+
+# ============================================================
+# Task 3: Ergodic theorem empirically
+# ============================================================
+set.seed(777)
+N <- 10000
+long_traj <- markovchainSequence(n = N, markovchain = mc_erg, t0 = "A")
+
+time_avg <- table(long_traj) / N
+cat("\nEmpirical time-averages (N=10000):\n")
+print(round(time_avg, 4))
+
+cat("Theoretical stationary distribution:\n")
+print(round(pi_erg, 4))
+
+cat("\nAbsolute differences:\n")
+print(round(abs(time_avg - pi_erg), 5))
+# Should be very small (~0.002 or less for N=10000)
+# This is the ergodic theorem: the empirical time-average converges to
+# the stationary distribution as N → ∞, regardless of starting state.
+
+# ============================================================
+# Task 4: Convergence plot
+# ============================================================
+mat_power <- function(M, n) {
+  r <- diag(nrow(M)); for(i in seq_len(n)) r <- r %*% M; r
+}
+
+starting_states <- list(A = c(1,0,0), B = c(0,1,0), C = c(0,0,1))
+ns <- 1:30
+
+evo_all <- lapply(names(starting_states), function(s0) {
+  pi0 <- starting_states[[s0]]
+  lapply(ns, function(n) {
+    dist_n <- pi0 %*% mat_power(P_erg, n)
+    data.frame(n=n, start=s0, state=c("A","B","C"), prob=as.numeric(dist_n))
+  }) |> bind_rows()
+}) |> bind_rows()
+
+evo_all$state <- factor(evo_all$state, levels=c("A","B","C"))
+
+pi_vals <- as.numeric(pi_erg)
+pi_ref  <- data.frame(state=factor(c("A","B","C")), pi_val=pi_vals)
+evo_all <- left_join(evo_all, pi_ref, by="state")
+
+p <- ggplot(evo_all, aes(x=n, y=prob, color=state, group=state)) +
+  geom_line(linewidth=1.0) +
+  geom_hline(aes(yintercept=pi_val, color=state), linetype="dashed", linewidth=0.8) +
+  facet_wrap(~ start, labeller=label_both) +
+  scale_color_manual(values=c("A"="#2ecc71","B"="#e74c3c","C"="#3498db")) +
+  labs(
+    title    = "Ergodic Theorem: Convergence to π from Three Starting States",
+    subtitle = "Dashed lines = stationary π; all three starting states converge to same π",
+    x="Step n", y="Probability", color="State"
+  ) +
+  theme_minimal(base_size=12)
+print(p)
+# Key insight: regardless of starting state (A, B, or C), by ~step 15
+# all state distributions have converged to the same stationary vector π.
+# This is the hallmark of ergodicity.

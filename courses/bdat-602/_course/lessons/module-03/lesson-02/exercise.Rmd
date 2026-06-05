@@ -1,51 +1,92 @@
 ---
-title: "BDAT 602 — Module 3, Lesson 2 Exercise"
-subtitle: "Mining Rules from the Health Insurance Dataset"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Mining Rules from the Health Insurance Dataset"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-## Task 1 — Build the transactions object
+```{r load-packages}
+library(tidyverse)
+library(arules)
+library(arulesViz)
 
-Generate `health_small` (n = 10000, seed = 602). Select only the four add-on cover columns (`dental_cover`, `vision_cover`, `mental_cover`, `maternity_cover`), `smoker`, and `high_risk`. Convert to a `transactions` object and call `summary()`.
-
-```{r task1}
-# YOUR CODE HERE
-# source("R/simulate_bdat602_data.R")
-# library(arules); library(dplyr)
-# health_small <- simulate_bdat602(n = 10000, seed = 602)
-# bin_cols <- c("dental_cover", "vision_cover", "mental_cover",
-#               "maternity_cover", "smoker", "high_risk")
-# health_bin <- health_small |>
-#   select(all_of(bin_cols)) |>
-#   mutate(across(everything(), as.logical))
-# trans <- as(health_bin, "transactions")
-# summary(trans)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 2 — Run Apriori
+## Task 1: Prepare the transaction object
 
-Run `apriori()` with `supp = 0.05`, `conf = 0.45`, `minlen = 2`. Store in `rules_ins` and print the count.
+```{r task1-transactions}
+# TODO: select dental_cover, vision_cover, mental_cover, maternity_cover
+# Convert each to logical (TRUE/FALSE) with as.logical()
+flag_cols <- c("dental_cover", "vision_cover", "mental_cover", "maternity_cover")
 
-```{r task2}
-# YOUR CODE HERE
+trans_df <- health_data |>
+  select(all_of(flag_cols)) |>
+  mutate(across(everything(), NULL))  # replace NULL with as.logical
+
+# TODO: convert trans_df to arules transactions object
+trans <- NULL  # as(trans_df, "transactions")
+
+# Inspect the object
+summary(trans)
 ```
 
-**Number of rules:** ___
+## Task 2: Plot item frequencies
 
-## Task 3 — Dental cover on the RHS
+```{r task2-item-freq}
+# TODO: use itemFrequencyPlot() to show the relative frequency of all 4 items
+# Set topN = 4, type = "relative", and add a meaningful title
+```
 
-Filter for rules where `dental_cover` is on the right-hand side. Print the top 3 by confidence using `inspect()`.
+```{r task2-interpret}
+# Which item is most frequent? Which is rarest?
+# How does rarity relate to the number of rules you expect to find?
+# Answer (as a comment):
+```
 
-```{r task3}
-# YOUR CODE HERE
-# dental_rules <- subset(rules_ins, rhs %pin% "dental_cover")
-# inspect(head(sort(dental_rules, by = "confidence"), 3))
+## Task 3: Mine association rules
+
+```{r task3-apriori}
+# TODO: run apriori() with supp = 0.05, conf = 0.70, minlen = 2
+rules <- NULL  # apriori(...)
+
+# Print a summary of the rules found
+summary(rules)
+```
+
+```{r task3-top10}
+# TODO: inspect the top 10 rules sorted by lift (descending)
+```
+
+```{r task3-dental-rules}
+# TODO: filter for rules with dental_cover=TRUE as the consequent (rhs)
+# Then inspect sorted by lift
+dental_rules <- NULL  # subset(rules, rhs %in% "dental_cover=TRUE")
+```
+
+## Task 4: Scatter plot and actionable recommendations
+
+```{r task4-scatter}
+# TODO: create a scatter plot with method = "scatter"
+# x-axis: support, y-axis: confidence, colour (shading): lift
+```
+
+```{r task4-recommendations}
+# Inspect the top 3 rules by lift
+top3 <- head(sort(rules, by = "lift"), 3)
+inspect(top3)
+
+# For each rule, write one actionable business recommendation:
+# Rule 1: ... → ... (lift = ...)
+# Recommendation:
+
+# Rule 2: ... → ... (lift = ...)
+# Recommendation:
+
+# Rule 3: ... → ... (lift = ...)
+# Recommendation:
 ```

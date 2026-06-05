@@ -1,27 +1,20 @@
-# Task: Module 2, Lesson 2 — optim() on a Custom Loss
+# Task: Search Strategies and Numerical Optimisation
 
 ## Objective
 
-Apply `optim()` to a loss function of your own design and compare it with RMSE.
+Implement and compare three strategies for minimising RMSE — grid search, `optim()` with BFGS, and `lm()` — to build a concrete understanding of what fitting a model means computationally.
 
 ## Instructions
 
-1. Define a new loss function called `measure_huber()` that implements the Huber loss with threshold $k = 1.345$:
-
-$$\text{loss}(r_i) = \begin{cases} r_i^2 / 2 & \text{if } |r_i| \leq k \\ k \cdot |r_i| - k^2/2 & \text{if } |r_i| > k \end{cases}$$
-
-   The total Huber loss is the mean of `loss(r_i)` over all observations.
-
-2. Use `optim()` to minimise the Huber loss on `sim1`. Report the optimal intercept and slope.
-
-3. Inject two outliers into `sim1` (add 15 to the y values at rows 3 and 17). Refit using:
-   - RMSE via `optim()`
-   - Huber loss via `optim()`
-
-4. Plot the three fitted lines (original RMSE, outlier RMSE, outlier Huber) on the scatter plot with outliers highlighted as star shapes.
-
-5. Which line stays closest to the non-outlier data? Explain why in 2–3 sentences.
+1. Load `sim1` from the `modelr` package.
+2. Write a scalar-argument wrapper `rmse_sim1(b0, b1)` that computes RMSE for the model `y = b0 + b1*x` on `sim1`.
+3. Run a 25×25 grid search over $\beta_0 \in [-5, 20]$ and $\beta_1 \in [1, 3]$. Report the best pair and its RMSE.
+4. Use `optim(c(0, 0), fn, method = "BFGS")` to minimise the same function. Report `par`, `value`, and `convergence`.
+5. Fit `lm(y ~ x, data = sim1)`. Report `coef()` and compute RMSE from `residuals()`.
+6. Create a comparison table showing $\hat{\beta}_0$, $\hat{\beta}_1$, and RMSE for all three methods.
+7. Plot the grid-search loss surface (scatter of $\beta_0$ vs $\beta_1$ coloured by RMSE). Mark the `optim()` solution with a distinct point.
+8. In two sentences, explain why `lm()` finds the exact minimum while grid search does not.
 
 ## Submission
 
-Submit the knitted HTML. The plot must show all three lines with a legend.
+Knit to HTML and submit the `.html` and `.Rmd`. The comparison table and the loss-surface plot are both required.

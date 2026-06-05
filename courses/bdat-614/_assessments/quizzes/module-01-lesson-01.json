@@ -1,60 +1,66 @@
 {
   "id": "module-01-lesson-01",
-  "title": "Quiz: What is Quality?",
+  "title": "Quiz: Quality Definitions and Dimensions",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Juran defines quality as:",
+      "text": "Which of Garvin's 8 dimensions asks 'does the product meet its written specification?'",
       "options": [
-        "Conformance to requirements",
-        "Fitness for use",
-        "Zero defects",
-        "Loss to society"
+        "Conformance",
+        "Performance",
+        "Reliability",
+        "Durability"
       ],
-      "correct": 1,
-      "explanation": "Juran's definition focuses on whether the product satisfies the user's needs — 'fitness for use'. Crosby defined quality as conformance to requirements; Taguchi introduced the 'loss to society' concept."
+      "correct": 0,
+      "explanation": "Conformance measures whether a product or service matches its defined specification — for example, whether a data record contains all required fields in the correct format."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "A hospital drug that works perfectly but has packaging that makes patients doubt its effectiveness is a failure in which Garvin dimension?",
+      "text": "Quality Control (QC) differs from Quality Assurance (QA) in that QC:",
       "options": [
-        "Conformance",
-        "Performance",
-        "Perceived Quality",
-        "Reliability"
+        "Detects defects after they occur by inspecting output",
+        "Prevents defects by redesigning the process",
+        "Sets specifications for the customer",
+        "Is only applied to manufacturing, not software"
       ],
-      "correct": 2,
-      "explanation": "Perceived Quality is about what customers believe based on indirect cues (brand, appearance, reputation) — not actual performance. The drug performs well but is perceived poorly."
+      "correct": 0,
+      "explanation": "QC is reactive — it inspects output to find defects that have already been produced. QA is proactive — it improves the process to stop defects from occurring."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "Quality Assurance (QA) is reactive — it finds and fixes defects after they occur.",
-      "correct": false,
-      "explanation": "QA is proactive — it builds systems and standards to prevent defects. Quality Control (QC) is the reactive activity of detecting and correcting defects."
+      "type": "multiple-choice",
+      "text": "An ETL pipeline produces records that pass all schema validation checks but compute incorrect benefit amounts because the transformation formula is wrong. Which best describes this situation?",
+      "options": [
+        "High conformance quality, low performance quality",
+        "Low conformance quality, high performance quality",
+        "Both high — schema validation guarantees correctness",
+        "Both low — any error means all dimensions are poor"
+      ],
+      "correct": 0,
+      "explanation": "The pipeline conforms to its schema specification (conformance quality is high) but fails at its primary job of computing correct values (performance quality is low). These two dimensions are independent."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "A data pipeline delivers results on schedule and with no missing records, but 8% of values are out of valid range. Which quality dimension is primarily violated?",
+      "text": "A health insurer scores high on 'Perceived Quality' but low on 'Conformance'. Which best explains how this is possible?",
       "options": [
-        "Timeliness",
-        "Completeness",
-        "Validity",
-        "Consistency"
+        "Customers trust the brand based on past reputation, even though current processes fail specifications",
+        "Perceived quality is always equal to conformance quality",
+        "High marketing spend always raises conformance",
+        "ISO 9001 certification guarantees high perceived quality"
       ],
-      "correct": 2,
-      "explanation": "Values out of valid range violate the Validity dimension of data quality. Completeness (missing records) and Timeliness (on schedule) are both fine here."
+      "correct": 0,
+      "explanation": "Perceived quality is driven by reputation, brand image, and historical trust — it can lag behind actual current performance. A well-regarded insurer may have declining conformance while retaining high perceived quality temporarily."
     },
     {
       "id": "q5",
       "type": "true-false",
-      "text": "ISO 9001 is a Quality Assurance standard focused on building systems that prevent defects.",
-      "correct": true,
-      "explanation": "ISO 9001 is an internationally recognised QA standard that specifies requirements for a quality management system — it is process-focused and preventive, not just inspection-based."
+      "text": "ISO 9001 is a quality management standard that prescribes specific statistical tools every organisation must use.",
+      "correct": false,
+      "explanation": "ISO 9001 specifies requirements for a quality management system (customer focus, documentation, management review, continual improvement) but does NOT prescribe which specific tools to use. Organisations choose appropriate methods for their context."
     }
   ]
 }

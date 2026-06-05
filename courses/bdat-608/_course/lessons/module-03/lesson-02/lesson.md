@@ -1,86 +1,83 @@
-# Lesson 7: Diagnostic Plots and Model Comparison
+# Lesson 2: Diagnostic Plots and Model Comparison
 
 ## Goal
 
-Read and interpret the four standard OLS diagnostic plots, use `ggfortify::autoplot()` as a ggplot2 alternative, and compare two competing models by overlaying their predictions and residuals.
+Produce and interpret the four standard diagnostic plots for a linear model, use AIC to compare models of different complexity, and apply the F-test to decide whether extra predictors are worth keeping.
 
 ## Concept
 
-### The four standard OLS diagnostics
+Fitting a model is not enough — you must verify that the model's assumptions hold. The four diagnostic plots produced by `plot(lm_fit)` each test a different assumption.
 
-Calling `plot(lm_object)` produces a 2×2 grid:
+**Plot 1: Residuals vs Fitted.** Tests linearity and homoscedasticity. If the model is correctly specified, points should scatter randomly around the horizontal line at zero. A U-shaped or arch pattern means the relationship is non-linear. A fan shape (spread increasing with fitted values) means variance is non-constant (heteroscedastic).
 
-| Plot | What it shows | Ideal appearance |
-|------|--------------|-----------------|
-| **Residuals vs Fitted** | Non-linearity; heteroscedasticity | Random horizontal band around 0 |
-| **Normal Q-Q** | Normality of residuals | Points lying on the 45° diagonal |
-| **Scale-Location** | Homoscedasticity (constant variance) | Flat red loess line |
-| **Cook's Distance** | Influential observations | No point much greater than 1 |
+**Plot 2: Normal Q-Q.** Tests normality of residuals. The x-axis is the theoretical quantile of a normal distribution; the y-axis is the observed residual quantile. If residuals are normal, all points lie close to the 45° diagonal. Heavy tails (points curving away at both ends) indicate outlier-prone, heavy-tailed noise. A left curve (points above the line at left) indicates left skew.
 
-```r
-par(mfrow = c(2, 2))
-plot(sim1_mod)
-par(mfrow = c(1, 1))
-```
+**Plot 3: Scale-Location (Spread-Location).** Tests homoscedasticity more directly. The y-axis is $\sqrt{|\text{standardised residual}|}$. If variance is constant, the red LOESS line should be approximately flat. An upward slope means variance increases with fitted values.
 
-### ggplot2-style diagnostics with `ggfortify`
+**Plot 4: Residuals vs Leverage.** Identifies influential observations. Leverage measures how extreme an observation's $x$-value is. Cook's distance combines leverage and residual size: $D_i > 1$ (or some use $D_i > 4/n$) indicates a highly influential point — removing it would substantially change the estimated coefficients.
 
-```r
-library(ggfortify)
-autoplot(sim1_mod, which = 1:4, colour = "#1B3A6B", smooth.colour = "#C9A84C")
-```
+**AIC (Akaike Information Criterion).** Model comparison requires balancing fit against complexity:
 
-`autoplot()` produces the same four diagnostics but as ggplot2 objects — easier to customise and embed in Rmd reports.
+$$\text{AIC} = 2k - 2\log\hat{L}$$
 
-### Comparing multiple models
+where $k$ is the number of parameters estimated (including the error variance) and $\hat{L}$ is the maximised likelihood. Lower AIC is better. Adding a predictor that does not improve fit enough to justify its extra parameter will increase AIC. Rule of thumb: a difference of 2 AIC units is already meaningful; $\Delta\text{AIC} > 10$ is strong evidence for the better model.
 
-`gather_predictions()` stacks predictions from multiple models into one long data frame for faceted comparison:
+In R: `AIC(model1, model2)`. For linear models, $-2\log\hat{L} = n\log(\hat{\sigma}^2) + n$, so AIC penalises models with more parameters and larger residual variance.
 
-```r
-mod_a <- lm(y ~ x,          data = sim1)
-mod_b <- lm(y ~ x + I(x^2), data = sim1)
+**F-test for nested models.** When model B contains all the terms of model A plus additional ones (B is "more complex"), we can formally test whether the extra terms improve fit:
 
-grid_multi <- sim1 |>
-  data_grid(x) |>
-  gather_predictions(mod_a, mod_b)
+$$F = \frac{(\text{RSS}_A - \text{RSS}_B)/(\text{df}_A - \text{df}_B)}{\text{RSS}_B/\text{df}_B}$$
 
-ggplot(sim1, aes(x, y)) +
-  geom_point(colour = "grey40") +
-  geom_line(data = grid_multi, aes(y = pred, colour = model)) +
-  facet_wrap(~ model) +
-  theme_minimal()
-```
+Under $H_0$ (the extra terms are all zero), $F \sim F(\text{df}_A - \text{df}_B, \text{df}_B)$. A small $p$-value means the extra terms are worth including.
 
-Similarly, `gather_residuals()` stacks residuals for side-by-side comparison.
-
-### Cook's Distance
-
-Cook's Distance measures how much each observation influences the fitted coefficients. A value > 1 (or > 4/n as a stricter rule) indicates a potentially influential point. Large Cook's D combined with a large residual is the most concerning combination.
+In R: `anova(simple_model, complex_model)`.
 
 ## Example
 
-For `sim1`, all four diagnostic plots look clean:
-- Residuals vs Fitted: random scatter around 0, flat red line.
-- Q-Q: points track the diagonal well.
-- Scale-Location: flat line — constant variance.
-- Cook's Distance: all values small — no single point dominates.
+We compare two diamond models: `mod1 = lm(log(price) ~ log(carat))` and `mod2 = lm(log(price) ~ log(carat) + cut + color + clarity)`.
 
-Adding a quadratic term (`mod_b`) makes negligible difference for `sim1` because the relationship is already linear:
+**Diagnostic plots for mod1:**
 
 ```r
-AIC(mod_a, mod_b)   # mod_a has lower AIC despite fewer parameters
+par(mfrow = c(2, 2))
+plot(mod1)
+par(mfrow = c(1, 1))
 ```
+
+What you see: Residuals vs Fitted shows slight curvature and a striped pattern (the ordinal nature of quality variables causes discretisation). Q-Q plot shows mild deviations in the tails — the price distribution has slightly heavier tails than normal. Scale-Location shows a non-flat line — heteroscedasticity remains. Residuals vs Leverage shows no single diamond with Cook's distance > 1.
+
+**AIC comparison:**
+
+```r
+AIC(mod1, mod2)
+# mod1: AIC ≈ -2,801   mod2: AIC ≈ -5,532
+```
+
+$\Delta\text{AIC} = 2{,}731$ — overwhelming evidence for `mod2`. The quality variables (cut, color, clarity) dramatically improve the model.
+
+**F-test:**
+
+```r
+anova(mod1, mod2)
+# F = 5,473, p-value < 2.2e-16
+```
+
+The extra 16 parameters (cut has 5 levels → 4 dummies; color has 7 → 6; clarity has 8 → 7; total: 4+6+7=17, minus mod1's parameters) jointly improve fit enormously. There is no question — add the quality variables.
+
+**Numeric example.** `mod1` has $k = 3$ parameters ($\beta_0$, $\beta_1$, $\hat{\sigma}^2$). If RSS = 3{,}100 and $n = 53{,}940$:
+
+$$\text{AIC} = 2 \times 3 - 2\log\hat{L} \approx 2 \times 3 + n\log(\text{RSS}/n) + n = 6 + 53940\log(3100/53940) \approx -2{,}800$$
+
+`mod2` with RSS = 1{,}400 and $k = 20$: AIC $\approx -5{,}530$. The dramatic reduction in RSS more than compensates for the extra parameters.
 
 ## Task
 
-Open `exercise.Rmd` and complete:
+Open `exercise.Rmd`. Fit `mod1 = lm(log(price) ~ log(carat))` and `mod2 = lm(log(price) ~ log(carat) + cut + color + clarity)` on `diamonds`:
 
-1. Produce the base R 2×2 diagnostic panel for `sim1_mod`.
-2. Produce the same diagnostics using `autoplot()`.
-3. Fit a quadratic model `mod_b <- lm(y ~ x + I(x^2), data = sim1)`.
-4. Use `gather_predictions()` to overlay both models' fitted lines on `sim1`.
-5. Use `gather_residuals()` to compare residuals side-by-side with `facet_wrap`.
-6. Compare AIC for both models. Which is preferred and why?
+1. Produce the four diagnostic plots for `mod1` using `plot(mod1)`. Describe what each plot tells you.
+2. Compute `AIC(mod1, mod2)`. Which model wins?
+3. Run `anova(mod1, mod2)`. Report $F$, degrees of freedom, and the $p$-value.
+4. Produce the residuals vs fitted plot for `mod2` and compare it to `mod1`. Has the heteroscedasticity improved?
 
 ## Check
 
@@ -90,4 +87,4 @@ npm run check -- bdat-608 module-03 lesson-02
 
 ## Reflection
 
-A colleague looks at the Normal Q-Q plot for their model and sees that the points deviate strongly from the diagonal at both ends (heavy tails). They say: "The residuals are not normal, so the model is wrong." Is this conclusion correct? What can you say about when normality of residuals matters and when it does not?
+AIC penalises models for the number of parameters $k$. This prevents overfitting: a model with 100 parameters will always fit the training data better than a model with 2 parameters, but it may generalise worse. However, AIC assumes that adding one parameter always costs 2 AIC units. Is this penalty always appropriate? When might you want a larger penalty (BIC uses $k\log n$), and when might AIC be too conservative?

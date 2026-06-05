@@ -1,28 +1,20 @@
-# Task: Module 2, Lesson 1 — Loss Function Experiment
+# Task: Loss Functions — RMSE and MAE
 
 ## Objective
 
-Empirically verify that OLS (RMSE) and MAE differ under heavy-tailed noise.
+Implement RMSE and MAE as R functions from scratch, conduct a random search over the parameter space, and visualise the loss surface — building intuition for what "fitting a model" means before using closed-form solutions.
 
 ## Instructions
 
-1. Create 20 different simulated datasets, each with the same structure as `sim1a` (Student-t noise, df=2), but each using a different random seed (1 through 20).
-
-2. For each dataset, use `optim()` to find the MAE-optimal slope and the OLS slope from `lm()`.
-
-   ```r
-   set.seed(seed_i)
-   temp_data <- tibble(x = rep(1:10, each = 3), y = x * 1.5 + 6 + rt(30, df = 2))
-   mae_par  <- optim(c(0,0), measure_mae, data = temp_data)$par
-   ols_coef <- coef(lm(y ~ x, data = temp_data))
-   ```
-
-3. Collect results into a tibble with columns: `seed`, `mae_slope`, `ols_slope`.
-
-4. Compute the standard deviation of `mae_slope` and `ols_slope` across the 20 seeds. Which is smaller?
-
-5. Plot both slopes against seed number (two lines on one plot), with a horizontal dashed line at the true slope = 1.5. Describe what you see.
+1. Take a 100-row random sample of `diamonds` with `set.seed(42)`.
+2. Write a function `rmse_fn(b0, b1, data)` that computes RMSE for `price ~ b0 + b1*carat`.
+3. Write a function `mae_fn(b0, b1, data)` that computes MAE for the same model.
+4. Evaluate both at three candidate parameter pairs of your choice. Report the results in a small table.
+5. Generate 250 random parameter pairs: `b0` uniformly in $[-5000, 0]$ and `b1` uniformly in $[5000, 12000]`. Compute RMSE for each pair. Use `set.seed(7)`.
+6. Report the pair with the lowest RMSE.
+7. Plot `b0` vs `b1` coloured by RMSE. Describe the shape of the low-RMSE region.
+8. Fit `lm(price ~ carat, data = d100)` and compare its RMSE to the best random-search RMSE. Write one sentence explaining why OLS wins.
 
 ## Submission
 
-Submit your Rmd and the knitted HTML. The plot and the SD comparison must be present.
+Knit to HTML and submit the `.html` and `.Rmd` files. The document must include the loss-surface plot with axis labels and a colour legend.

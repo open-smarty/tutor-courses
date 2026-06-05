@@ -1,67 +1,108 @@
 ---
-title: "BDAT 602 — Module 4, Lesson 1 Solution"
-subtitle: "k-Means Clustering"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Solution: k-Means Clustering"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
 ```
 
-## Task 1 — Prepare scaled clustering matrix
+```{r load-packages}
+library(tidyverse)
+library(cluster)
 
-```{r task1}
-library(dplyr)
-
-hc_df <- health_small |>
-  select(age, bmi, income, num_claims, claim_amount) |>
-  mutate(
-    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
-    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
-  ) |>
-  na.omit()
-
-hc_mat <- scale(hc_df)
-dim(hc_mat)
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
 ```
 
-## Task 2 — Fit k-Means with k = 4
+## Task 1: Prepare and scale clustering features
 
-```{r task2}
+```{r task1-prepare}
+clust_data <- health_data |>
+  select(age, bmi, income, num_claims, num_chronic_conditions) |>
+  drop_na() |>
+  scale()
+
+dim(clust_data)
+```
+
+```{r task1-check-scale}
+apply(clust_data, 2, mean) |> round(4)  # all ≈ 0
+apply(clust_data, 2, sd)   |> round(4)  # all ≈ 1
+```
+
+## Task 2: Elbow plot — choose k
+
+```{r task2-elbow}
 set.seed(602)
-km4 <- kmeans(hc_mat, centers = 4, nstart = 25)
+wcss <- sapply(1:10, function(k) kmeans(clust_data, centers = k, nstart = 25)$tot.withinss)
 
-cat("Cluster sizes:", km4$size, "\n")
-cat("Total WCSS:   ", round(km4$tot.withinss, 1), "\n")
+tibble(k = 1:10, wcss = wcss) |>
+  ggplot(aes(x = k, y = wcss)) +
+  geom_line() + geom_point(size = 2, colour = "steelblue") +
+  labs(title = "Elbow Method for Optimal k",
+       x = "Number of clusters (k)", y = "Within-Cluster Sum of Squares") +
+  theme_minimal()
 ```
 
-## Task 3 — Cluster profile
+```{r task2-choose-k}
+# The elbow typically appears at k = 4 for this dataset:
+# WCSS drops steeply from k=1 to k=4, then the reduction flattens.
+# k = 4 provides a good balance between interpretability and compactness.
+chosen_k <- 4
+```
 
-```{r task3}
-hc_labeled <- health_small |>
-  select(age, bmi, income, num_claims, claim_amount, fraud_flag, plan_tier) |>
-  mutate(
-    bmi    = if_else(is.na(bmi),    median(bmi,    na.rm = TRUE), bmi),
-    income = if_else(is.na(income), median(income, na.rm = TRUE), income)
-  ) |>
-  na.omit() |>
-  mutate(cluster = as.factor(km4$cluster))
+## Task 3: Fit k-means
 
-hc_labeled |>
+```{r task3-fit}
+set.seed(602)
+km <- kmeans(clust_data, centers = chosen_k, nstart = 25)
+
+cat("WCSS:", round(km$tot.withinss, 1), "\n")
+cat("Cluster sizes:", km$size, "\n")
+```
+
+```{r task3-silhouette}
+set.seed(42)
+idx <- sample(nrow(clust_data), min(5000, nrow(clust_data)))
+sil <- silhouette(km$cluster[idx], dist(clust_data[idx, ]))
+cat("Mean silhouette score:", round(mean(sil[, "sil_width"]), 3), "\n")
+# A score around 0.15-0.25 is typical for this many features — clusters exist
+# but there is natural overlap between similar policyholders.
+```
+
+## Task 4: Profile clusters and assign labels
+
+```{r task4-profile}
+health_clustered <- health_data |>
+  drop_na(age, bmi, income, num_claims, num_chronic_conditions) |>
+  mutate(cluster = factor(km$cluster))
+
+cluster_profile <- health_clustered |>
   group_by(cluster) |>
   summarise(
     n          = n(),
-    avg_claim  = round(mean(claim_amount), 0),
-    fraud_pct  = round(mean(fraud_flag) * 100, 2),
-    avg_age    = round(mean(age), 1)
-  ) |>
-  arrange(desc(avg_claim))
+    avg_age    = round(mean(age), 1),
+    avg_bmi    = round(mean(bmi, na.rm = TRUE), 1),
+    avg_income = round(mean(income, na.rm = TRUE), 0),
+    avg_claims = round(mean(num_claims), 2),
+    avg_chronic = round(mean(num_chronic_conditions), 2),
+    pct_smoker = round(mean(smoker) * 100, 1)
+  )
+
+print(cluster_profile)
 ```
 
-The clusters should separate into low-utilisation (young/healthy, low claims), moderate-risk, high-utilisation (older, many claims), and outlier (rare large claims). The cluster with the highest average claims typically also has the highest fraud rate.
+```{r task4-labels}
+# Typical cluster labels (exact values depend on random seed):
+# Cluster 1: "Young Healthy Low-Risk"
+#   — youngest avg age, lowest BMI, few claims, lowest chronic conditions
+# Cluster 2: "Middle-Aged Moderate-Risk"
+#   — middle age, moderate income, some claims, occasional smoking
+# Cluster 3: "Elderly High-Utilisation"
+#   — oldest avg age, highest num_claims and chronic conditions, frequent visits
+# Cluster 4: "High-BMI Smoker Segment"
+#   — elevated BMI, high smoker rate, more claims than Cluster 1/2
+# These labels inform targeted pricing, wellness programme design, and retention strategies.
+```

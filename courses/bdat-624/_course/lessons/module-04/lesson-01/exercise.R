@@ -1,194 +1,181 @@
-# BDAT 624 — Module 4, Lesson 1: The Pure Birth Process (Yule Model)
-# Exercise: simulate the Yule process and verify the negative binomial distribution
-#
-# Instructions: fill in every # TODO: marker.
-# Run: npm run check -- bdat-624 module-04 lesson-01
-#
-# Libraries -----------------------------------------------------------------
+# Required packages
 library(ggplot2)
 library(dplyr)
 
-set.seed(42)
+# Scenario: Bacterial cell division modelled as a Yule (pure birth) process.
+# Each cell divides independently at rate lambda per hour. Starting from 1 cell.
 
-# Parameters ----------------------------------------------------------------
-lambda  <- 0.5    # per-individual birth rate
-j       <- 1      # initial population X(0)
-t_end   <- 10     # simulation horizon (time units)
-n_sims  <- 100    # number of independent trajectories
-t_check <- 6      # time point for distribution check
+lambda <- 0.3   # birth rate per cell per hour
+t_obs  <- c(1, 2, 5, 10)  # observation times of interest
 
-# ---------------------------------------------------------------------------
-# Part 1: Simulate n_sims Yule process trajectories
-# Algorithm:
-#   While current time < t_end:
-#     Draw next inter-event time: Exp(rate = n * lambda)  (n = current population)
-#     Advance time and increment population by 1
-# Store each trajectory as a data frame with columns: sim, time, population
-# ---------------------------------------------------------------------------
+# ============================================================
+# Task 1: Compute the theoretical Geometric distribution at each time
+# ============================================================
+# P_n(t) = exp(-lambda*t) * (1 - exp(-lambda*t))^(n-1), n >= 1
 
-simulate_yule <- function(lambda, j, t_end) {
-  # TODO: initialise t = 0, n = j, and two vectors: times = c(0), pops = c(j)
-  t   <- 0
-  n   <- j
+# TODO: For each t in t_obs, compute P_n(t) for n = 1, 2, ..., 30
+# and store in a long-format data frame: columns n, t, prob
+
+max_n <- 30
+
+theoretical_df <- lapply(t_obs, function(t) {
+  p_t  <- exp(-lambda * t)
+  n_vals <- 1:max_n
+  prob <- p_t * (1 - p_t)^(n_vals - 1)
+  data.frame(n = n_vals, t = t, prob = prob,
+             t_label = paste0("t = ", t, " hr"))
+}) |> bind_rows()
+
+# TODO: Print E[N(t)] = exp(lambda*t) for each t and compare to
+# the weighted mean of the theoretical distribution
+cat("Theoretical mean E[N(t)] = exp(lambda*t):\n")
+for (t in t_obs) {
+  p_t    <- exp(-lambda * t)
+  n_vals <- 1:max_n
+  emp_mean <- sum(n_vals * p_t * (1 - p_t)^(n_vals - 1))
+  cat(sprintf("  t=%.0f: exp(lambda*t)=%.4f, weighted_mean=%.4f\n",
+              t, exp(lambda * t), emp_mean))
+}
+
+# TODO: Plot the theoretical PMF at each time point (bar chart)
+# Facet by t. Colour bars by t for visual distinction.
+ggplot(theoretical_df, aes(x = n, y = prob, fill = factor(t))) +
+  geom_col(alpha = 0.8) +
+  facet_wrap(~ t_label, scales = "free_y") +
+  labs(
+    title  = "Yule Process: Theoretical PMF P_n(t) = Geometric(e^{-lambda*t})",
+    subtitle = paste("lambda =", lambda, "per cell per hour; starting from 1 cell"),
+    x = "Population size n", y = "Probability P_n(t)", fill = "Time (hr)"
+  ) +
+  theme_minimal()
+
+# ============================================================
+# Task 2: Gillespie algorithm simulation of the Yule process
+# ============================================================
+# Function: simulate one Yule process trajectory up to time T_max
+# Returns: a data frame with columns time and population
+
+simulate_yule <- function(lambda, T_max, n0 = 1) {
   times <- c(0)
-  pops  <- c(j)
-
-  while (t < t_end) {
-    # TODO: draw the waiting time until the next birth
-    #   Hint: rexp(1, rate = n * lambda)
-    dt <- # TODO
-
-    t <- t + dt
-    if (t >= t_end) break
-
-    # TODO: a birth occurs — increment the population
-    n <- # TODO
-
-    times <- c(times, t)
-    pops  <- c(pops, n)
+  pops  <- c(n0)
+  n     <- n0
+  t     <- 0
+  while (t < T_max) {
+    # Rate of next birth = n * lambda (all n individuals contribute)
+    rate     <- n * lambda
+    # Wait time until next birth ~ Exp(rate)
+    wait     <- rexp(1, rate = rate)
+    t        <- t + wait
+    if (t > T_max) break
+    n        <- n + 1
+    times    <- c(times, t)
+    pops     <- c(pops, n)
   }
-  # Append a final record at t_end so all trajectories end at the same time
-  times <- c(times, t_end)
-  pops  <- c(pops, n)
-  data.frame(time = times, population = pops)
+  data.frame(time = times, pop = pops)
 }
 
-# Run all simulations and combine into one data frame
-all_sims <- bind_rows(
-  lapply(1:n_sims, function(i) {
-    df <- simulate_yule(lambda, j, t_end)
-    df$sim <- i
-    df
-  })
-)
+# TODO: Simulate 5 independent trajectories up to T_max = 15 hours
+set.seed(123)
+T_max <- 15
+n_traj <- 5
 
-# ---------------------------------------------------------------------------
-# Part 2: Plot trajectories with mean and theoretical E[X(t)] = j * exp(lambda * t)
-# ---------------------------------------------------------------------------
+traj_list <- lapply(seq_len(n_traj), function(i) {
+  sim <- simulate_yule(lambda, T_max)
+  sim$sim_id <- i
+  sim
+})
+traj_all <- bind_rows(traj_list)
 
-# Compute the empirical mean at a fine grid of time points
-t_grid  <- seq(0, t_end, length.out = 200)
+# TODO: Plot all 5 trajectories as step functions (geom_step).
+# Overlay the theoretical mean E[N(t)] = exp(lambda*t) as a smooth red curve.
+t_seq <- seq(0, T_max, length.out = 300)
+mean_df <- data.frame(t = t_seq, mean_pop = exp(lambda * t_seq))
 
-# For each t in t_grid, find the population for each simulation at that time.
-# Use a step-function lookup: for sim i, the population at time t is the
-# value just before the next recorded event.
-get_pop_at <- function(sim_df, t_query) {
-  # TODO: return the population at time t_query for this simulation
-  #   Hint: use max(sim_df$population[sim_df$time <= t_query])
-  #         but be careful when t_query < the first event time
-  # TODO
-}
+ggplot(traj_all, aes(x = time, y = pop, group = sim_id, color = factor(sim_id))) +
+  geom_step(linewidth = 0.8, alpha = 0.8) +
+  geom_line(data = mean_df, aes(x = t, y = mean_pop),
+            inherit.aes = FALSE, color = "black", linewidth = 1.5, linetype = "dashed") +
+  labs(
+    title    = "Yule Process: 5 Simulated Trajectories",
+    subtitle = "Dashed black = theoretical mean E[N(t)] = exp(lambda*t)",
+    x = "Time (hours)", y = "Population size N(t)", color = "Simulation"
+  ) +
+  theme_minimal()
 
-# Build a matrix: rows = t_grid points, cols = simulations
-pop_matrix <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  # TODO: call get_pop_at for each t in t_grid
-  sapply(t_grid, function(t) get_pop_at(sim_df, t))
+# ============================================================
+# Task 3: Compare simulated distribution to theory at t=5
+# ============================================================
+# Simulate n_sim replicates; record N(5) for each
+
+set.seed(456)
+n_sim <- 2000
+t_check <- 5
+
+# TODO: Simulate n_sim Yule processes and record the population at t=t_check
+N_at_t <- replicate(n_sim, {
+  sim <- simulate_yule(lambda, t_check)
+  tail(sim$pop, 1)
 })
 
-emp_mean <- rowMeans(pop_matrix)          # empirical mean at each t_grid point
-theo_mean <- j * exp(lambda * t_grid)     # theoretical E[X(t)]
+# Theoretical distribution at t=t_check
+p_t5 <- exp(-lambda * t_check)
+n_range <- 1:50
+theo_probs <- p_t5 * (1 - p_t5)^(n_range - 1)
 
-# Build data frames for ggplot
-traj_df  <- all_sims
-mean_df  <- data.frame(time = t_grid, emp_mean = emp_mean, theo_mean = theo_mean)
+# TODO: Create a comparison data frame and plot side-by-side bars
+# (empirical frequency vs theoretical probability)
+emp_freq <- tabulate(N_at_t, nbins = max(n_range)) / n_sim
 
-# TODO: produce the trajectory plot
-# - grey lines for each simulation trajectory (use geom_step)
-# - red line for empirical mean
-# - blue dashed line for theoretical E[X(t)]
-# - label axes and add a title
-p1 <- ggplot() +
-  # TODO: add grey trajectories (alpha = 0.2)
-  # TODO: add red empirical mean line
-  # TODO: add blue dashed theoretical mean line
+comparison_df <- data.frame(
+  n          = n_range,
+  empirical  = emp_freq[n_range],
+  theoretical = theo_probs
+) |>
+  tidyr::pivot_longer(cols = c(empirical, theoretical),
+                      names_to = "source", values_to = "prob")
+
+ggplot(comparison_df, aes(x = n, y = prob, fill = source)) +
+  geom_col(position = "dodge", alpha = 0.8) +
+  xlim(0, 30) +
   labs(
-    title = "Yule Process: 100 Simulated Trajectories",
-    subtitle = paste0("lambda = ", lambda, ", X(0) = ", j),
-    x = "Time", y = "Population size"
+    title    = paste0("N(t=", t_check, ") Distribution: Simulation vs Geometric Theory"),
+    subtitle = paste0("p(t) = exp(-lambda*t) = ", round(p_t5, 4),
+                      "; n_sim = ", n_sim),
+    x = "Population size", y = "Probability", fill = "Source"
   ) +
   theme_minimal()
 
-print(p1)
+# ============================================================
+# Task 4: Mean and variance over time
+# ============================================================
+# Simulate many trajectories and compute E[N(t)] and Var[N(t)] at each t
+set.seed(789)
+n_sim_mv <- 1000
+t_check_seq <- seq(0, 10, by = 1)
 
-# ---------------------------------------------------------------------------
-# Part 3: Distribution of X(t_check) vs theoretical NegBin PMF
-# ---------------------------------------------------------------------------
+# TODO: For each t in t_check_seq, simulate n_sim_mv trajectories
+# and compute the empirical mean and variance of N(t)
+mv_df <- lapply(t_check_seq, function(t) {
+  if (t == 0) return(data.frame(t=0, sim_mean=1, sim_var=0,
+                                 theo_mean=1, theo_var=0))
+  N_t <- replicate(n_sim_mv, tail(simulate_yule(lambda, t)$pop, 1))
+  data.frame(
+    t         = t,
+    sim_mean  = mean(N_t),
+    sim_var   = var(N_t),
+    theo_mean = exp(lambda * t),
+    theo_var  = exp(lambda*t) * (exp(lambda*t) - 1)
+  )
+}) |> bind_rows()
 
-# Extract population at t = t_check for each simulation
-x_at_check <- sapply(1:n_sims, function(i) {
-  sim_df <- all_sims[all_sims$sim == i, ]
-  # TODO: use get_pop_at to find the population at t_check
-  # TODO
-})
+cat("\nMean and Variance comparison (simulated vs theoretical):\n")
+print(round(mv_df, 3))
 
-# Theoretical: X(t) | X(0) = j ~ NegBin(j, p) where p = exp(-lambda * t_check)
-p_negbin <- exp(-lambda * t_check)
-
-# Compute theoretical PMF over the observed range
-x_range  <- min(x_at_check):max(x_at_check)
-# TODO: compute theo_pmf using dnbinom(x_range - j, size = j, prob = p_negbin)
-#   Note: in R's dnbinom, 'x' is the number of failures before the j-th success.
-#   Our X(t) = j + failures, so failures = X(t) - j = x_range - j.
-theo_pmf <- # TODO
-
-dist_df  <- data.frame(x = x_at_check)
-theo_df  <- data.frame(x = x_range, pmf = theo_pmf)
-
-# TODO: produce the distribution plot
-# - histogram (or bar chart) of simulated X(t_check)
-# - overlay the theoretical NegBin PMF as red points/line
-p2 <- ggplot(dist_df, aes(x = x)) +
-  # TODO: geom_bar with frequency / n_sims to get proportions
-  # TODO: overlay theo_df PMF
-  labs(
-    title = paste0("Distribution of X(", t_check, ") across ", n_sims, " simulations"),
-    subtitle = paste0("Theoretical: NegBin(j=", j, ", p=", round(p_negbin, 3), ")"),
-    x = paste0("X(", t_check, ")"), y = "Proportion"
-  ) +
+# TODO: Plot simulated vs theoretical mean on log scale
+ggplot(mv_df) +
+  geom_point(aes(x=t, y=sim_mean, color="Simulated mean"), size=3) +
+  geom_line(aes(x=t, y=theo_mean, color="Theoretical exp(lambda*t)"), linewidth=1.2) +
+  scale_y_log10() +
+  labs(title="E[N(t)]: Simulated vs Theoretical (log scale)",
+       x="Time (hours)", y="E[N(t)] (log scale)", color="") +
   theme_minimal()
-
-print(p2)
-
-# ---------------------------------------------------------------------------
-# Part 4: Verify E[X(t)] ≈ j * exp(lambda * t) at several time points
-# ---------------------------------------------------------------------------
-
-check_times <- c(2, 4, 6, 8)
-
-for (tc in check_times) {
-  # TODO: compute the empirical mean of X(tc) across all simulations
-  emp  <- mean(sapply(1:n_sims, function(i) {
-    sim_df <- all_sims[all_sims$sim == i, ]
-    get_pop_at(sim_df, tc)
-  }))
-  theo <- j * exp(lambda * tc)
-  cat(sprintf("t = %2d | E[X(t)] empirical = %6.2f | theoretical = %6.2f\n",
-              tc, emp, theo))
-}
-
-# ---------------------------------------------------------------------------
-# Part 5: Effect of doubling lambda
-# ---------------------------------------------------------------------------
-
-lambda2 <- 2 * lambda   # doubled birth rate
-
-# TODO: simulate n_sims trajectories with lambda2 (reuse simulate_yule)
-all_sims2 <- # TODO
-
-# TODO: compute the empirical mean for lambda2 simulations at t_grid
-pop_matrix2 <- # TODO
-emp_mean2   <- # TODO
-theo_mean2  <- j * exp(lambda2 * t_grid)
-
-# TODO: plot both mean trajectories on one graph
-#   - label which is lambda and which is lambda2
-p3 <- ggplot() +
-  # TODO: add lines for both lambda and lambda2 means (empirical and theoretical)
-  labs(
-    title = "Effect of doubling lambda on mean Yule trajectory",
-    x = "Time", y = "E[X(t)]"
-  ) +
-  theme_minimal()
-
-print(p3)

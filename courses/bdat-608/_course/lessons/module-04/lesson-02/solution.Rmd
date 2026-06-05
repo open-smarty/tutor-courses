@@ -1,82 +1,107 @@
 ---
-title: "BDAT 608 | Module 4, Lesson 2 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Interactions and Transformations"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 9, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-data("sim3", package = "modelr")
-sim1_base <- sim1
+library(broom)
 ```
 
-## Task 1 — Fit Models on sim3
-
-```{r fit-sim3}
-mod_add <- lm(y ~ x1 + x2,  data = sim3)
-mod_int <- lm(y ~ x1 * x2,  data = sim3)
-
-grid_sim3 <- sim3 |>
-  data_grid(x1, x2) |>
-  gather_predictions(mod_add, mod_int)
-
-ggplot(sim3, aes(x1, y, colour = x2)) +
-  geom_point(alpha = 0.6) +
-  geom_line(data = grid_sim3, aes(y = pred), linewidth = 1) +
-  facet_wrap(~ model, labeller = label_both) +
-  labs(title = "Additive (+) vs Interaction (*) model on sim3") +
-  theme_minimal(base_size = 12)
+```{r load-data}
+data("diamonds", package = "ggplot2")
 ```
 
-## Task 2 — Residual Comparison
+## Task 1: Fit the additive model
 
-```{r residuals-sim3}
-sim3 |>
-  gather_residuals(mod_add, mod_int) |>
-  ggplot(aes(x1, resid, colour = x2)) +
-  geom_point(alpha = 0.8) +
-  geom_ref_line(h = 0) +
-  facet_grid(model ~ x2) +
-  scale_colour_brewer(palette = "Set1") +
-  labs(title = "Residuals: additive vs interaction", y = "Residual") +
-  theme_minimal(base_size = 11)
-# mod_add residuals show systematic within-group patterns (slopes differ by group).
-# mod_int residuals show random scatter — the interaction captures the slope differences.
+```{r task1}
+mod_add <- lm(log(price) ~ log(carat) + cut, data = diamonds)
+summary(mod_add)
+# One slope for log(carat), different intercepts per cut level.
 ```
 
-## Task 3 — AIC Comparison
+## Task 2: Fit the interaction model
 
-```{r aic-sim3}
+```{r task2}
+mod_int <- lm(log(price) ~ log(carat) * cut, data = diamonds)
+summary(mod_int)
+# Each cut level gets its own intercept AND its own slope for log(carat).
+# log(carat) * cut expands to: log(carat) + cut + log(carat):cutGood
+#   + log(carat):cutVery Good + log(carat):cutPremium + log(carat):cutIdeal
+```
+
+## Task 3: AIC comparison
+
+```{r task3}
 AIC(mod_add, mod_int)
-cat("Additive R²:   ", round(summary(mod_add)$r.squared, 4), "\n")
-cat("Interaction R²:", round(summary(mod_int)$r.squared, 4), "\n")
-# Interaction model has lower AIC → preferred for sim3.
+
+cat("ΔAIC:", round(AIC(mod_add) - AIC(mod_int), 1), "\n")
+# The interaction model has lower AIC. A ΔAIC > 10 is strong evidence.
+# Whether the improvement justifies the extra 4 parameters (one per
+# interaction term) depends on the context and practical significance.
 ```
 
-## Task 4 — I() vs ^ in Formulas
+## Task 4: Prediction grid — are lines parallel?
 
-```{r formula-demo}
-# WRONG: y ~ x^2 + x collapses to y ~ x
-model_matrix(sim1_base, y ~ x^2 + x) |> head(3)
+```{r task4}
+grid <- diamonds |>
+  data_grid(
+    carat = seq_range(carat, n = 10),
+    cut
+  ) |>
+  gather_predictions(mod_add, mod_int) |>
+  mutate(pred_price = exp(pred))
 
-# CORRECT: I() protects exponentiation
-model_matrix(sim1_base, y ~ I(x^2) + x) |> head(3)
-# Two distinct columns: (Intercept), I(x^2), x
+ggplot(grid, aes(x = carat, y = pred_price, colour = cut)) +
+  geom_line(linewidth = 1) +
+  facet_wrap(~ model, labeller = label_both) +
+  scale_colour_brewer(palette = "RdYlGn") +
+  labs(
+    title    = "Predicted price: additive vs interaction model",
+    subtitle = "Additive: parallel lines (same carat slope). Interaction: lines fan out.",
+    x        = "Carat",
+    y        = "Predicted price (USD)",
+    colour   = "Cut"
+  ) +
+  theme_minimal()
+
+# In mod_add the lines are exactly parallel — the slope of carat is
+# identical across all cut levels. In mod_int the lines diverge —
+# Ideal diamonds have a slightly different (and in fact somewhat lower)
+# price elasticity for carat than Fair diamonds.
 ```
 
-## Reflection
+## Task 5: Interpret the interaction coefficient
 
-If the interaction model has higher AIC than the additive model, it means the extra parameters (the `x1:x2` interaction terms) do not improve the fit enough to justify their complexity cost. The data do not show evidence that the slope of `x1` differs meaningfully across groups. This illustrates the **parsimony principle**: prefer the simpler model when the added complexity does not measurably improve predictive performance. AIC quantifies this trade-off by penalising each additional parameter.
+```{r task5}
+int_coef <- coef(mod_int)["log(carat):cutIdeal"]
+cat("log(carat):cutIdeal coefficient:", round(int_coef, 4), "\n")
+
+# Interpretation:
+# The slope of log(carat) is ___ units different for Ideal-cut vs Fair-cut diamonds.
+# A negative value means: for Ideal-cut diamonds, each 1% increase in carat
+# is associated with a slightly smaller percentage increase in price than
+# for Fair-cut diamonds. Ideal diamonds command a fixed quality premium
+# (the intercept shift), but the marginal value of additional carat
+# weight is slightly lower for them.
+```
+
+## Task 6: Polynomial model
+
+```{r task6}
+mod_poly <- lm(log(price) ~ poly(log(carat), 2) + cut, data = diamonds)
+summary(mod_poly)
+
+AIC(mod_add, mod_poly)
+
+# The quadratic term (degree 2 polynomial) is typically significant
+# (p < 0.05), indicating a slight non-linearity in the log-log relationship.
+# However, AIC may favour mod_poly or mod_int over mod_add only slightly.
+# The key finding: the log-log transformation already captures most of the
+# non-linearity; the quadratic adds only modest improvement.
+```

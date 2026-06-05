@@ -2,90 +2,85 @@
 
 ## Goal
 
-Install and load the R packages used throughout BDAT 608, verify that key datasets are available, and produce your first diagnostic scatter plot of the `sim1` data.
+Configure a working R modelling environment, load and inspect the `diamonds` dataset, and produce your first annotated scatter plot and a basic fitted line — all inside an R Markdown document that knits cleanly to HTML.
 
 ## Concept
 
-Before fitting any model, you need a reproducible environment: the right packages loaded, global options set, and an understanding of the datasets you will use.
+Before any modelling, you need two things in place: the right packages and a workflow that makes your analysis reproducible. R Markdown is how we achieve the second goal.
 
-### Core packages
+**Packages.** The core packages for this course are:
 
-| Package | Key functions | Why we use it |
-|---------|--------------|---------------|
-| `tidyverse` | `ggplot2`, `dplyr`, `purrr`, `tidyr` | Data manipulation and visualisation |
-| `modelr` | `data_grid()`, `add_predictions()`, `add_residuals()` | Model-centric helpers for tidy workflows |
-| `splines` | `ns()` | Natural spline basis (ships with base R) |
-| `ggfortify` | `autoplot()` | ggplot2-style diagnostics for `lm` objects |
-| `caret` | `createFolds()` | Cross-validation helpers |
-| `mice` | `mice()`, `pool()` | Multiple imputation for missing data |
-| `mgcv` | `gam()`, `s()`, `te()` | Generalised Additive Models |
-| `rpart` | `rpart()` | Decision trees |
-| `MASS` | `rlm()` | Robust linear regression |
-| `glmnet` | `glmnet()`, `cv.glmnet()` | Ridge and LASSO regularisation |
-| `broom` | `tidy()`, `augment()`, `glance()` | Tidy model outputs |
+| Package | Why we need it |
+|---|---|
+| `tidyverse` | Data manipulation (`dplyr`, `tidyr`) and plotting (`ggplot2`) |
+| `modelr` | `data_grid()`, `add_predictions()`, `add_residuals()` |
+| `broom` | Turns model output into tidy data frames via `tidy()`, `augment()`, `glance()` |
 
-### One important global option
+Install packages once with `install.packages(c("tidyverse", "modelr", "broom"))`. After installation, load them at the top of every script with `library()`. Never put `install.packages()` inside a chunk that runs automatically — it re-downloads the package every time you knit.
 
-```r
-options(na.action = na.warn)
-```
+**R Markdown chunk options.** Each code chunk has a header like `` ```{r label, option=value} ``. The most important options are:
 
-This makes R warn you whenever a modelling function silently drops rows with missing values. Without it, you can lose data without realising it.
+- `echo = TRUE` — show the source code in the output (good for teaching).
+- `eval = FALSE` — show the code but do not run it (useful for `install.packages()`).
+- `include = FALSE` — run the code but show nothing (good for setup).
+- `message = FALSE` — suppress messages (e.g., package loading messages).
+- `warning = FALSE` — suppress warnings.
 
-### The `sim1`–`sim4` datasets
-
-All four are built into `modelr`. Each is a small teaching dataset designed to illustrate a different modelling scenario:
-
-| Dataset | Predictors | Purpose |
-|---------|-----------|---------|
-| `sim1` | 1 continuous | Simple linear relationship |
-| `sim2` | 1 categorical | Categorical predictors |
-| `sim3` | 1 continuous + 1 categorical | Interactions |
-| `sim4` | 2 continuous | Two-predictor interaction surfaces |
-
-### MASS masks dplyr
-
-**Important:** `MASS` exports a function also called `select()`. When loaded after `tidyverse`, it will overwrite `dplyr::select()`, breaking many pipelines. Always restore the tidyverse versions:
+**The pipe operator `|>`.** Instead of nesting function calls, we write them left to right:
 
 ```r
-library(MASS)
-select <- dplyr::select   # restore after MASS masks it
-filter <- dplyr::filter
+diamonds |> filter(carat > 1) |> summarise(mean_price = mean(price))
 ```
+
+This reads: "take diamonds, then filter to carat > 1, then compute the mean price." It is equivalent to `summarise(filter(diamonds, carat > 1), mean_price = mean(price))` but far easier to read and modify.
+
+**Inspecting a dataset.** Before fitting any model, always run:
+
+- `glimpse(data)` — one row per column, shows type and first few values.
+- `summary(data)` — min, max, mean, and quartiles for numeric columns; level counts for factors.
+- `ggplot(data, aes(x, y)) + geom_point()` — a quick scatter plot to see the raw relationship.
 
 ## Example
+
+We inspect `diamonds` and produce a scatter plot with a linear fit.
 
 ```r
 library(tidyverse)
 library(modelr)
+library(broom)
 
-options(na.action = na.warn)
-
-data("sim1", package = "modelr")
-glimpse(sim1)
-
-ggplot(sim1, aes(x, y)) +
-  geom_point(size = 3, colour = "#1B3A6B") +
-  labs(
-    title    = "sim1: Response vs Predictor",
-    subtitle = "There is a clear linear trend with random scatter around it."
-  ) +
-  theme_minimal(base_size = 13)
+data("diamonds", package = "ggplot2")
+glimpse(diamonds)
 ```
 
-A quick `glimpse()` confirms `sim1` has 30 rows and 2 columns. The scatter plot shows a clear upward linear trend: each unit increase in `x` is associated with an increase in `y`.
+`glimpse()` shows 53,940 rows and 10 columns. Key columns: `price` (integer, USD), `carat` (double, weight), `cut` (ordered factor: Fair < Good < Very Good < Premium < Ideal), `color` (D–J, D is best), `clarity` (I1 to IF, IF is best).
+
+```r
+ggplot(diamonds, aes(x = carat, y = price, colour = cut)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title  = "Diamond price vs carat",
+    x      = "Carat",
+    y      = "Price (USD)"
+  ) +
+  theme_minimal()
+```
+
+`geom_smooth(method = "lm")` fits one straight line per `cut` group. You will notice that: (1) heavier diamonds cost more, (2) the lines are roughly parallel — suggesting cut shifts the intercept but not the slope dramatically, (3) the cloud of points gets wider for large carats — confirming the heteroscedasticity we saw in lesson 1.
+
+**Reading `summary(diamonds)`.** For `price`: Min = \$326, Median = \$2,401, Mean = \$3,933, Max = \$18,823. The mean exceeds the median, indicating a right-skewed distribution — more cheap diamonds than expensive ones.
 
 ## Task
 
-Open `exercise.Rmd` and complete the tasks:
+Open `exercise.Rmd`. Complete the following inside a knittable R Markdown document:
 
-1. Install any missing packages (use the `eval=FALSE` chunk so it does not run on every knit).
-2. Load all required packages and restore `dplyr::select` and `dplyr::filter`.
-3. Set `options(na.action = na.warn)`.
-4. Run the package check and confirm all packages return `TRUE`.
-5. Produce a `glimpse()` of `sim1` and a scatter plot with title "sim1: Ready to model".
-
-Knit the document. It must produce HTML with no errors.
+1. Install the required packages (only in a chunk with `eval = FALSE`).
+2. Load `tidyverse`, `modelr`, and `broom`.
+3. Run `glimpse()` and `summary()` on `diamonds`. Report the number of rows, columns, and the median diamond price.
+4. Create a scatter plot of `price` vs `carat` coloured by `cut`, with `alpha = 0.3` and `geom_smooth(method = "lm")`.
+5. Write one sentence interpreting the `geom_smooth()` line.
+6. Use the pipe `|>` to filter diamonds where `carat > 2` and report how many remain.
 
 ## Check
 
@@ -95,4 +90,4 @@ npm run check -- bdat-608 module-01 lesson-02
 
 ## Reflection
 
-Why do we set `options(na.action = na.warn)` at the start of every modelling session, rather than relying on R's default behaviour? Give a concrete example of the kind of mistake this option helps prevent.
+The pipe `|>` makes code easier to read by presenting operations in the order they happen. But pipes can also make debugging harder — if one step in the chain produces an unexpected result, you have to break the chain apart to find it. When is it better to use nested function calls or intermediate variables instead of a long pipe chain?

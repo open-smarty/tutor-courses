@@ -6,61 +6,74 @@
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "Decision trees use Gini impurity to choose splits. A node with Gini = 0 means:",
+      "text": "At a node with 80 non-churners and 20 churners (n=100), what is the Gini impurity?",
       "options": [
-        "The split is completely random",
-        "The node contains equal proportions of all classes",
-        "All observations in the node belong to the same class (pure node)",
-        "The algorithm has overfit the data"
+        "0.20",
+        "0.32",
+        "0.50",
+        "0.48"
       ],
-      "correct": 2,
-      "explanation": "Gini = 1 − Σp_k² = 0 when one class has probability 1 (all others 0). A pure node — where every observation belongs to the same class — has Gini impurity of 0."
+      "correct": 1,
+      "explanation": "G = 1 − (p₁² + p₂²) = 1 − (0.8² + 0.2²) = 1 − (0.64 + 0.04) = 1 − 0.68 = 0.32."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "What is the purpose of pruning a decision tree?",
+      "text": "In a random forest with p = 9 predictor variables, how many features are randomly considered at each split (default for classification)?",
       "options": [
-        "To increase the depth of the tree",
-        "To add more variables to the model",
-        "To reduce overfitting by removing branches that provide little predictive improvement",
-        "To convert the tree to a random forest"
+        "9 (all features)",
+        "3 (floor of square root of 9)",
+        "4 (ceiling of square root of 9)",
+        "1 (always one feature at a time)"
       ],
-      "correct": 2,
-      "explanation": "Pruning removes branches that do not improve test-set performance (or worsen it). A deep unpruned tree memorises training data (low bias, high variance). Pruning trades some training accuracy for better generalisation."
+      "correct": 1,
+      "explanation": "For classification, the default in randomForest is mtry = floor(√p). With p = 9, mtry = floor(√9) = floor(3) = 3."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "A random forest requires feature scaling because it uses Euclidean distance to split nodes.",
-      "correct": false,
-      "explanation": "Decision trees (and random forests) use threshold comparisons (e.g. age > 45), not Euclidean distances. They are invariant to feature scaling — no normalisation is needed."
+      "type": "multiple-choice",
+      "text": "What is the Out-of-Bag (OOB) error in a random forest?",
+      "options": [
+        "The error on the training set for each tree",
+        "The error computed on the ~37% of observations not included in each tree's bootstrap sample",
+        "The error on a separate held-out test set",
+        "The cross-validation error averaged across k folds"
+      ],
+      "correct": 1,
+      "explanation": "Each bootstrap sample draws n rows with replacement, leaving ~37% of observations out. For each tree, these OOB observations are used to evaluate that tree's predictions. Averaging OOB predictions across all trees gives the OOB error — a nearly unbiased test error estimate without requiring a separate test set."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "In randomForest(), the OOB (out-of-bag) error is:",
+      "text": "Precision = TP / (TP + FP). In a fraud detection context, what does low precision mean?",
       "options": [
-        "The training error on the full dataset",
-        "An unbiased test-error estimate computed from the bootstrap samples not used to train each tree",
-        "The error on a held-out validation set",
-        "The error after pruning"
+        "The model misses many genuine fraud cases",
+        "The model raises many false alarms — many flagged cases are not actually fraudulent",
+        "The model's predictions are unstable across different test sets",
+        "The model is overfitting the training data"
       ],
       "correct": 1,
-      "explanation": "Each tree in a random forest is trained on a bootstrap sample (~63% of data). The remaining ~37% — the out-of-bag observations — are used to compute prediction error for that tree. Averaging OOB errors across all trees gives an unbiased test-error estimate without a separate validation set."
+      "explanation": "Precision = proportion of flagged cases that are genuinely positive. Low precision means many of the model's 'fraud' predictions are actually legitimate claims — false positives. This wastes investigators' time. High recall (low FN rate) is the complement concern."
     },
     {
       "id": "q5",
+      "type": "true-false",
+      "text": "A single decision tree is a high-variance model, meaning small changes in the training data can lead to very different tree structures.",
+      "correct": true,
+      "explanation": "Decision trees are greedy and deterministic: the first split is chosen based on all training data, and a different training sample can produce a completely different first split. This high variance is why bagging (random forests) is so effective — averaging many unstable estimators reduces variance dramatically."
+    },
+    {
+      "id": "q6",
       "type": "multiple-choice",
-      "text": "Setting mtry = 3 in randomForest() means:",
+      "text": "ROC-AUC of 0.5 for a binary classifier means:",
       "options": [
-        "3 trees are grown in the forest",
-        "The maximum tree depth is 3",
-        "3 randomly chosen variables are considered at each split",
-        "The forest stops when 3% OOB error is achieved"
+        "The model achieves 50% accuracy",
+        "The model performs no better than random guessing",
+        "The model has precision = recall = 0.5",
+        "The model correctly classifies all cases but one"
       ],
-      "correct": 2,
-      "explanation": "mtry controls the number of variables randomly sampled as candidates at each split. The recommended default for classification is √p (where p is total variables). This random feature selection is what de-correlates the trees and reduces variance."
+      "correct": 1,
+      "explanation": "ROC-AUC = 0.5 corresponds to the diagonal line in ROC space — the curve of a classifier that randomly assigns class probabilities. Any model with AUC = 0.5 provides no discriminative power beyond chance. AUC = 1.0 is a perfect classifier; AUC > 0.7 is generally considered useful."
     }
   ]
 }

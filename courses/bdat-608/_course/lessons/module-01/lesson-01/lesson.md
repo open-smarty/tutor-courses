@@ -2,80 +2,68 @@
 
 ## Goal
 
-Explain what a statistical model is by decomposing observed data into signal (the systematic pattern) and noise (random variation), and describe the two key objects: the model family and the fitted model.
+Explain what a statistical model is, decompose observed data into signal and noise, and describe the iterative modelling cycle that drives every analysis in this course.
 
 ## Concept
 
-A statistical model is a mathematical device for separating what we can explain from what we cannot.
+Imagine you are trying to predict the price of a diamond from its weight. You look at the data and notice a clear upward trend — heavier diamonds cost more. But not every diamond follows the trend perfectly. Some are priced higher than you would expect; others are cheaper. That gap between "what we expect" and "what we observe" is the central idea of statistical modelling.
 
-Every observation $y$ is written as:
+**The signal/noise decomposition.** Every statistical model says:
 
-$$y = \underbrace{f(x)}_{\text{signal}} + \underbrace{\varepsilon}_{\text{noise}}$$
+$$y_i = f(x_i) + \varepsilon_i$$
 
-- **Signal** $f(x)$ is the structural relationship between the predictor $x$ and the response $y$. It is what we want to learn.
-- **Noise** $\varepsilon$ is random variation — measurement error, unobserved factors, pure chance. No model can explain this.
+where $y_i$ is the observed response for observation $i$, $f(x_i)$ is the **signal** — the systematic pattern we want to learn — and $\varepsilon_i$ is the **noise** — random variation that no model can explain. Our job is to estimate $f$ as accurately as possible.
 
-### Two distinct objects
+**Model family vs fitted model.** These are two distinct objects, and confusing them is a common source of errors.
 
-| Object | What it is | Example |
-|--------|-----------|---------|
-| **Model family** | The *shape* of the equation; all possible versions | All straight lines: $y = a_1 + a_2 x$ |
-| **Fitted model** | The *specific member* of the family closest to the data | $\hat{y} = 4.22 + 2.05\,x$ |
+- A **model family** is the *shape* of the equation: "we believe the relationship is a straight line," i.e. $f(x) = \beta_0 + \beta_1 x$. This is the collection of *all possible* straight lines — infinitely many of them.
+- A **fitted model** is the *specific* member of that family that best matches our data: "after fitting, $\hat{f}(x) = 0.25 + 0.77x$." The numbers $0.25$ and $0.77$ are estimated from data.
 
-Choosing a model family is an **assumption** about how the world works. You cannot verify the assumption from the data alone — you can only check whether it is reasonable by inspecting the residuals (what the model missed).
+Choosing the family is a modelling assumption. You cannot prove it from the data alone, but you *can* diagnose whether it was reasonable — by inspecting the residuals.
 
-### The modelling cycle
+**What is a residual?** The residual for observation $i$ is:
 
-Statistical modelling is iterative, not linear:
+$$e_i = y_i - \hat{y}_i$$
 
-```
-Observe Data → Choose Model Family → Fit Model → Generate Predictions
-      ↑                                                      ↓
- Revise Model ← Inspect Residuals ←────────────────────────┘
-```
+where $\hat{y}_i = \hat{f}(x_i)$ is the model's prediction. A residual tells you exactly what the model missed for that observation. If $e_i > 0$, the true value was above the model's prediction; if $e_i < 0$, it was below.
 
-This cycle repeats until the residuals look like random noise — meaning the model has captured all available systematic variation.
+**Why residuals matter.** If the model is correctly specified, residuals should look like random noise: no pattern, centred at zero, roughly the same spread across all fitted values. Any systematic pattern in the residuals means the model is missing something. A fan shape means the variance is non-constant (the noise is bigger for larger predictions). A curve means the relationship is not linear. Clusters by group mean a grouping variable is relevant. Residual inspection is how you discover what the model got wrong.
 
-> "All models are wrong, but some are useful." — George E. P. Box
+**The iterative modelling cycle.** Modelling is not a one-shot procedure. We follow this loop:
 
-The question is never *Is the model true?* but *Is the model adequate for this purpose?*
+1. Observe the data and form a hypothesis about the shape of $f$.
+2. Choose a model family.
+3. Fit the model (estimate the parameters).
+4. Inspect the residuals — look for patterns.
+5. Refine the model based on what the residuals revealed.
+6. Repeat until the residuals look like random noise.
+
+The cycle stops when no further systematic pattern can be extracted from the residuals.
 
 ## Example
 
-Consider the `sim1` dataset from the `modelr` package. It has 30 rows with two columns: `x` (a predictor) and `y` (a response).
+We use the `diamonds` dataset (53,940 rows, from `ggplot2`). Each row is one diamond; we will predict `price` from `carat` (weight in carats).
 
-```r
-library(modelr)
-data("sim1")
-glimpse(sim1)
-# $ x <int> 1 1 1 2 2 2 3 3 3 ... (each x-value repeated 3 times)
-# $ y <dbl> 4.20 7.51 2.13 8.99 ...
-```
+**Step 1.** Plot `price` vs `carat`. We see a clear upward trend, but the points form a fan — the spread in price grows with carat size.
 
-Plotting `sim1` reveals a clear **linear** trend with random scatter around it:
+**Step 2.** Choose a model family: straight line, $\text{price} = \beta_0 + \beta_1 \cdot \text{carat}$.
 
-```r
-library(ggplot2)
-ggplot(sim1, aes(x, y)) +
-  geom_point(size = 3, colour = "#1B3A6B") +
-  labs(title = "sim1: Response vs Predictor") +
-  theme_minimal()
-```
+**Step 3.** Fit using `lm(price ~ carat, data = diamonds)`. R returns $\hat{\beta}_0 = -2{,}256$ and $\hat{\beta}_1 = 7{,}756$, so the fitted model is $\widehat{\text{price}} = -2{,}256 + 7{,}756 \times \text{carat}$.
 
-The model family we choose is: $y = a_1 + a_2 x + \varepsilon$ (a straight line).
+**Step 4.** Compute residuals and plot them against `carat`. The residuals fan outward — a classic sign that the variance is non-constant (heteroscedastic). The model is systematically wrong for large diamonds.
 
-The fitted model — found by minimising a loss function, as we will learn in Module 2 — turns out to be approximately $\hat{y} = 4.22 + 2.05\,x$.
+**Step 5.** Refinement: take $\log$ of both sides. The `log(price) ~ log(carat)` model shrinks the fan. We will explore this in later lessons.
 
-The **residuals** (observed minus fitted) are what the straight line could not explain. Plotting them reveals whether any systematic pattern remains.
+**Numeric check.** For a 1-carat diamond: $\widehat{\text{price}} = -2{,}256 + 7{,}756 \times 1 = 5{,}500$. Suppose the actual price is $\$6{,}200$. Then $e = 6{,}200 - 5{,}500 = +700$. The model underestimated by $\$700$ for this diamond.
 
 ## Task
 
-Open `exercise.Rmd` and complete the two marked chunks:
+Open `exercise.Rmd`. Load the `diamonds` dataset and complete the following:
 
-1. Load `sim1` from `modelr` and call `glimpse()` on it. Report: how many rows? How many columns?
-2. Create a scatter plot of `y` versus `x` using `ggplot2`. Add a title "sim1: My first look".
-
-Knit the document when done. All chunks must run without errors.
+1. Create a scatter plot of `price` vs `carat` coloured by `cut`.
+2. Fit a simple linear model: `lm(price ~ carat, data = diamonds)`.
+3. Use `add_residuals()` from the `modelr` package to attach residuals to the dataset.
+4. Plot residuals vs `carat`. Describe the pattern you see and what it tells you about the model.
 
 ## Check
 
@@ -85,4 +73,4 @@ npm run check -- bdat-608 module-01 lesson-01
 
 ## Reflection
 
-A classmate says: "We just need to find the equation that fits the data perfectly — zero residuals." What is wrong with this goal, and what does it tell us about the difference between fitting training data and predicting new observations?
+A residual is defined as $e_i = y_i - \hat{y}_i$. If you computed the mean of all residuals from an OLS fit, you would always get exactly zero. Does that mean the model is unbiased? What does "unbiased" mean in this context, and could a model have zero mean residuals yet still be systematically wrong?

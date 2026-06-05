@@ -1,94 +1,95 @@
 ---
-title: "BDAT 608 | Module 3, Lesson 2 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Diagnostic Plots and Model Comparison"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 8, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
-library(ggfortify)
-options(na.action = na.warn)
-data("sim1", package = "modelr")
-sim1_mod <- lm(y ~ x, data = sim1)
+library(broom)
 ```
 
-## Task 1 — Base R Diagnostics
+```{r fit-models}
+data("diamonds", package = "ggplot2")
+mod1 <- lm(log(price) ~ log(carat),                         data = diamonds)
+mod2 <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)
+```
 
-```{r base-diagnostics, fig.width=9, fig.height=7}
+## Task 1: Four diagnostic plots for mod1
+
+```{r task1, fig.width=9, fig.height=7}
 par(mfrow = c(2, 2))
-plot(sim1_mod)
+plot(mod1)
 par(mfrow = c(1, 1))
+
+# Plot 1 — Residuals vs Fitted:
+# The points form bands (striped pattern) due to the discrete nature of
+# cut/color/clarity — the model cannot capture these effects with carat alone.
+# The red LOESS line deviates from zero, indicating remaining structure.
+
+# Plot 2 — Normal Q-Q:
+# Points follow the diagonal reasonably well in the middle, but deviate
+# in the tails — the residuals are slightly heavy-tailed. This is acceptable
+# for this large dataset; it will not invalidate inference badly.
+
+# Plot 3 — Scale-Location:
+# The LOESS line is not flat — variance is not fully constant. The log
+# transformation has improved homoscedasticity over the raw scale, but
+# further improvement would come from adding quality variables.
+
+# Plot 4 — Residuals vs Leverage:
+# No diamond has Cook's distance close to 1. There are some high-leverage
+# observations (extreme carat values), but none is catastrophically influential.
 ```
 
-All four panels look clean for `sim1`: random scatter around zero, points near the Q-Q diagonal, flat Scale-Location line, and small Cook's distances.
+## Task 2: AIC comparison
 
-## Task 2 — ggfortify Diagnostics
+```{r task2}
+AIC(mod1, mod2)
 
-```{r ggplot-diagnostics}
-autoplot(sim1_mod, which = 1:4, colour = "#1B3A6B", smooth.colour = "#C9A84C")
+delta_aic <- AIC(mod1) - AIC(mod2)
+cat("ΔAIC:", round(delta_aic, 1), "\n")
+
+# mod2 has a dramatically lower AIC (by > 2,000 units).
+# A ΔAIC > 10 is strong evidence; > 100 is overwhelming.
+# The quality variables (cut, color, clarity) provide massive improvement.
 ```
 
-## Task 3 — Fit Quadratic Model
+## Task 3: F-test for the extra predictors
 
-```{r quadratic-model}
-mod_b <- lm(y ~ x + I(x^2), data = sim1)
-summary(mod_b)
+```{r task3}
+anova(mod1, mod2)
+
+# The F-statistic is extremely large (>> 100) with p-value < 2.2e-16.
+# This confirms that the 17 extra parameters (cut, color, clarity dummies)
+# are jointly highly significant — they explain enormous amounts of
+# residual variance. The F-test and AIC agree: use mod2.
 ```
 
-## Task 4 — Compare Fitted Lines
+## Task 4: Residuals vs fitted for mod2
 
-```{r compare-fits}
-mod_a <- sim1_mod
+```{r task4}
+aug2 <- augment(mod2)
 
-grid_multi <- sim1 |>
-  data_grid(x) |>
-  gather_predictions(mod_a, mod_b)
+ggplot(aug2, aes(x = .fitted, y = .resid)) +
+  geom_point(alpha = 0.05, colour = "steelblue") +
+  geom_hline(yintercept = 0, colour = "darkorange", linewidth = 1) +
+  geom_smooth(method = "loess", formula = y ~ x,
+              colour = "red", se = FALSE, linewidth = 0.8) +
+  labs(
+    title    = "Residuals vs Fitted — mod2 (log-log + cut + color + clarity)",
+    subtitle = "The LOESS line is much closer to zero than for mod1. Variance more stable.",
+    x        = "Fitted log(price)",
+    y        = "Residual"
+  ) +
+  theme_minimal()
 
-ggplot(sim1, aes(x, y)) +
-  geom_point(colour = "grey40", size = 2) +
-  geom_line(data = grid_multi, aes(y = pred, colour = model), linewidth = 1.2) +
-  scale_colour_manual(values = c("#1B3A6B", "#C9A84C"),
-                      labels = c("Linear", "Quadratic")) +
-  labs(title = "Linear vs Quadratic model on sim1", colour = "Model") +
-  theme_minimal(base_size = 13)
+# Compared to mod1, the banded pattern has largely disappeared.
+# The LOESS line is nearly flat around zero, and the spread of residuals
+# is more uniform across fitted values. Some heteroscedasticity remains
+# at the extremes of fitted price, but the model is substantially better.
 ```
-
-## Task 5 — Compare Residuals
-
-```{r compare-residuals}
-sim1 |>
-  gather_residuals(mod_a, mod_b) |>
-  ggplot(aes(x, resid, colour = model)) +
-  geom_point() +
-  geom_ref_line(h = 0) +
-  facet_wrap(~ model, labeller = label_both) +
-  scale_colour_manual(values = c("#1B3A6B", "#C9A84C")) +
-  labs(title = "Residuals: linear vs quadratic", y = "Residual") +
-  theme_minimal(base_size = 13)
-```
-
-## Task 6 — AIC Comparison
-
-```{r aic}
-AIC(mod_a, mod_b)
-cat("Additive R²:    ", round(summary(mod_a)$r.squared, 4), "\n")
-cat("Quadratic R²:   ", round(summary(mod_b)$r.squared, 4), "\n")
-# The linear model (mod_a) has a lower (better) AIC despite fewer parameters.
-# For sim1, the relationship is genuinely linear — the quadratic term adds complexity
-# without capturing any real additional signal.
-```
-
-## Reflection
-
-Non-normality of residuals does **not** automatically mean the model is wrong. Normality matters primarily for **inference** — t-tests, p-values, and confidence intervals rely on the normality assumption. For large samples, the Central Limit Theorem ensures these are approximately valid even with moderately non-normal residuals. However, normality does not affect the unbiasedness or consistency of the OLS estimates themselves. The more critical assumptions are **linearity of the mean** (checked by Residuals vs Fitted) and **homoscedasticity** (checked by Scale-Location). Heavy tails in residuals typically indicate that standard errors and p-values should be treated with caution, and robust regression (`rlm()`) may be more appropriate.

@@ -1,65 +1,113 @@
 ---
-title: "BDAT 602 — Module 5, Lesson 1 Exercise"
-subtitle: "Decision Trees and Random Forests"
-output:
-  html_document:
-    theme: flatly
-    highlight: tango
-    toc: false
+title: "Exercise: Decision Trees and Random Forests"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
-source("R/simulate_bdat602_data.R")
-health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+```{r load-packages}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(pROC)
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_data <- simulate_bdat602(n = 50000, seed = 602)
+```
+
+```{r split-data}
 set.seed(602)
-idx   <- sample(nrow(health_small), 0.75 * nrow(health_small))
-train <- health_small[idx, ]
-test  <- health_small[-idx, ]
+idx   <- sample(nrow(health_data), 0.80 * nrow(health_data))
+train <- health_data[idx, ]
+test  <- health_data[-idx, ]
+
+# Convert target to factor
+train$churned <- factor(train$churned, levels = c(0, 1), labels = c("No", "Yes"))
+test$churned  <- factor(test$churned,  levels = c(0, 1), labels = c("No", "Yes"))
 ```
 
-## Task 1 — Fit and plot a decision tree
+## Task 1: Train and plot a decision tree
 
-Predict `high_risk` using `age`, `bmi`, `smoker`, `num_chronic_conditions`, and `plan_tier`. Set `maxdepth = 4`. Plot with `rpart.plot()`.
+```{r task1-tree}
+# TODO: fit a rpart tree for churned ~ age + plan_tier + income + num_claims +
+#       support_calls + auto_pay + customer_rating + deductible
+# method = "class", cp = 0.005
+tree <- NULL  # rpart(...)
 
-```{r task1}
-# YOUR CODE HERE
-# library(rpart); library(rpart.plot)
-# tree_fit <- rpart(
-#   high_risk ~ age + bmi + smoker + num_chronic_conditions + plan_tier,
-#   data = train, method = "class",
-#   control = rpart.control(maxdepth = 4)
-# )
-# rpart.plot(tree_fit, type = 4, extra = 104,
-#            main = "Decision Tree: High-Risk Prediction")
+# TODO: plot the tree with rpart.plot (type = 4, extra = 104)
 ```
 
-## Task 2 — Confusion matrix and accuracy
-
-Predict classes on `test`. Build the confusion matrix with `table()`. Report accuracy.
-
-```{r task2}
-# YOUR CODE HERE
-# pred <- predict(tree_fit, test, type = "class")
-# conf_mat <- table(Predicted = pred, Actual = test$high_risk)
-# print(conf_mat)
-# accuracy <- sum(diag(conf_mat)) / sum(conf_mat)
-# cat("Accuracy:", round(accuracy, 3), "\n")
+```{r task1-tree-summary}
+# Print the complexity table
+printcp(tree)
 ```
 
-## Task 3 — Random forest and variable importance
+## Task 2: Tune cp with plotcp()
 
-Fit a random forest with `ntree = 200`, `mtry = 2`, `importance = TRUE`. Plot variable importance.
+```{r task2-plotcp}
+# TODO: call plotcp(tree) to see the cross-validation error by cp
+# Then prune the tree to the optimal cp (minimum xerror)
+```
 
-```{r task3}
-# YOUR CODE HERE
-# library(randomForest)
-# set.seed(602)
-# rf_fit <- randomForest(
-#   as.factor(high_risk) ~ age + bmi + smoker +
-#     num_chronic_conditions + plan_tier,
-#   data = train, ntree = 200, mtry = 2, importance = TRUE
-# )
-# print(rf_fit)
-# varImpPlot(rf_fit, main = "RF Variable Importance: High-Risk")
+```{r task2-prune}
+# TODO: find the optimal cp value
+best_cp <- NULL  # tree$cptable[which.min(tree$cptable[, "xerror"]), "CP"]
+
+# TODO: prune the tree
+tree_pruned <- NULL  # prune(tree, cp = best_cp)
+rpart.plot(tree_pruned, type = 4, extra = 104, main = "Pruned Decision Tree")
+```
+
+## Task 3: Train a random forest and plot variable importance
+
+```{r task3-rf}
+# TODO: fit a random forest with ntree = 200, mtry = floor(sqrt(8)) = 2
+# Predictors: same 8 as the tree above
+# importance = TRUE
+set.seed(602)
+rf <- NULL  # randomForest(...)
+
+# Print OOB error
+print(rf)
+```
+
+```{r task3-varimp}
+# TODO: plot variable importance with varImpPlot()
+```
+
+```{r task3-top-vars}
+# Which 3 variables are most important according to Mean Decrease in Gini?
+# Answer (as a comment):
+```
+
+## Task 4: Compare decision tree vs. random forest
+
+```{r task4-predictions}
+# Decision tree predictions
+prob_tree <- predict(tree_pruned, test, type = "prob")[, "Yes"]
+
+# TODO: random forest predictions (type = "prob")
+prob_rf <- NULL  # predict(rf, test, type = "prob")[, "Yes"]
+```
+
+```{r task4-roc}
+# TODO: plot ROC curves for both models on the same plot
+# Report AUC for each
+roc_tree <- roc(test$churned, prob_tree, levels = c("No", "Yes"))
+# roc_rf   <- roc(...)
+
+cat("Decision tree AUC:", round(auc(roc_tree), 3), "\n")
+# cat("Random forest AUC:", round(auc(roc_rf), 3), "\n")
+```
+
+```{r task4-f1}
+# TODO: compute F1 score for both models at the 0.5 threshold
+# pred_tree_class <- factor(ifelse(prob_tree > 0.5, "Yes", "No"), levels = c("No","Yes"))
+# confusion matrix, then F1 = 2*P*R / (P+R)
+# Which model wins on F1? On AUC?
+# Answer (as a comment):
 ```

@@ -1,90 +1,123 @@
 ---
-title: "BDAT 608 | Module 5, Lesson 3 — SOLUTION"
-author: "Instructor Reference"
-date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    theme: flatly
-    highlight: tango
+title: "Solution: Penalised Regression and Decision Trees"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
-                      fig.width = 8, fig.height = 5)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-```{r libraries}
+```{r load-packages}
 library(tidyverse)
 library(modelr)
 library(glmnet)
 library(rpart)
 library(rpart.plot)
-options(na.action = na.warn)
-data("sim4", package = "modelr")
+library(broom)
 ```
 
-## Task 1 — Simulate Data and Fit Ridge/LASSO
+```{r generate-data}
+set.seed(2024)
+n <- 200; p <- 50
+X <- matrix(rnorm(n * p), n, p)
+colnames(X) <- paste0("V", 1:p)
+y <- 2 * X[, 1] - 1.5 * X[, 2] + rnorm(n)
 
-```{r simulate-data}
-set.seed(2024); p <- 50; n <- 200
-X <- matrix(rnorm(n*p), n, p)
-y_pen <- 2 * X[,1] - 1.5 * X[,2] + rnorm(n)
-
-mod_ridge <- glmnet(X, y_pen, alpha = 0)
-mod_lasso <- glmnet(X, y_pen, alpha = 1)
+data("diamonds", package = "ggplot2")
 ```
 
-## Task 2 — Cross-Validate LASSO
+## Task 1: Fit Ridge and LASSO with cross-validation
 
-```{r lasso-cv}
-cv_lasso    <- cv.glmnet(X, y_pen, alpha = 1, nfolds = 10)
+```{r task1}
+set.seed(42)  # for reproducibility of CV fold assignment
+cv_lasso <- cv.glmnet(X, y, alpha = 1, nfolds = 10)
+cv_ridge  <- cv.glmnet(X, y, alpha = 0, nfolds = 10)
+
 plot(cv_lasso)
-best_lambda <- cv_lasso$lambda.min
-cat("lambda.min:", round(best_lambda, 4), "\n")
+title("LASSO: CV-MSE vs log(lambda)", line = 2.5)
+
+cat("LASSO lambda.min:  ", round(cv_lasso$lambda.min,  4), "\n")
+cat("LASSO lambda.1se:  ", round(cv_lasso$lambda.1se,  4), "\n")
+cat("Ridge lambda.min:  ", round(cv_ridge$lambda.min,  4), "\n")
+cat("Ridge lambda.1se:  ", round(cv_ridge$lambda.1se,  4), "\n")
 ```
 
-## Task 3 — Inspect Coefficients
+## Task 2: Extract and compare coefficients
 
-```{r lasso-coefs}
-coef(cv_lasso, s = "lambda.min")[1:6, ]
-# V1 ≈ 2, V2 ≈ -1.5, V3-V6 = 0
-# LASSO correctly identified V1 and V2 as the active predictors.
+```{r task2}
+lasso_coef <- coef(cv_lasso, s = "lambda.1se")
+ridge_coef <- coef(cv_ridge, s = "lambda.1se")
+
+cat("LASSO non-zero coefficients at lambda.1se:\n")
+print(lasso_coef[lasso_coef[,1] != 0, ])
+
+cat("\nNumber of non-zero LASSO coefficients:",
+    sum(lasso_coef[-1, ] != 0), "\n")  # exclude intercept
+cat("Number of zero LASSO coefficients:    ",
+    sum(lasso_coef[-1, ] == 0), "\n")
+
+cat("\nRidge: any exactly zero coefficients?",
+    any(ridge_coef[-1, ] == 0), "\n")
+
+# LASSO correctly identifies V1 (≈ +2) and V2 (≈ −1.5) as the only
+# non-zero predictors, setting the remaining 48 coefficients to exactly 0.
+# Ridge keeps all 50 but shrinks them toward 0.
 ```
 
-## Task 4 — Coefficient Paths
+## Task 3: LASSO coefficient path
 
-```{r lasso-paths}
-plot(mod_lasso, xvar = "lambda",
-     main = "LASSO coefficient paths  (only 2 true predictors)")
-abline(v = log(best_lambda), lty = 2, col = "darkred")
+```{r task3}
+lasso_path <- glmnet(X, y, alpha = 1)
+
+plot(lasso_path, xvar = "lambda",
+     main = "LASSO coefficient paths")
+abline(v = log(cv_lasso$lambda.1se), lty = 2, col = "red", lwd = 2)
+legend("topright", legend = "lambda.1se", lty = 2, col = "red")
+
+# As lambda decreases (left to right), more coefficients enter the model.
+# V1 and V2 (the true predictors) enter first and have the largest
+# magnitude at any given lambda.
 ```
 
-## Task 5 — Decision Tree on sim4
+## Task 4: Decision tree on diamonds
 
-```{r tree-fit}
-tree_mod <- rpart(y ~ x1 + x2, data = sim4,
-                  control = rpart.control(maxdepth = 4, cp = 0.01))
-rpart.plot(tree_mod, type = 4, extra = 101, col = "#1B3A6B",
-           main = "Regression tree: y ~ x1 + x2")
+```{r task4}
+tree_mod <- rpart(
+  price ~ carat + cut + color + clarity,
+  data    = diamonds,
+  control = rpart.control(maxdepth = 4, cp = 0.001)
+)
+
+rpart.plot(tree_mod, type = 4, extra = 101,
+           main = "Regression tree: diamond price")
+
+cat("\nVariable importance:\n")
+print(tree_mod$variable.importance)
+
+# The first split is always on carat — confirming it as the dominant
+# predictor of price. Subsequent splits refine by clarity and color.
 ```
 
-## Task 6 — Tree Prediction Surface
+## Task 5: Compare tree RMSE to OLS RMSE
 
-```{r tree-surface}
-grid4_tree <- sim4 |>
-  data_grid(x1 = seq_range(x1, 30), x2 = seq_range(x2, 30)) |>
-  add_predictions(tree_mod)
+```{r task5}
+# Tree predictions
+tree_pred <- predict(tree_mod, diamonds)
+tree_rmse <- sqrt(mean((diamonds$price - tree_pred)^2))
 
-ggplot(grid4_tree, aes(x1, x2, fill = pred)) +
-  geom_tile() +
-  scale_fill_viridis_c() +
-  labs(title = "Tree: piecewise-constant prediction surface", fill = "ŷ") +
-  theme_minimal(base_size = 13)
+# OLS log-log model predictions (back-transformed)
+mod_lm   <- lm(log(price) ~ log(carat) + cut + color + clarity, data = diamonds)
+lm_pred  <- exp(predict(mod_lm, diamonds))
+lm_rmse  <- sqrt(mean((diamonds$price - lm_pred)^2))
+
+cat("Tree RMSE:", round(tree_rmse, 0), "USD\n")
+cat("OLS RMSE: ", round(lm_rmse,  0), "USD\n")
+
+# OLS has lower RMSE because:
+# (1) The log-log model captures the continuous, smooth price-carat
+#     relationship, while the tree only approximates it with step functions.
+# (2) The tree with maxdepth = 4 has at most 2^4 = 16 leaf nodes —
+#     very coarse — while OLS uses a single continuous formula.
+# Trees shine when the relationship is genuinely piecewise-constant or
+# when complex interactions among many predictors are present.
 ```
-
-The tree surface shows hard rectangular boundaries — predictions are constant within each rectangular leaf region, unlike the smooth gradient of the OLS or GAM surfaces.
-
-## Reflection
-
-LASSO is more appropriate for sparse signals because it sets irrelevant coefficients **exactly to zero**, effectively removing those variables from the model. This produces a sparse, interpretable model that keeps only V1 and V2. Ridge shrinks all 50 coefficients but leaves them non-zero, making the model harder to interpret and potentially including noisy predictors that inflate prediction variance. When the true model involves only a few active predictors among many candidates, LASSO's $\ell_1$ penalty induces exactly the right kind of sparsity.

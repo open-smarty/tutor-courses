@@ -1,30 +1,27 @@
-# Task: Production-Ready Preprocessing Pipeline
+# Task: Building a Full Preprocessing Pipeline
 
 ## Objective
 
-Build a complete, leak-proof preprocessing pipeline that could be deployed to score new policyholders in production.
+Implement Z-score and Min-Max scaling manually, create dummy variables for a multi-level categorical variable, and assemble a complete `recipes` preprocessing pipeline with imputation, encoding, and normalisation.
 
 ## Instructions
 
-1. **Split** — Use `initial_split(health_small, prop = 0.75, strata = plan_tier)` to create training and test sets.
+1. Knit `exercise.Rmd` to confirm it runs without errors.
 
-2. **Pipeline** — Build a `recipes` pipeline on the training set with all of the following steps in order:
-   - `step_impute_median(bmi, income)`
-   - `step_mutate()` to add `bmi_missing` and `income_missing` indicators
-   - `step_mutate()` to winsorise `bmi` to [10, 60]
-   - `step_log(claim_amount, base = 10, offset = 1)`
-   - `step_dummy(sex, region, payment_method, employment_type, one_hot = FALSE)`
-   - `step_mutate()` to make `plan_tier` an ordered factor (Bronze < Silver < Gold < Platinum)
-   - `step_integer(plan_tier)`
+2. **Task 1 — Manual scaling**: Compute Z-score scaled `age` and Min-Max scaled `age` without using `recipes`. Verify that Z-score gives mean ≈ 0 and sd ≈ 1, and Min-Max gives min = 0 and max = 1.
+
+3. **Task 2 — Dummy encoding**: Build a minimal recipe with `step_dummy(plan_tier)`. After baking, print the column names. State which level is the reference (dropped) level and explain why it is dropped.
+
+4. **Task 3 — Full pipeline**: Using an 80/20 train/test split (stratified on `churned`), build a recipe with:
+   - `step_impute_median()` on `income` and `bmi`
+   - `step_impute_mode()` on `plan_tier` and `education`
+   - `step_dummy(all_nominal_predictors())`
    - `step_normalize(all_numeric_predictors())`
-   - `step_nzv(all_predictors())`
+   
+   Prep on the training set, then bake both training and test sets.
 
-3. **Apply** — `prep()` on training data only. `bake()` on both training and test sets.
-
-4. **Verify** — Report: (a) number of columns in each output; (b) NAs in each output; (c) mean and SD of `age` in the training output (should be ≈ 0 and ≈ 1).
-
-5. **Leakage check** — The pipeline learned the `bmi` median from training data only. Print `tidy(prep_fit, number = 1)` to show the stored median. Compare it to `median(health_small$bmi, na.rm = TRUE)` — they should be slightly different because the pipeline only saw 75% of the data.
+5. **Task 4 — Verification**: Confirm that the baked training set has zero missing values. Compute and print the mean and standard deviation of `age` and `income` after baking (both should be ≈ 0 and ≈ 1). List the `plan_tier` dummy column names created.
 
 ## Submission
 
-Knit your Rmd to HTML with all five sections visible.
+Submit `exercise.Rmd` and the knitted `exercise.html`. Your explanation of the dropped reference level (Task 2) must be written as an R comment inside the code chunk.

@@ -1,60 +1,66 @@
 {
   "id": "module-02-lesson-01",
-  "title": "Quiz: Variables Control Charts — Xbar-R and Xbar-S",
+  "title": "Quiz: Xbar-R and Xbar-S Control Charts",
   "passingScore": 70,
   "questions": [
     {
       "id": "q1",
       "type": "multiple-choice",
-      "text": "For an Xbar-R chart with subgroup size n=4, R̄ = 3.2 mm, and A₂ = 0.729, and x̄̄ = 50.0 mm — what is the UCL of the Xbar chart?",
+      "text": "For a bottling process with x̄̄ = 500g, R̄ = 4g, and n = 5 (A₂ = 0.577), what is the UCL of the Xbar chart?",
       "options": [
-        "50.0 + 0.729 × 3.2 = 52.33 mm",
-        "50.0 + 3.267 × 3.2 = 60.45 mm",
-        "50.0 + 0.729 × 50.0 = 86.45 mm",
-        "50.0 + 3 × 3.2 = 59.6 mm"
+        "502.31 g",
+        "504.00 g",
+        "508.46 g",
+        "501.15 g"
       ],
       "correct": 0,
-      "explanation": "UCL for the Xbar chart = x̄̄ + A₂ × R̄ = 50.0 + 0.729 × 3.2 = 52.33 mm. The constant A₂ depends on subgroup size n."
+      "explanation": "UCL = x̄̄ + A₂ × R̄ = 500 + 0.577 × 4 = 500 + 2.308 = 502.31 g."
     },
     {
       "id": "q2",
       "type": "multiple-choice",
-      "text": "Which chart in a control chart pair monitors process SPREAD (variability)?",
+      "text": "Why do 3-sigma control limits result in a false alarm rate of approximately 0.27%?",
       "options": [
-        "The Xbar chart",
-        "The R or S chart",
-        "Both charts equally",
-        "Neither — control charts only monitor the mean"
+        "For a normal distribution, P(|Z| > 3) = 2 × 0.00135 = 0.0027",
+        "Control charts use the t-distribution with 3 degrees of freedom",
+        "0.27% was chosen arbitrarily as an industry standard",
+        "The 3-sigma rule applies only to the range chart, not the Xbar chart"
       ],
-      "correct": 1,
-      "explanation": "The R chart (or S chart) monitors process spread/variability within subgroups. The Xbar chart monitors the process location (mean). Both are always used together."
+      "correct": 0,
+      "explanation": "From standard normal tables, P(Z > 3) = 0.00135. For a two-sided limit, P(|Z| > 3) = 2 × 0.00135 = 0.0027, or 0.27%."
     },
     {
       "id": "q3",
-      "type": "true-false",
-      "text": "An Xbar chart that shows all points within control limits proves the process is producing conforming products.",
-      "correct": false,
-      "explanation": "An in-control Xbar chart means the process location is statistically stable — not that products meet specification. Process capability (Cp, Cpk) determines whether the process meets specifications."
+      "type": "multiple-choice",
+      "text": "For n = 5 with D₃ = 0 and D₄ = 2.114, a process has R̄ = 5g. What is the LCL of the R chart?",
+      "options": [
+        "0 g",
+        "2.5 g",
+        "5 g",
+        "10.57 g"
+      ],
+      "correct": 0,
+      "explanation": "LCL_R = D₃ × R̄ = 0 × 5 = 0. For small subgroup sizes (n < 7), D₃ = 0, which means the lower control limit is zero — you cannot have a negative range."
     },
     {
       "id": "q4",
       "type": "multiple-choice",
-      "text": "According to the Western Electric rules, eight consecutive points on the same side of the centre line indicate:",
+      "text": "You observe 9 consecutive subgroup means all above the center line but all within the UCL. According to Western Electric rules, you should:",
       "options": [
-        "Normal common-cause variation",
-        "A probable process shift — an out-of-control signal",
-        "An error in the control chart constants",
-        "The subgroup size is too large"
+        "Signal out of control — 8 consecutive points on one side of CL is a rule violation",
+        "Take no action — all points are within 3-sigma limits",
+        "Widen the control limits to accommodate the pattern",
+        "Switch from Xbar-R to Xbar-S to get a better estimate"
       ],
-      "correct": 1,
-      "explanation": "Eight consecutive points on the same side of the CL is a Western Electric run rule — it signals a probable process shift even if no single point exceeds the 3σ limits."
+      "correct": 0,
+      "explanation": "Western Electric Rule 4: 8 consecutive points on the same side of the center line signals a process shift, even if no single point exceeds 3σ. The probability of this happening by chance in a stable process is (0.5)^8 = 0.4%."
     },
     {
       "id": "q5",
       "type": "true-false",
-      "text": "The Xbar-S chart is preferred over Xbar-R when the subgroup size is greater than 10.",
+      "text": "You should switch from an Xbar-R chart to an Xbar-S chart when the subgroup size n is 10 or more.",
       "correct": true,
-      "explanation": "For larger subgroups (n > 10), the within-subgroup standard deviation S is a more efficient estimator of process spread than the range R, so the Xbar-S chart is used."
+      "explanation": "For large subgroups (n ≥ 10), the sample standard deviation S is a more statistically efficient estimator of process variability than the range R. The Xbar-S chart uses S̄ with constants A₃, B₃, B₄ instead of A₂, D₃, D₄."
     }
   ]
 }

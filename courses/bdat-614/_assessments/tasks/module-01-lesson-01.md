@@ -1,27 +1,27 @@
-# Task: Module 1, Lesson 1 — Quality Dimensions in a Real Context
+# Task: Garvin Quality Audit — ETL Pipeline
 
 ## Objective
 
-Apply Garvin's eight quality dimensions to a real-world product or data system that you choose yourself.
+Apply Garvin's 8 dimensions of quality to a real or simulated ETL pipeline and produce a scored audit with a radar chart visualisation.
 
 ## Instructions
 
-1. Choose either a **physical product** (e.g., a smartphone, a medical device, a manufactured part) or a **data/software system** (e.g., a database, a data pipeline, an API).
+1. Open `exercise.py` in the `module-01/lesson-01/` directory.
+2. Define the `audit` dictionary with the 8 Garvin dimensions as keys and integer scores (1–5) as values. Use the provided scores or substitute your own if you are auditing a real system you have access to.
+3. Compute the overall quality score as the arithmetic mean of all 8 dimension scores. Print it to 2 decimal places.
+4. Build the radar chart following the step-by-step comments in the exercise file:
+   - Extract dimension names and scores.
+   - Compute angles using `np.linspace`.
+   - Close the polygon.
+   - Create a polar subplot.
+   - Plot and fill the polygon.
+   - Label axes and set the score range to [0, 5].
+   - Add a title that includes the overall score.
+5. Save or display the chart.
+6. Answer in a comment at the bottom of your script: which dimension would you prioritise improving first, and why?
 
-2. Write a short paragraph (3–5 sentences) describing your chosen product or system.
+## Submission
 
-3. For **each of the eight Garvin dimensions**, write one sentence explaining how that dimension applies to your example. If a dimension is not applicable, explain why.
-
-4. Identify which **two dimensions** are most critical for your example and justify your choice.
-
-5. State whether poor quality in your example is primarily a **QC problem**, a **QA problem**, or both — and explain.
-
-## Deliverable
-
-Submit your answers as comments in your `exercise.py` file (in a clearly marked section at the bottom), or as a separate `.txt` file in the same lesson folder.
-
-## Criteria
-
-- All eight dimensions addressed: 40%
-- Quality of justification for the two most critical dimensions: 30%
-- QC vs QA analysis is correct and well-reasoned: 30%
+- Submit your completed `exercise.py`.
+- The radar chart image (saved as PNG) if required by your instructor.
+- The overall quality score printed to the console.

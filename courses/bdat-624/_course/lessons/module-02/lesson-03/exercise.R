@@ -1,137 +1,153 @@
-# BDAT 624 — Module 2, Lesson 3
-# State Classification — Recurrence, Transience, and Ergodicity
-#
-# You will need: markovchain, expm
-# Install if needed:
-#   install.packages(c("markovchain", "expm"))
-
+# Required packages
 library(markovchain)
-library(expm)
+library(ggplot2)
+library(dplyr)
 
-# -----------------------------------------------------------------------
-# Chain A: the alternating chain  P = [[0,1],[1,0]]
-# -----------------------------------------------------------------------
+# Scenario: We analyse two Markov chains — one with an absorbing state
+# (the clinical chain from Lesson 1) and one fully ergodic — classifying
+# states, identifying communicating classes, and checking ergodicity.
 
-P_alt <- matrix(
-  c(0, 1,
-    1, 0),
-  nrow = 2, byrow = TRUE,
-  dimnames = list(c("s0", "s1"), c("s0", "s1"))
+# ============================================================
+# Task 1: Build a 5-state chain and determine communicating classes
+# ============================================================
+# States: S1, S2, S3, S4, S5
+# Transition matrix (row sums = 1):
+#   S1 → S2: 0.6, S1 → S3: 0.4
+#   S2 → S1: 0.3, S2 → S4: 0.7
+#   S3 → S1: 0.5, S3 → S5: 0.5
+#   S4 → S4: 1.0  (absorbing)
+#   S5 → S5: 1.0  (absorbing)
+
+# TODO: Build the 5×5 TPM and verify row sums
+states_5 <- c("S1","S2","S3","S4","S5")
+P5 <- matrix(
+  c(0.0, 0.6, 0.4, 0.0, 0.0,   # from S1
+    0.3, 0.0, 0.0, 0.7, 0.0,   # from S2
+    0.5, 0.0, 0.0, 0.0, 0.5,   # from S3
+    0.0, 0.0, 0.0, 1.0, 0.0,   # from S4 (absorbing)
+    0.0, 0.0, 0.0, 0.0, 1.0),  # from S5 (absorbing)
+  nrow = 5, byrow = TRUE,
+  dimnames = list(states_5, states_5)
 )
 
-# TODO: Create a markovchain object for P_alt called alt_mc.
+cat("Row sums of P5:\n"); print(rowSums(P5))
 
+# TODO: Create a markovchain object
+mc5 <- new("markovchain",
+  states = states_5, byrow = TRUE,
+  transitionMatrix = P5, name = "5-State Chain"
+)
 
-# -----------------------------------------------------------------------
-# Chain B: the 3-state regular chain from Lesson 2
-# -----------------------------------------------------------------------
+# TODO: Check irreducibility — is the chain irreducible?
+cat("\nIs irreducible:", is.irreducible(mc5), "\n")
+# Write a comment explaining why (or why not).
 
-P_reg <- matrix(
-  c(0,   2/3, 1/3,
-    3/8, 1/8, 1/2,
-    1/2, 1/2, 0),
+# TODO: Get the communicating classes using communicatingClasses(mc5)
+cat("\nCommunicating classes:\n")
+print(communicatingClasses(mc5))
+
+# TODO: Identify which classes are recurrent (closed) and which are transient
+# Hint: use recurrentClasses(mc5) and transientClasses(mc5)
+cat("\nRecurrent classes:\n"); print(recurrentClasses(mc5))
+cat("\nTransient classes:\n");  print(transientClasses(mc5))
+
+# ============================================================
+# Task 2: Analyse a fully ergodic 3-state chain
+# ============================================================
+# States: A, B, C (all communicate, no absorbing state, aperiodic)
+# Transition matrix:
+#   A → A=0.5, A → B=0.3, A → C=0.2
+#   B → A=0.4, B → B=0.2, B → C=0.4
+#   C → A=0.1, C → B=0.6, C → C=0.3
+
+P_erg <- matrix(
+  c(0.5, 0.3, 0.2,
+    0.4, 0.2, 0.4,
+    0.1, 0.6, 0.3),
   nrow = 3, byrow = TRUE,
-  dimnames = list(c("s0", "s1", "s2"), c("s0", "s1", "s2"))
+  dimnames = list(c("A","B","C"), c("A","B","C"))
 )
 
-# TODO: Create a markovchain object for P_reg called reg_mc.
+mc_erg <- new("markovchain",
+  states = c("A","B","C"), byrow = TRUE,
+  transitionMatrix = P_erg, name = "Ergodic Chain"
+)
 
+# TODO: Check irreducibility
+cat("\nErgodic chain — is irreducible:", is.irreducible(mc_erg), "\n")
 
-# -----------------------------------------------------------------------
-# Part 1: Irreducibility and period
-# -----------------------------------------------------------------------
+# TODO: Check period of each state.
+# Hint: period(mc_erg) from markovchain package
+cat("Period:", period(mc_erg), "\n")
+# Write a comment: is the chain aperiodic? How does a non-zero self-loop
+# (like P_AA = 0.5) guarantee aperiodicity?
 
-# TODO: For each chain, test irreducibility using is.irreducible().
-#   Print TRUE/FALSE for alt_mc and reg_mc.
-cat("Alternating chain irreducible?", is.irreducible(alt_mc), "\n")
-cat("Regular chain irreducible?    ", is.irreducible(reg_mc), "\n")
+# TODO: Compute the stationary distribution
+cat("\nStationary distribution of ergodic chain:\n")
+print(steadyStates(mc_erg))
 
-# TODO: Compute the period of each chain using period().
-#   (This returns the period of the chain — all states share the same
-#    period if the chain is irreducible.)
-cat("Alternating chain period:", period(alt_mc), "\n")
-cat("Regular chain period:    ", period(reg_mc), "\n")
+# ============================================================
+# Task 3: Demonstrate the ergodic theorem empirically
+# ============================================================
+# Simulate a long trajectory (N=10000 steps) from the ergodic chain.
+# Compare the empirical time-average to the stationary distribution.
 
+set.seed(777)
+N <- 10000
 
-# -----------------------------------------------------------------------
-# Part 2: Non-convergence of the alternating chain
-# -----------------------------------------------------------------------
+# TODO: Simulate N steps starting from "A"
+long_traj <- markovchainSequence(n = N, markovchain = mc_erg, t0 = "A")
 
-# TODO: Compute P_alt^n for n = 2, 4, 6, 8 using %^%.
-#   Print each. Verify that even powers equal I and odd powers equal P_alt.
+# TODO: Compute time-averages (fraction of time in each state)
+time_avg <- table(long_traj) / N
+cat("\nEmpirical time-averages (N=10000):\n")
+print(round(time_avg, 4))
 
-for (n in c(2, 4, 6, 8)) {
-  cat("\nP_alt ^", n, ":\n")
-  # TODO: print P_alt %^% n
+cat("Theoretical stationary distribution:\n")
+pi_erg <- steadyStates(mc_erg)
+print(round(pi_erg, 4))
+
+# TODO: Compute the absolute difference between empirical and theoretical
+cat("\nAbsolute differences:\n")
+print(round(abs(time_avg - pi_erg), 5))
+
+# TODO: Write a comment interpreting the result in terms of the ergodic theorem.
+
+# ============================================================
+# Task 4: Visualise convergence for different starting states
+# ============================================================
+mat_power <- function(M, n) {
+  r <- diag(nrow(M)); for(i in seq_len(n)) r <- r %*% M; r
 }
 
-# TODO: Compute and print P_alt^3 and P_alt^5 to show odd powers = P_alt.
+# For each starting state (A, B, C), compute distribution at steps 1..30
+starting_states <- list(A=c(1,0,0), B=c(0,1,0), C=c(0,0,1))
+ns <- 1:30
 
+evo_all <- lapply(names(starting_states), function(s0) {
+  pi0 <- starting_states[[s0]]
+  lapply(ns, function(n) {
+    dist_n <- pi0 %*% mat_power(P_erg, n)
+    data.frame(n=n, start=s0, state=c("A","B","C"), prob=as.numeric(dist_n))
+  }) |> bind_rows()
+}) |> bind_rows()
 
-# -----------------------------------------------------------------------
-# Part 3: Convergence of the regular chain
-# -----------------------------------------------------------------------
+evo_all$state <- factor(evo_all$state, levels=c("A","B","C"))
 
-# TODO: Use steadyStates() on reg_mc to find the stationary distribution.
-cat("\nStationary distribution of regular chain:\n")
-# TODO
+# TODO: Get stationary distribution for reference lines
+pi_vals <- as.numeric(steadyStates(mc_erg))
+pi_ref  <- data.frame(state=factor(c("A","B","C")), pi_val=pi_vals)
+evo_all <- left_join(evo_all, pi_ref, by="state")
 
-# TODO: Print P_reg^50 and verify all rows equal the stationary distribution.
-cat("\nP_reg^50:\n")
-# TODO
-
-
-# -----------------------------------------------------------------------
-# Part 4: Reflecting random walk on {0, 1, ..., 10}
-# -----------------------------------------------------------------------
-
-# Build the TPM for a simple random walk on states {0, 1, ..., 10}
-# with reflecting boundaries:
-#   - At state 0: always move to state 1 (reflect)
-#   - At state 10: always move to state 9 (reflect)
-#   - At interior states i (1..9): move to i-1 or i+1 with prob 0.5 each
-
-n_states <- 11
-states_rw <- as.character(0:10)
-
-P_rw <- matrix(0, nrow = n_states, ncol = n_states,
-               dimnames = list(states_rw, states_rw))
-
-# TODO: Fill in the TPM P_rw row by row.
-# Row 0 (reflecting boundary): P_rw["0", "1"] = 1
-# Row 10 (reflecting boundary): P_rw["10", "9"] = 1
-# Rows 1..9 (interior): P_rw[i, i-1] = 0.5, P_rw[i, i+1] = 0.5
-
-
-# TODO: Verify row sums.
-cat("\nRow sums of P_rw (should all be 1):\n")
-# TODO
-
-# TODO: Create a markovchain object rw_mc from P_rw.
-
-
-# TODO: Simulate 1000 steps of the random walk starting at state "5".
-#   Use rmarkovchain(n = 1000, object = rw_mc, t0 = "5").
-set.seed(99)
-rw_sim <- # TODO
-
-# TODO: Compute the empirical state visit frequency from rw_sim.
-#   Use table(rw_sim) / length(rw_sim) and sort by state name.
-
-
-# TODO: Find the theoretical stationary distribution using steadyStates() on rw_mc.
-
-
-# TODO: Plot a bar chart comparing the empirical visit frequencies (grey bars)
-#   to the theoretical stationary probabilities (red dots or line).
-#   Hint: use barplot() for the empirical frequencies, then points() for theory.
-
-# For a symmetric random walk with reflecting boundaries on {0,...,N},
-# the stationary distribution is: pi_0 = pi_N = 1/(2N), pi_i = 1/N for i=1..N-1.
-# Compute this analytically for N=10 and compare.
-N <- 10
-pi_theory <- c(1/(2*N), rep(1/N, N-1), 1/(2*N))
-names(pi_theory) <- states_rw
-
-cat("\nTheoretical stationary distribution (analytic):\n")
-print(round(pi_theory, 4))
+# TODO: Plot — facet by starting state, all three state probabilities on y-axis
+# Include dashed horizontal lines at stationary probabilities
+ggplot(evo_all, aes(x=n, y=prob, color=state, group=state)) +
+  geom_line(linewidth=1.0) +
+  geom_hline(aes(yintercept=pi_val, color=state), linetype="dashed") +
+  facet_wrap(~ start, labeller=label_both) +
+  labs(
+    title    = "Ergodic Theorem: Convergence to π from Three Starting States",
+    subtitle = "Dashed = stationary distribution π",
+    x="Step n", y="Probability", color="State"
+  ) +
+  theme_minimal()
