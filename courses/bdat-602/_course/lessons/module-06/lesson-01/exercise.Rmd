@@ -128,3 +128,47 @@ tfidf_cat |>
 # Which category has the most distinctive vocabulary?
 # Answer (as a comment):
 ```
+
+## Task 5: Spark text pipeline (eval=FALSE)
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full,
+                       name = "health_ins", overwrite = TRUE)
+
+# TODO: filter to non-NA complaint_notes and assign a document ID
+complaints_spark <- NULL  # health_tbl |> filter(!is.na(complaint_notes)) |> ...
+```
+
+```{r task5-spark-tokenise, eval=FALSE}
+# TODO: apply ft_tokenizer() with input_col = "complaint_notes", output_col = "words_raw"
+tokenised <- NULL  # ft_tokenizer(complaints_spark, ...)
+
+# TODO: apply ft_stop_words_remover() with input_col = "words_raw", output_col = "words"
+cleaned <- NULL  # ft_stop_words_remover(tokenised, ...)
+```
+
+```{r task5-spark-tfidf, eval=FALSE}
+# TODO: apply ft_count_vectorizer() with input_col = "words", output_col = "tf", min_df = 5
+cv_model   <- NULL  # ft_count_vectorizer(cleaned, ...)
+tf_vectors <- NULL  # ml_transform(cv_model, cleaned)
+
+# TODO: apply ft_idf() with input_col = "tf", output_col = "tfidf"
+idf_model   <- NULL  # ft_idf(tf_vectors, ...)
+tfidf_spark <- NULL  # ml_transform(idf_model, tf_vectors)
+
+# How large is the learned vocabulary?
+vocab <- cv_model$vocabulary
+cat("Vocabulary size:", length(vocab), "\n")
+# Is it larger or smaller than you expected for 500,000 complaints?
+# Answer (as a comment):
+
+spark_disconnect(sc)
+```

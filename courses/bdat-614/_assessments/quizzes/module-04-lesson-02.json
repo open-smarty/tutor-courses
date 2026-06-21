@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-02",
+  "title": "Quiz: DMAIC Framework and Root Cause Analysis Tools",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a Pareto chart of defect types, the cumulative percentage line crosses 80% after the third category. This means:",
+      "options": [
+        "The top three defect types account for 80% of all defects — focus on these to achieve the greatest improvement",
+        "You must fix all defect types, because fixing only 80% of defects still leaves 20% unresolved",
+        "The data collection was incomplete — a good process should have all causes below 80%",
+        "The bottom three categories are more important because they are undercounted"
+      ],
+      "correct": 0,
+      "explanation": "The Pareto principle (80/20 rule) identifies the 'vital few' causes that produce most of the effect. Crossing 80% after three categories means those three types generate 80% of defects. Eliminating them yields disproportionate improvement. Trying to fix all types simultaneously dilutes effort and slows improvement."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "During a 5 Whys analysis, a team reaches the answer 'The operator did not follow the procedure.' The facilitator asks Why again. What type of root cause is the team most likely approaching?",
+      "options": [
+        "A human error root cause — individual accountability is the appropriate corrective action",
+        "A systemic or process-design failure — such as an unclear SOP, inadequate training, or a missing error-proofing mechanism",
+        "A measurement system failure — the operator's errors indicate gauge drift",
+        "An environmental factor — ambient conditions affected the operator's performance"
+      ],
+      "correct": 1,
+      "explanation": "In 5 Whys analysis, 'operator error' is almost never a true root cause — it is a symptom of a system failure. Asking Why one more level typically reveals: unclear procedure, lack of training, poor workstation design, or absence of mistake-proofing. Blaming individuals without fixing the system guarantees recurrence."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "A Six Sigma team is about to analyse 6 months of process data to identify root causes. They then discover their measurement system has %GRR = 45%. At which DMAIC phase is this discovery most damaging, and why?",
+      "options": [
+        "Define — because the project charter will need to be rewritten",
+        "Analyse — because the data used for root cause analysis is unreliable; findings may be artefacts of measurement noise",
+        "Improve — because DOE results will be invalid if discovered here",
+        "Control — because control chart signals cannot be trusted"
+      ],
+      "correct": 1,
+      "explanation": "Discovering %GRR = 45% during Analyse means all the process data collected in Measure is untrustworthy — the measurement error (45% of tolerance) is so large it could mask or create apparent patterns. The correct place to validate the measurement system is in Measure (before data collection), using a Gauge R&R study. Discovering it in Analyse typically forces a costly restart of the Measure phase."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Which DMAIC phase is primarily responsible for ensuring that improvements are permanent after the project closes?",
+      "options": [
+        "Define — because a strong project charter prevents regression",
+        "Analyse — because understanding root causes ensures they cannot return",
+        "Improve — because the pilot study proves the solution works",
+        "Control — through control charts, updated SOPs, mistake-proofing, and handover to the process owner"
+      ],
+      "correct": 3,
+      "explanation": "Control is the sustainability phase. It uses statistical process control (control charts) for ongoing monitoring, updated Standard Operating Procedures to encode the new method, mistake-proofing (Poka-yoke) to make errors impossible, and formal handover to ensure the process owner, not the project team, sustains the gain after the project ends."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "In a fishbone (Ishikawa) diagram, the causes closest to the fish head (main spine junction) are always the most important root causes and should be prioritised first.",
+      "correct": false,
+      "explanation": "A fishbone diagram is a brainstorming and organisation tool — it does not rank causes by importance or probability. All bones and sub-causes are hypotheses that require data collection and analysis (e.g., Pareto chart, hypothesis tests) to prioritise. Proximity to the spine in the diagram has no statistical meaning."
+    }
+  ]
+}

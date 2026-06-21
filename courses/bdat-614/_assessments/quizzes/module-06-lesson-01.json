@@ -1,0 +1,66 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Total Quality Management and Cost of Poor Quality",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A company has Prevention = £100k, Appraisal = £200k, Internal Failure = £400k, External Failure = £700k. What percentage of total COPQ is attributable to failure costs?",
+      "options": [
+        "78.6%",
+        "50.0%",
+        "21.4%",
+        "64.3%"
+      ],
+      "correct": 0,
+      "explanation": "Total COPQ = 100 + 200 + 400 + 700 = £1,400k. Failure costs = Internal + External = 400 + 700 = £1,100k. Failure share = 1100 / 1400 × 100 = 78.6%. This high failure share indicates underinvestment in prevention — the classic pre-TQM pattern."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Which of Deming's 14 Points directly addresses the problem of evaluating employees and suppliers purely on cost or output metrics?",
+      "options": [
+        "Eliminate quotas and management by objective",
+        "Institute training on the job",
+        "Drive out fear",
+        "Create constancy of purpose"
+      ],
+      "correct": 0,
+      "explanation": "Deming's Point 11 (eliminate quotas and management by objective) argues that numerical targets and piecework quotas create the wrong incentives — workers meet the number rather than building quality, and managers optimise short-term metrics at the expense of long-run process improvement."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In the PAF model, which cost category captures warranty claims and product recalls?",
+      "options": [
+        "External Failure",
+        "Internal Failure",
+        "Appraisal",
+        "Prevention"
+      ],
+      "correct": 0,
+      "explanation": "External Failure costs arise when defects are discovered by the customer after delivery. Warranty claims, product recalls, customer complaints, legal liability, and loss of goodwill all fall into External Failure — typically the most expensive category to correct."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The PAF trade-off model predicts that total COPQ is minimised when:",
+      "options": [
+        "The marginal reduction in failure costs equals the marginal increase in prevention investment",
+        "Prevention costs equal 50% of total COPQ",
+        "External failure costs reach zero",
+        "Appraisal costs are eliminated entirely"
+      ],
+      "correct": 0,
+      "explanation": "The optimal prevention level occurs where the marginal return on prevention investment — in the form of reduced failure costs — equals the marginal cost of additional prevention spending. Beyond this point, each additional £ of prevention saves less than £1 in failure costs."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Under TQM philosophy, quality is defined by internal engineering specifications, not by customer requirements.",
+      "correct": false,
+      "explanation": "A core pillar of TQM is customer focus — quality is defined by the customer's needs and expectations, not by internal specifications set in isolation. Specifications should be derived from the Voice of the Customer (VoC). Internal specs that do not reflect customer requirements can lead to conformant products that still fail to satisfy customers."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "id": "module-06-lesson-02",
+  "title": "Quiz: Big Data Applications in SQC — EWMA, CUSUM, and ML Integration",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "An EWMA chart uses λ = 0.2 and starts at z₀ = μ₀ = 50. The first observation is x₁ = 54. What is z₁?",
+      "options": [
+        "50.8",
+        "54.0",
+        "52.0",
+        "51.6"
+      ],
+      "correct": 0,
+      "explanation": "z₁ = λ × x₁ + (1 − λ) × z₀ = 0.2 × 54 + 0.8 × 50 = 10.8 + 40.0 = 50.8. The EWMA statistic gives only 20% weight to the new observation and 80% to the previous value, smoothing out the effect of the single outlier."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In a tabular CUSUM chart with K = 0.5σ and H = 5σ, a process shift of +1σ is introduced. The CUSUM statistic C⁺ starts at 0. After the first out-of-control observation x₁ = μ₀ + 1.2σ, what is C₁⁺?",
+      "options": [
+        "0.7σ",
+        "1.2σ",
+        "0.5σ",
+        "1.7σ"
+      ],
+      "correct": 0,
+      "explanation": "C₁⁺ = max(0, x₁ − (μ₀ + K) + C₀⁺) = max(0, (μ₀ + 1.2σ) − (μ₀ + 0.5σ) + 0) = max(0, 0.7σ) = 0.7σ. The CUSUM accumulates the excess above the allowance K at each step."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "Which statement correctly explains why the EWMA chart detects small sustained process shifts faster than the Shewhart Xbar chart?",
+      "options": [
+        "EWMA accumulates information from all past observations, so small consistent shifts build up in the statistic over time",
+        "EWMA uses wider control limits, making it easier for any observation to cross the boundary",
+        "EWMA ignores recent observations, focusing only on long-run history",
+        "EWMA uses a non-parametric test that does not require normality"
+      ],
+      "correct": 0,
+      "explanation": "The Shewhart chart uses only the most recent point. EWMA accumulates a weighted average of all past observations. A small sustained shift of +0.5σ contributes +0.5σ × λ to z_t at each step; after many steps the EWMA statistic drifts clearly beyond the control limits, even though no single observation was far enough to signal on the Shewhart chart."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In a Big Data SPC pipeline, which ML technique is most appropriate for detecting that a process has moved out of control when the fault pattern is unknown and no labelled historical examples of out-of-control conditions exist?",
+      "options": [
+        "Isolation Forest (unsupervised anomaly detection)",
+        "Random Forest classification (supervised learning)",
+        "Linear regression for trend extrapolation",
+        "k-means clustering on the last 10 observations"
+      ],
+      "correct": 0,
+      "explanation": "When no labelled fault examples exist, supervised classification cannot be trained. Isolation Forest is an unsupervised anomaly detection algorithm that isolates anomalous observations by randomly partitioning the feature space — points that are isolated with fewer splits are flagged as anomalies, without needing prior knowledge of what faults look like."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "A smaller EWMA smoothing parameter λ (e.g. 0.05) makes the chart more sensitive to large sudden jumps but slower to detect small sustained drifts.",
+      "correct": false,
+      "explanation": "The relationship is reversed. A small λ gives heavy weight to historical values, producing a heavily smoothed statistic that changes slowly — it detects small sustained shifts well but responds slowly to sudden large jumps. A large λ (e.g. 0.4–0.5) responds quickly to sudden jumps but provides less smoothing, making it similar to the Shewhart chart and less sensitive to gradual drift."
+    }
+  ]
+}

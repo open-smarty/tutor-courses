@@ -128,3 +128,70 @@ cat("Random Forest F1:", round(f1_rf,   3), "\n")
 # The ensemble of 200 decorrelated trees produces smoother probability estimates
 # and is less sensitive to the specific training sample than a single tree.
 ```
+
+## Task 5: Distributed random forest with Spark
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full, name = "health_ins", overwrite = TRUE)
+
+health_tbl <- health_tbl |>
+  mutate(
+    plan_tier_num = case_when(
+      plan_tier == "Bronze"   ~ 1L,
+      plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L,
+      plan_tier == "Platinum" ~ 4L
+    )
+  )
+```
+
+```{r task5-spark-split, eval=FALSE}
+splits      <- sdf_random_split(health_tbl,
+                                training = 0.80, test = 0.20, seed = 602)
+train_spark <- splits$training
+test_spark  <- splits$test
+
+cat("Spark train rows:", sdf_nrow(train_spark), "\n")
+cat("Spark test rows: ", sdf_nrow(test_spark),  "\n")
+```
+
+```{r task5-spark-rf, eval=FALSE}
+spark_rf <- train_spark |>
+  ml_random_forest_classifier(
+    formula                  = churned ~ age + plan_tier_num + income +
+                                        num_claims + support_calls +
+                                        auto_pay + customer_rating + deductible,
+    num_trees                = 100,
+    feature_subset_strategy  = "sqrt",
+    seed                     = 602
+  )
+```
+
+```{r task5-spark-eval, eval=FALSE}
+preds <- ml_predict(spark_rf, test_spark)
+
+auc_spark <- ml_binary_classification_evaluator(
+  preds,
+  label_col          = "churned",
+  raw_prediction_col = "rawPrediction",
+  metric_name        = "areaUnderROC"
+)
+cat("Spark RF ROC-AUC:", round(auc_spark, 3), "\n")
+
+# The Spark RF AUC is typically comparable to (within 0.01 of) the local RF,
+# despite training on 10× more data. The local model used 40,000 rows; the Spark
+# model used 400,000 — more data generally yields marginal improvements for
+# random forests once the dataset is already in the tens of thousands.
+# The main benefit of the Spark version is not higher AUC but shorter wall-clock
+# training time at scale: 400,000 rows in parallel vs. 40,000 rows sequentially.
+
+spark_disconnect(sc)
+```

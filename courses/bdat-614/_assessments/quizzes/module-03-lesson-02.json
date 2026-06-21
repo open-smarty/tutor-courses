@@ -1,0 +1,66 @@
+{
+  "id": "module-03-lesson-02",
+  "title": "Quiz: Measurement System Analysis — Gauge R&R",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a Gauge R&R study, 'Repeatability' (Equipment Variation, EV) refers to:",
+      "options": [
+        "Variation between different operators measuring the same part",
+        "Variation when the same operator measures the same part multiple times with the same gauge",
+        "Variation between different parts measured by the same operator",
+        "The combined measurement system error relative to the tolerance"
+      ],
+      "correct": 1,
+      "explanation": "Repeatability (EV) captures the gauge's own inherent variability: the same operator, same part, same instrument, repeated under identical conditions. If this is large, the instrument itself is unreliable regardless of who uses it."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A Gauge R&R study yields %GRR = 18%. According to AIAG MSA Manual thresholds, this measurement system is:",
+      "options": [
+        "Acceptable — %GRR is well below 30%",
+        "Marginal — may be acceptable depending on the application and risk",
+        "Unacceptable — exceeds the 10% threshold for acceptance",
+        "Excellent — %GRR below 20% always indicates a world-class system"
+      ],
+      "correct": 1,
+      "explanation": "AIAG thresholds: <10% acceptable, 10–30% marginal, >30% unacceptable. At 18%, the system falls in the marginal zone. Whether to accept it depends on application criticality, cost of alternative systems, and management judgement."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In an ANOVA-based Gauge R&R with n=10 parts, k=3 operators, r=2 reps, the degrees of freedom for the Part × Operator interaction are:",
+      "options": [
+        "18",
+        "30",
+        "2",
+        "9"
+      ],
+      "correct": 0,
+      "explanation": "df_PO = (n − 1) × (k − 1) = (10 − 1) × (3 − 1) = 9 × 2 = 18. The interaction term has df equal to the product of the main-effect degrees of freedom."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The Number of Distinct Categories (ndc) is calculated as int(√2 × σ_PV / σ_GRR). The AIAG minimum acceptable ndc is:",
+      "options": [
+        "2",
+        "3",
+        "5",
+        "10"
+      ],
+      "correct": 2,
+      "explanation": "AIAG requires ndc ≥ 5. This means the measurement system must be capable of distinguishing at least 5 statistically distinct groups of parts. An ndc of 1 or 2 means the system cannot differentiate parts reliably."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "A high %Part Variation (PV) in a Gauge R&R study is undesirable because it means the parts differ too much from each other.",
+      "correct": false,
+      "explanation": "High %PV is actually desirable in a Gauge R&R study. It means the measurement system can distinguish genuine differences between parts — the parts span a wide range relative to the measurement error. If %PV is low, either the parts are nearly identical (a poor study design) or the measurement error is drowning out real part differences."
+    }
+  ]
+}

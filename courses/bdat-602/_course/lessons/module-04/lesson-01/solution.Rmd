@@ -1,5 +1,5 @@
 ---
-title: "Solution: k-Means Clustering"
+title: "Solution: Distance Measures and k-Means Clustering"
 output: html_document
 ---
 
@@ -9,100 +9,140 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r load-packages}
 library(tidyverse)
-library(cluster)
+library(factoextra)
 
-options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
-health_data <- simulate_bdat602(n = 50000, seed = 602)
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 1: Prepare and scale clustering features
+## Task 1: Prepare and scale the clustering features
 
-```{r task1-prepare}
-clust_data <- health_data |>
-  select(age, bmi, income, num_claims, num_chronic_conditions) |>
-  drop_na() |>
-  scale()
-
-dim(clust_data)
-```
-
-```{r task1-check-scale}
-apply(clust_data, 2, mean) |> round(4)  # all ≈ 0
-apply(clust_data, 2, sd)   |> round(4)  # all ≈ 1
-```
-
-## Task 2: Elbow plot — choose k
-
-```{r task2-elbow}
+```{r task1-sample}
 set.seed(602)
-wcss <- sapply(1:10, function(k) kmeans(clust_data, centers = k, nstart = 25)$tot.withinss)
+health_sub <- health_data |>
+  filter(!is.na(bmi), !is.na(income)) |>
+  slice_sample(n = 50000)
 
-tibble(k = 1:10, wcss = wcss) |>
-  ggplot(aes(x = k, y = wcss)) +
-  geom_line() + geom_point(size = 2, colour = "steelblue") +
-  labs(title = "Elbow Method for Optimal k",
-       x = "Number of clusters (k)", y = "Within-Cluster Sum of Squares") +
+cluster_vars <- c("age", "bmi", "income", "premium",
+                  "num_chronic_conditions", "num_claims",
+                  "claim_amount", "support_calls",
+                  "customer_rating", "app_logins_monthly")
+```
+
+```{r task1-transform-scale}
+signed_log <- function(x) sign(x) * log1p(abs(x))
+
+health_scaled <- health_sub |>
+  select(all_of(cluster_vars)) |>
+  mutate(
+    income       = signed_log(income),
+    claim_amount = log1p(claim_amount)
+  ) |>
+  scale() |>
+  as.data.frame()
+
+colMeans(health_scaled) |> round(3)  # all ~0
+apply(health_scaled, 2, sd) |> round(3)  # all ~1
+```
+
+## Task 2: Distance measures on the first five observations
+
+```{r task2-euclidean}
+d_euclid <- dist(health_scaled[1:5, ], method = "euclidean")
+print(round(as.matrix(d_euclid), 3))
+```
+
+```{r task2-manhattan}
+d_manhattan <- dist(health_scaled[1:5, ], method = "manhattan")
+print(round(as.matrix(d_manhattan), 3))
+
+# Manhattan distances are consistently larger than Euclidean distances because
+# Manhattan sums absolute differences while Euclidean takes a square root of
+# squared differences — the square root compresses large differences.
+# The RANKING of pairwise distances can differ: if two policyholders differ
+# greatly on one feature and little on others, Euclidean distance will be less
+# affected by those small differences than Manhattan (which adds them linearly).
+# This matters when some features have naturally higher variance even after scaling.
+```
+
+## Task 3: Elbow plot — choose k
+
+```{r task3-elbow}
+set.seed(602)
+fviz_nbclust(
+  health_scaled, kmeans, method = "wss", k.max = 10, nstart = 10
+) +
+  labs(title = "Elbow Method: Choosing Optimal k",
+       x = "Number of Clusters k",
+       y = "Total Within-Cluster Sum of Squares") +
   theme_minimal()
 ```
 
-```{r task2-choose-k}
+```{r task3-choose-k}
 # The elbow typically appears at k = 4 for this dataset:
-# WCSS drops steeply from k=1 to k=4, then the reduction flattens.
-# k = 4 provides a good balance between interpretability and compactness.
+# WCSS drops steeply from k=1 to k=4, then the marginal reduction per additional
+# cluster flattens. k=4 balances compactness with interpretability.
 chosen_k <- 4
 ```
 
-## Task 3: Fit k-means
+## Task 4: Fit k-means, profile, and label clusters
 
-```{r task3-fit}
+```{r task4-fit}
 set.seed(602)
-km <- kmeans(clust_data, centers = chosen_k, nstart = 25)
+km_fit <- kmeans(health_scaled,
+                 centers = chosen_k, nstart = 25, iter.max = 100)
 
-cat("WCSS:", round(km$tot.withinss, 1), "\n")
-cat("Cluster sizes:", km$size, "\n")
+cat("Variance explained:",
+    round(km_fit$betweenss / km_fit$totss * 100, 1), "%\n")
+cat("Cluster sizes:", km_fit$size, "\n")
 ```
-
-```{r task3-silhouette}
-set.seed(42)
-idx <- sample(nrow(clust_data), min(5000, nrow(clust_data)))
-sil <- silhouette(km$cluster[idx], dist(clust_data[idx, ]))
-cat("Mean silhouette score:", round(mean(sil[, "sil_width"]), 3), "\n")
-# A score around 0.15-0.25 is typical for this many features — clusters exist
-# but there is natural overlap between similar policyholders.
-```
-
-## Task 4: Profile clusters and assign labels
 
 ```{r task4-profile}
-health_clustered <- health_data |>
-  drop_na(age, bmi, income, num_claims, num_chronic_conditions) |>
-  mutate(cluster = factor(km$cluster))
+health_sub$cluster <- factor(km_fit$cluster)
 
-cluster_profile <- health_clustered |>
+cluster_profile <- health_sub |>
   group_by(cluster) |>
   summarise(
-    n          = n(),
-    avg_age    = round(mean(age), 1),
-    avg_bmi    = round(mean(bmi, na.rm = TRUE), 1),
-    avg_income = round(mean(income, na.rm = TRUE), 0),
-    avg_claims = round(mean(num_claims), 2),
-    avg_chronic = round(mean(num_chronic_conditions), 2),
-    pct_smoker = round(mean(smoker) * 100, 1)
-  )
+    n           = n(),
+    avg_age     = round(mean(age), 1),
+    avg_bmi     = round(mean(bmi, na.rm = TRUE), 1),
+    avg_income  = round(mean(income, na.rm = TRUE), 0),
+    avg_claims  = round(mean(num_claims), 2),
+    pct_smoker  = round(mean(smoker) * 100, 1),
+    pct_fraud   = round(mean(fraud_flag) * 100, 1),
+    pct_churned = round(mean(churned) * 100, 1)
+  ) |>
+  arrange(desc(avg_claims))
 
 print(cluster_profile)
 ```
 
+```{r task4-visualise}
+fviz_cluster(
+  km_fit,
+  data         = health_scaled,
+  geom         = "point",
+  ellipse      = TRUE,
+  ellipse.type = "convex",
+  alpha        = 0.3,
+  palette      = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3"),
+  ggtheme      = theme_minimal(),
+  main         = "k-Means Clusters (k = 4): PCA Projection"
+)
+```
+
 ```{r task4-labels}
-# Typical cluster labels (exact values depend on random seed):
-# Cluster 1: "Young Healthy Low-Risk"
-#   — youngest avg age, lowest BMI, few claims, lowest chronic conditions
-# Cluster 2: "Middle-Aged Moderate-Risk"
-#   — middle age, moderate income, some claims, occasional smoking
-# Cluster 3: "Elderly High-Utilisation"
-#   — oldest avg age, highest num_claims and chronic conditions, frequent visits
-# Cluster 4: "High-BMI Smoker Segment"
-#   — elevated BMI, high smoker rate, more claims than Cluster 1/2
-# These labels inform targeted pricing, wellness programme design, and retention strategies.
+# Typical labels (exact cluster numbers depend on random seed):
+# Cluster with highest avg_claims and avg_bmi:
+#   "Elderly High-Utilisation" — oldest, most chronic conditions, most claims
+# Cluster with highest pct_smoker and elevated avg_bmi:
+#   "High-Risk Smoker Segment" — moderate age, high BMI, elevated fraud rate
+# Cluster with lowest avg_age and avg_claims:
+#   "Young Healthy Low-Risk" — youngest, fewest claims, lowest fraud rate
+# Remaining cluster:
+#   "Middle-Aged Moderate-Risk" — mid-range on all metrics, moderate income
+#
+# These segments guide: risk-adjusted pricing, targeted wellness programmes,
+# churn prevention for the low-risk young segment, and fraud screening for
+# the high-BMI smoker group.
 ```

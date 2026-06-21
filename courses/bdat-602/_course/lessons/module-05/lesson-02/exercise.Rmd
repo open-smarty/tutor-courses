@@ -148,3 +148,59 @@ ggplot(pr_df, aes(x = recall, y = precision, colour = model)) +
 # Which model gives a better trade-off? At what threshold?
 # Answer (as a comment):
 ```
+
+## Task 5: Class-weighted Spark random forest (eval=FALSE)
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full, name = "health_ins", overwrite = TRUE)
+```
+
+```{r task5-spark-weights, eval=FALSE}
+# TODO: compute the churn rate inside Spark and derive minority_weight
+churn_rate      <- NULL  # health_tbl |> summarise(rate = mean(churned)) |> collect() |> pull(rate)
+minority_weight <- NULL  # (1 - churn_rate) / churn_rate
+
+# TODO: add a sample_weight column and encode plan_tier_num
+health_tbl <- health_tbl |>
+  mutate(
+    sample_weight = ifelse(churned == 1, minority_weight, 1.0),
+    plan_tier_num = case_when(
+      plan_tier == "Bronze"   ~ 1L, plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L, plan_tier == "Platinum" ~ 4L
+    )
+  )
+
+cat("Minority weight:", round(minority_weight, 2), "\n")
+```
+
+```{r task5-spark-train, eval=FALSE}
+splits      <- sdf_random_split(health_tbl,
+                                training = 0.80, test = 0.20, seed = 602)
+train_spark <- splits$training
+test_spark  <- splits$test
+
+# TODO: fit ml_random_forest_classifier() with weight_col = "sample_weight"
+spark_rf_wt <- NULL  # ml_random_forest_classifier(train_spark, formula = churned ~ ...,
+                     #   num_trees = 100, weight_col = "sample_weight", seed = 602)
+```
+
+```{r task5-spark-eval, eval=FALSE}
+# TODO: get predictions and compute ROC-AUC
+preds_spark <- NULL  # ml_predict(spark_rf_wt, test_spark)
+auc_spark   <- NULL  # ml_binary_classification_evaluator(preds_spark, ...)
+
+cat("Weighted Spark RF ROC-AUC:", round(auc_spark, 3), "\n")
+# Compare with the local weighted RF AUC. Which is higher?
+# Why might more training data improve or not improve imbalanced-class AUC?
+# Answer (as a comment):
+
+spark_disconnect(sc)
+```

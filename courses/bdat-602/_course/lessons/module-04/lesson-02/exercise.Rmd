@@ -1,5 +1,5 @@
 ---
-title: "Exercise: Hierarchical Clustering"
+title: "Exercise: Hierarchical Clustering and DBSCAN"
 output: html_document
 ---
 
@@ -9,92 +9,126 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r load-packages}
 library(tidyverse)
-library(cluster)  # for silhouette()
+library(factoextra)
+library(dbscan)
 
-options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
-# Use 5,000 rows — hclust needs O(n^2) memory
-health_data <- simulate_bdat602(n = 5000, seed = 602)
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 1: Prepare the data
-
-```{r task1-prepare}
-# TODO: select age, bmi, income, num_claims, num_chronic_conditions
-# drop_na(), then scale()
-clust_data <- health_data |>
-  select(age, bmi, income, num_claims, num_chronic_conditions) |>
-  drop_na() |>
-  NULL  # replace with scale()
-
-dim(clust_data)
-```
-
-## Task 2: Fit hierarchical clustering (Ward linkage) and plot the dendrogram
-
-```{r task2-hclust}
-# TODO: compute the Euclidean distance matrix with dist()
-D <- NULL  # dist(clust_data, method = "euclidean")
-
-# TODO: fit hclust with method = "ward.D2"
-hc <- NULL  # hclust(D, method = "ward.D2")
-
-# TODO: plot the dendrogram
-# Use labels = FALSE (too many to show), hang = -1 for a clean look
-# Add a red dashed horizontal line at a height that gives ~4 clusters
-
-plot(hc, labels = FALSE, hang = -1,
-     main = "Ward.D2 Dendrogram — Insurance Policyholders")
-# abline(h = ???, col = "red", lty = 2)
-```
-
-```{r task2-interpret}
-# Looking at the dendrogram, at what height do the major branches merge?
-# How many distinct groups can you identify before the final merge?
-# Answer (as a comment):
-```
-
-## Task 3: Extract clusters and compare to k-means
-
-```{r task3-cutree}
-# TODO: use cutree() to extract 4 clusters from hc
-clusters_hc <- NULL  # cutree(hc, k = 4)
-
-# Print the size of each cluster
-table(clusters_hc)
-```
-
-```{r task3-compare}
-# For reference, run k-means with k = 4 on the same data
+```{r prepare-data}
 set.seed(602)
-km4 <- kmeans(clust_data, centers = 4, nstart = 25)
+health_sub <- health_data |>
+  filter(!is.na(bmi), !is.na(income)) |>
+  slice_sample(n = 50000)
 
-# Compare cluster sizes
-cat("Hierarchical cluster sizes:", table(clusters_hc), "\n")
-cat("k-means cluster sizes:     ", km4$size, "\n")
+cluster_vars <- c(
+  "age", "bmi", "income", "premium",
+  "num_chronic_conditions", "num_claims",
+  "claim_amount", "support_calls",
+  "customer_rating", "app_logins_monthly"
+)
 
-# Are the cluster sizes similar? Which method produces more balanced clusters?
+signed_log <- function(x) sign(x) * log1p(abs(x))
+
+health_sub2 <- health_sub |>
+  select(all_of(cluster_vars)) |>
+  mutate(income = signed_log(income), claim_amount = log1p(claim_amount))
+health_scaled <- as.data.frame(scale(health_sub2))
+```
+
+## Task 1: Hierarchical clustering — dendrogram and cut
+
+```{r task1-sample-hc}
+# Hierarchical clustering requires an n x n distance matrix.
+# Take a 2,000-row sample for speed.
+set.seed(602)
+health_hc <- health_scaled |> slice_sample(n = 2000)
+```
+
+```{r task1-hclust}
+# TODO: compute the Euclidean distance matrix on health_hc
+dist_matrix <- NULL  # dist(health_hc, method = "euclidean")
+
+# TODO: fit hierarchical clustering with Ward.D2 linkage
+hc_fit <- NULL  # hclust(dist_matrix, method = "ward.D2")
+```
+
+```{r task1-dendrogram}
+# TODO: plot the dendrogram using fviz_dend() with k = 4 coloured rectangles
+# fviz_dend(hc_fit, k = 4, cex = 0.4, palette = "jco",
+#           rect = TRUE, rect_fill = TRUE,
+#           main = "Ward Dendrogram — Insurance Policyholders")
+```
+
+```{r task1-cut}
+# TODO: cut the tree at k = 4 using cutree()
+hc_labels <- NULL  # cutree(hc_fit, k = 4)
+table(hc_labels)
+```
+
+## Task 2: Compare hierarchical to k-means
+
+```{r task2-kmeans-same-rows}
+# For a fair comparison, run k-means on the same 2,000 rows
+set.seed(602)
+km4 <- kmeans(health_hc, centers = 4, nstart = 25)
+```
+
+```{r task2-crosstab}
+# TODO: cross-tabulate hc_labels against km4$cluster
+# table(hc_labels, km4$cluster)
+# Are the cluster solutions similar?
+# Which method produces more balanced cluster sizes?
 # Answer (as a comment):
 ```
 
-## Task 4: Single linkage — chaining effect
+## Task 3: k-NN distance plot — choose epsilon for DBSCAN
 
-```{r task4-single-linkage}
-# TODO: re-fit hclust with method = "single"
-hc_single <- NULL  # hclust(D, method = "single")
-
-# TODO: plot the dendrogram for single linkage
-plot(hc_single, labels = FALSE, hang = -1,
-     main = "Single Linkage Dendrogram — Insurance Policyholders")
+```{r task3-pca}
+# PCA projection of all 50,000 rows into 2D
+pca_result <- prcomp(health_scaled, scale. = FALSE)
+pca_2d     <- pca_result$x[, 1:2]
 ```
 
-```{r task4-chaining}
-# Extract 4 clusters from single linkage
-clusters_single <- cutree(hc_single, k = 4)
-table(clusters_single)
+```{r task3-knn-plot}
+# TODO: produce a k-NN distance plot for k = 4 (MinPts - 1)
+# kNNdistplot(pca_2d, k = 4, main = "k-NN Distance Plot: Choosing epsilon")
+# Add a horizontal reference line at your chosen epsilon candidate
+# abline(h = ???, col = "red", lty = 2)
 
-# Describe the chaining effect you observe:
-# - What do the cluster sizes look like with single linkage?
-# - How does the dendrogram shape differ from Ward?
+# What value of epsilon does the elbow in the curve suggest?
+# Answer (as a comment):
+chosen_eps <- NULL  # replace with your chosen numeric value
+```
+
+## Task 4: Run DBSCAN and profile noise points
+
+```{r task4-dbscan}
+# TODO: run DBSCAN with your chosen_eps and minPts = 5
+db_fit <- NULL  # dbscan(pca_2d, eps = chosen_eps, minPts = 5)
+table(db_fit$cluster)  # 0 = noise
+```
+
+```{r task4-visualise}
+# TODO: visualise the DBSCAN clusters using fviz_cluster()
+# fviz_cluster(db_fit, data = pca_2d, geom = "point",
+#              palette = "Set2", ggtheme = theme_minimal())
+```
+
+```{r task4-profile-noise}
+noise_idx <- which(db_fit$cluster == 0)
+cat("Noise points:", length(noise_idx), "\n")
+cat("As % of total:", round(100 * length(noise_idx) / nrow(pca_2d), 1), "%\n")
+
+# TODO: compute the fraud rate in noise points vs cluster members
+# and report the difference.
+fraud_noise   <- NULL  # mean(health_sub$fraud_flag[noise_idx]) * 100
+fraud_cluster <- NULL  # mean(health_sub$fraud_flag[-noise_idx]) * 100
+
+cat("Fraud rate — noise points:   ", round(fraud_noise,   1), "%\n")
+cat("Fraud rate — cluster members:", round(fraud_cluster, 1), "%\n")
+
+# What does this difference imply for fraud detection strategy?
 # Answer (as a comment):
 ```

@@ -135,3 +135,65 @@ tibble(K = 3:7, perplexity = round(perp_values, 1)) |> print()
 # existing coherent themes into sub-themes, reducing interpretability.
 # The perplexity elbow aligns with domain knowledge: 5 complaint categories.
 ```
+
+## Task 5: Spark LDA on 500,000 complaint notes
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full,
+                       name = "health_ins", overwrite = TRUE)
+
+complaints_spark <- health_tbl |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = monotonically_increasing_id())
+
+cat("Documents for LDA:", sdf_nrow(complaints_spark), "\n")
+```
+
+```{r task5-spark-pipeline, eval=FALSE}
+tokenised  <- ft_tokenizer(complaints_spark,
+                           input_col = "complaint_notes", output_col = "words_raw")
+cleaned    <- ft_stop_words_remover(tokenised,
+                                    input_col = "words_raw", output_col = "words")
+cv_model   <- ft_count_vectorizer(cleaned,
+                                  input_col = "words", output_col = "tf", min_df = 5)
+tf_vectors <- ml_transform(cv_model, cleaned)
+
+cat("Vocabulary size:", length(cv_model$vocabulary), "\n")
+```
+
+```{r task5-spark-lda, eval=FALSE}
+lda_spark <- ml_lda(
+  tf_vectors,
+  features_col        = "tf",
+  k                   = 5,
+  max_iter            = 20,
+  doc_concentration   = rep(1.0 / 5, 5),
+  topic_concentration = 0.01
+)
+
+vocab     <- cv_model$vocabulary
+topic_mat <- lda_spark$topics_matrix()
+
+top_words_per_topic <- apply(topic_mat, 1, function(row) {
+  vocab[order(row, decreasing = TRUE)[1:10]]
+})
+cat("Top words per Spark LDA topic:\n")
+print(top_words_per_topic)
+
+# The 5 Spark LDA topics correspond to the same complaint categories but topic
+# numbering is arbitrary — match topics by their top words, not their index.
+# Spark LDA (Online LDA) uses variational EM rather than Gibbs sampling;
+# max_iter = 20 mini-batch passes are sufficient for this templated corpus.
+# For a real free-text corpus, 50-100 iterations and tuned hyperparameters
+# would be needed to achieve comparable topic coherence.
+
+spark_disconnect(sc)
+```

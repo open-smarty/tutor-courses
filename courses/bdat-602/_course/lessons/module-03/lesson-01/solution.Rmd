@@ -1,5 +1,5 @@
 ---
-title: "Solution: Market Basket Analysis and the Apriori Algorithm"
+title: "Solution: Rule Metrics, the Apriori Algorithm, and FP-Growth"
 output: html_document
 ---
 
@@ -10,105 +10,121 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r load-packages}
 library(tidyverse)
 library(arules)
-library(arulesViz)
 ```
 
-## Task 1: Compute support, confidence, and lift by hand
+## Task 1: Compute all five rule metrics from a 10,000-policyholder table
 
-```{r task1-toy-data}
-trans_list <- list(
-  T1 = c("dental", "vision"),
-  T2 = c("dental", "mental"),
-  T3 = c("dental", "vision", "mental"),
-  T4 = c("vision", "mental"),
-  T5 = c("dental", "vision")
-)
-N <- length(trans_list)
-
-contains <- function(trans_list, itemset) {
-  sum(sapply(trans_list, function(t) all(itemset %in% t)))
-}
+```{r task1-data}
+N <- 10000
+count_D  <- 6600
+count_V  <- 5700
+count_DV <- 2800
 ```
 
 ```{r task1-support}
-supp_dental        <- contains(trans_list, "dental") / N
-supp_vision        <- contains(trans_list, "vision") / N
-supp_mental        <- contains(trans_list, "mental") / N
-supp_dental_vision <- contains(trans_list, c("dental", "vision")) / N
+supp_D  <- count_D  / N   # 0.66
+supp_V  <- count_V  / N   # 0.57
+supp_DV <- count_DV / N   # 0.28
 
-cat("supp({dental})        =", supp_dental, "\n")        # 0.80
-cat("supp({vision})        =", supp_vision, "\n")        # 0.80
-cat("supp({mental})        =", supp_mental, "\n")        # 0.60
-cat("supp({dental, vision})=", supp_dental_vision, "\n") # 0.60
+cat("supp({Dental})  =", supp_D,  "\n")
+cat("supp({Vision})  =", supp_V,  "\n")
+cat("supp({D, V})    =", supp_DV, "\n")
 ```
 
-```{r task1-confidence}
-conf_d_v <- supp_dental_vision / supp_dental
-conf_v_d <- supp_dental_vision / supp_vision
+```{r task1-confidence-lift}
+conf_DV <- supp_DV / supp_D   # 0.424
+lift_DV <- conf_DV / supp_V   # 0.744
 
-cat("conf(dental → vision) =", conf_d_v, "\n")  # 0.75
-cat("conf(vision → dental) =", conf_v_d, "\n")  # 0.75
+cat("conf(D => V) =", round(conf_DV, 3), "\n")
+cat("lift(D => V) =", round(lift_DV, 3), "\n")
+# Lift < 1: Dental and Vision are NEGATIVELY associated.
+# A Dental holder is less likely to take Vision than a randomly chosen policyholder.
+# Despite 42% confidence, the rule is not actionable as a cross-sell — it goes
+# against the direction of association.
 ```
 
-```{r task1-lift}
-lift_d_v <- conf_d_v / supp_vision
+```{r task1-conviction-leverage}
+conv_DV <- (1 - supp_V) / (1 - conf_DV)
+lev_DV  <- supp_DV - supp_D * supp_V
 
-cat("lift(dental → vision) =", lift_d_v, "\n")  # 0.9375
-# Lift < 1: slight negative association. A policyholder with dental cover is
-# marginally LESS likely than average to also have vision cover. With only 5
-# transactions this is not statistically meaningful, but the calculation is correct.
+cat("conv(D => V) =", round(conv_DV, 3), "\n")  # < 1: negative dependence
+cat("lev (D => V) =", round(lev_DV,  3), "\n")  # < 0: observed < expected
 ```
 
-## Task 2: Verify the anti-monotone property
+## Task 2: Trace Apriori on the 5-transaction database
 
-```{r task2-antimonotone}
+```{r task2-data}
+trans_list <- list(
+  T1 = c("Dental", "Vision"),
+  T2 = c("Dental", "Mental", "Vision"),
+  T3 = c("Vision", "Maternity"),
+  T4 = c("Dental", "Mental"),
+  T5 = c("Dental", "Vision", "Mental")
+)
+N5 <- length(trans_list)
 min_supp <- 0.60
 
-supp_dental_mental <- contains(trans_list, c("dental", "mental")) / N
-cat("supp({dental, mental}) =", supp_dental_mental, "— infrequent:", supp_dental_mental < min_supp, "\n")
-# supp = 0.40 < 0.60 → infrequent
-
-supp_all_three <- contains(trans_list, c("dental", "vision", "mental")) / N
-cat("supp({dental, vision, mental}) =", supp_all_three, "— also infrequent:", supp_all_three < min_supp, "\n")
-# supp = 0.20 < 0.60 → also infrequent ✓
-
-# The anti-monotone property holds: supp({dental,mental}) = 0.40 < 0.60
-# implies supp({dental,vision,mental}) ≤ 0.40 < 0.60.
-# In fact supp({dental,vision,mental}) = 0.20, which is even lower, as expected.
+contains <- function(tl, items) {
+  sum(sapply(tl, function(t) all(items %in% t)))
+}
 ```
 
-## Task 3: Run apriori() on the toy transactions
+```{r task2-pass1}
+items_1 <- c("Dental", "Vision", "Mental", "Maternity")
+for (item in items_1) {
+  s <- contains(trans_list, item) / N5
+  cat(item, ": supp =", round(s, 2), "| frequent:", s >= min_supp, "\n")
+}
+# L1 = {Dental (0.80), Vision (0.80), Mental (0.60)}
+# Maternity (0.20) is infrequent and dropped
+```
 
-```{r task3-apriori}
+```{r task2-pass2}
+for (pair in list(c("Dental","Vision"), c("Dental","Mental"), c("Vision","Mental"))) {
+  s <- contains(trans_list, pair) / N5
+  cat("{", paste(pair, collapse=", "), "}: supp =", round(s, 2),
+      "| frequent:", s >= min_supp, "\n")
+}
+# L2 = {{Dental, Vision} (0.60), {Dental, Mental} (0.60)}
+# {Vision, Mental} (0.40) is infrequent.
+# Therefore {Dental, Vision, Mental} is pruned in Pass 3:
+# its subset {Vision, Mental} is infrequent, so by the anti-monotone property
+# {Dental, Vision, Mental} cannot be frequent — no scan needed.
+```
+
+## Task 3: Run apriori() and eclat()
+
+```{r task3-convert}
 trans <- as(trans_list, "transactions")
 inspect(trans)
-
-rules <- apriori(
-  trans,
-  parameter = list(supp = 0.40, conf = 0.60, minlen = 2)
-)
-
-inspect(sort(rules, by = "lift"))
 ```
 
-## Task 4: Interpret the top rules
+```{r task3-apriori}
+rules_ap <- apriori(trans, parameter = list(supp = 0.40, conf = 0.60, minlen = 2))
+inspect(sort(rules_ap, by = "lift"))
+```
 
-```{r task4-interpret}
-top_rules <- head(sort(rules, by = "lift"), 3)
-inspect(top_rules)
+```{r task3-eclat}
+freq_sets   <- eclat(trans, parameter = list(supp = 0.40, minlen = 2))
+rules_eclat <- ruleInduction(freq_sets, trans, confidence = 0.60)
+inspect(sort(rules_eclat, by = "lift"))
+```
 
-# Rule 1: {mental} → {vision}  (check actual output for values)
-# Business interpretation: Policyholders who hold mental health cover also tend
-# to hold vision cover. The insurer could bundle these two add-ons and offer a
-# small discount to increase uptake of both.
+## Task 4: Compare Apriori and ECLAT results
 
-# Rule 2: {vision} → {dental}
-# Business interpretation: Vision cover holders are also likely to have dental.
-# A cross-sell campaign targeting vision policyholders with dental cover offers
-# is statistically justified.
+```{r task4-compare}
+# Both algorithms find the same set of frequent itemsets and rules —
+# the output is mathematically identical. The difference is computational:
+# ECLAT uses a vertical data format (tidset: set of transaction IDs per item),
+# allowing fast intersection-based support counting without repeated full scans.
+# For n = 500,000 rows with many items, ECLAT is substantially faster than
+# Apriori because it avoids generating and scanning large candidate sets.
+# For a 5-transaction toy example the difference is immeasurable.
 
-# Rule 3: {dental, vision} → {mental}  (if it appears)
-# Business interpretation: Customers who have both dental and vision cover show
-# elevated interest in mental health cover — a natural candidate for the
-# platinum plan or a comprehensive bundle offer.
+# Top 5 by lift from Apriori
+cat("--- Apriori ---\n")
+inspect(head(sort(rules_ap,    by = "lift"), 5))
+
+cat("--- ECLAT   ---\n")
+inspect(head(sort(rules_eclat, by = "lift"), 5))
 ```

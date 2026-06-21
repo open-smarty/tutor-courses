@@ -1,0 +1,73 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Competing Risks and Multi-State Models",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In a competing risks setting, using the Kaplan-Meier estimator and treating competing events as censored produces estimates that are:",
+      "options": [
+        "Unbiased, because censoring assumptions are satisfied",
+        "Conservative (underestimates), because censored patients inflate the risk set",
+        "Inflated (overestimates) of the event probability, because competing events permanently remove subjects from the risk set",
+        "Correct, provided the competing events are independent of the event of interest"
+      ],
+      "correct": 2,
+      "explanation": "Treating competing events as censored violates the non-informative censoring assumption: a patient who died from a competing cause can never experience the event of interest, so they are not 'still at risk' in the same sense as patients lost to follow-up. The KM estimator incorrectly keeps them in the risk set, underestimating the denominator, which inflates the estimated probability of the primary event. The Cumulative Incidence Function (CIF) is the correct tool."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "The Cumulative Incidence Functions for all competing causes sum to 1 − S(t), where S(t) is the overall event-free survival probability.",
+      "correct": true,
+      "explanation": "By the law of total probability: P(T ≤ t) = ∑ₖ P(T ≤ t, C=k) = ∑ₖ Fₖ(t). Since P(T ≤ t) = 1 − S(t), we have ∑ₖ Fₖ(t) = 1 − S(t). The individual CIFs do not sum to 1 (unlike the marginal survival functions from separate KM analyses, which would sum to more than 1 − S(t) when there are competing risks)."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "The Fine-Gray subdistribution hazard model is preferred over the cause-specific Cox model when the clinical goal is:",
+      "options": [
+        "Understanding the mechanism by which a covariate affects a specific cause",
+        "Predicting the probability that a patient will experience event k by time t",
+        "Estimating the overall survival function S(t) for a new patient",
+        "Testing whether the overall event rate differs between two groups"
+      ],
+      "correct": 1,
+      "explanation": "The Fine-Gray model directly models the subdistribution hazard, which governs the Cumulative Incidence Function Fₖ(t). A positive coefficient in the Fine-Gray model directly implies a higher Fₖ(t) — a higher probability of experiencing cause k. This is appropriate for prognosis. Cause-specific Cox models are better for aetiology (understanding mechanisms), because they directly model the cause-specific hazard without the modified risk set of the Fine-Gray approach."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The CIF for cause k is Fₖ(t) = ∫₀ᵗ hₖ(u)·S(u) du. If the competing cause rate increases (while cause k's rate stays constant), what happens to Fₖ(t)?",
+      "options": [
+        "Fₖ(t) increases because the total hazard is higher",
+        "Fₖ(t) decreases because S(u) falls faster, reducing the integral",
+        "Fₖ(t) is unchanged because hₖ(u) did not change",
+        "Fₖ(t) doubles because the two causes are now equally weighted"
+      ],
+      "correct": 1,
+      "explanation": "S(u) = exp(−H₁(u)−H₂(u)): if the competing cause rate (say h₂) increases, S(u) decreases faster. This makes S(u) smaller at each time u, which reduces the integrand hₖ(u)·S(u). Therefore Fₖ(t) decreases — the competing cause 'uses up' subjects before they can experience cause k. This is why the CIF for relapse can decrease when treatments that reduce TRM are introduced, even if they don't affect the cause-specific relapse rate."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "In a multi-state model, the transition intensities qₛᵣ(t) satisfy the same mathematical structure as which object from the stochastic processes modules?",
+      "options": [
+        "The probability generating function of a branching process",
+        "The stationary distribution vector π of a Markov chain",
+        "The generator (Q) matrix of a continuous-time Markov chain",
+        "The Chapman-Kolmogorov equation for discrete-time chains"
+      ],
+      "correct": 2,
+      "explanation": "The matrix Q(t) = [qₛᵣ(t)] of transition intensities is the generator matrix (infinitesimal generator) of a continuous-time Markov chain — the same object studied in Modules 2 and 4. The Kolmogorov forward equations dP(s,t)/dt = P(s,t)·Q(t) are the continuous-time analogue of the Chapman-Kolmogorov equations and are the same ODEs we solved for birth-death processes. Multi-state survival models are thus a direct application of Arc 1 theory to clinical event data."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "Gray's test is the competing risks analogue of the log-rank test: it compares cumulative incidence functions between groups rather than comparing cause-specific hazard functions.",
+      "correct": true,
+      "explanation": "Gray's test uses a weighted integral of differences in the subdistribution hazards (which govern the CIF), not the cause-specific hazards. The null hypothesis is H₀: Fₖ(t|group A) = Fₖ(t|group B) for all t. This is the correct hypothesis when the question is 'do the two groups have different probabilities of experiencing cause k?', rather than 'do the two groups have different rates of cause k conditional on being event-free?' (which would be the log-rank test applied cause-specifically)."
+    }
+  ]
+}

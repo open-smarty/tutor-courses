@@ -1,5 +1,5 @@
 ---
-title: "Exercise: PCA for Dimensionality Reduction and Cluster Visualisation"
+title: "Exercise: Cluster Validation and Scaling with Spark"
 output: html_document
 ---
 
@@ -9,91 +9,131 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r load-packages}
 library(tidyverse)
+library(cluster)
+library(factoextra)
 
-options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
-health_data <- simulate_bdat602(n = 50000, seed = 602)
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 1: Run prcomp()
-
-```{r task1-prepare}
-# TODO: select age, bmi, income, num_claims, num_chronic_conditions
-# drop_na(), then scale()
-clust_data <- health_data |>
-  select(age, bmi, income, num_claims, num_chronic_conditions) |>
-  drop_na() |>
-  NULL  # scale()
-```
-
-```{r task1-pca}
-# TODO: run prcomp(clust_data, scale. = FALSE)  (data is already scaled)
-pca <- NULL
-
-# Print the summary: cumulative proportion of variance
-summary(pca)
-```
-
-## Task 2: Scree plot and variance explained
-
-```{r task2-scree}
-# TODO: compute Proportion of Variance Explained (PVE) for each PC
-# PVE_k = pca$sdev[k]^2 / sum(pca$sdev^2)
-pve <- NULL  # pca$sdev^2 / sum(pca$sdev^2)
-
-tibble(PC = 1:length(pve), PVE = pve, cumPVE = cumsum(pve)) |>
-  ggplot(aes(x = PC, y = PVE)) +
-  geom_col(fill = "steelblue") +
-  geom_line(aes(y = cumPVE), colour = "red", group = 1) +
-  geom_point(aes(y = cumPVE), colour = "red") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(title = "Scree Plot — Insurance Policyholders",
-       y = "Proportion of Variance Explained",
-       caption = "Red line = cumulative PVE") +
-  theme_minimal()
-```
-
-```{r task2-80pct}
-# TODO: how many PCs are needed to explain at least 80% of variance?
-# Hint: use cumsum(pve) >= 0.80
-num_pcs_80 <- NULL  # min(which(cumsum(pve) >= 0.80))
-cat("Number of PCs for 80% variance:", num_pcs_80, "\n")
-```
-
-## Task 3: Biplot — which variables drive PC1 and PC2?
-
-```{r task3-biplot}
-# TODO: create a biplot using biplot(pca, scale = 0, cex = 0.5)
-# scale = 0 ensures loadings and scores are on comparable scales
-```
-
-```{r task3-loadings}
-# TODO: print the loadings (rotation matrix) for PC1 and PC2
-# pca$rotation[, 1:2]
-# Which variables have the largest absolute loading on PC1?
-# Which variables have the largest absolute loading on PC2?
-pca$rotation[, 1:2]
-
-# PC1 is most influenced by:
-# PC2 is most influenced by:
-```
-
-## Task 4: Visualise k-means clusters in PCA space
-
-```{r task4-kmeans}
-# TODO: fit k-means with k = 4, nstart = 25 on clust_data
+```{r prepare-data}
 set.seed(602)
-km <- NULL  # kmeans(clust_data, centers = 4, nstart = 25)
+health_sub <- health_data[!is.na(health_data$bmi) &
+                            !is.na(health_data$income), ]
+health_sub <- health_sub[sample(nrow(health_sub), 50000), ]
+
+cluster_vars <- c(
+  "age", "bmi", "income", "premium",
+  "num_chronic_conditions", "num_claims",
+  "claim_amount", "support_calls",
+  "customer_rating", "app_logins_monthly"
+)
+signed_log <- function(x) sign(x) * log1p(abs(x))
+health_mat <- health_sub[, cluster_vars]
+health_mat$income <- signed_log(health_mat$income)
+health_mat$claim_amount <- log1p(health_mat$claim_amount)
+health_scaled <- as.data.frame(scale(health_mat))
 ```
 
-```{r task4-scatter}
-# TODO: project observations into PC1-PC2 space and colour by cluster
-# as.data.frame(pca$x[, 1:2]) |> mutate(cluster = factor(km$cluster)) |> ggplot(...)
-```
+## Task 1: Silhouette method — choose optimal k
 
-```{r task4-interpret}
-# Are the clusters well-separated in PC1-PC2 space?
-# If two clusters overlap in the plot, does that mean the clustering failed?
-# What else could you check?
+```{r task1-silhouette-method}
+# Use a 5,000-row subset for speed (dist() is O(n^2))
+set.seed(602)
+sub5k <- health_scaled[sample(nrow(health_scaled), 5000), ]
+
+# TODO: use fviz_nbclust() with FUNcluster = kmeans, method = "silhouette",
+# k.max = 8, nstart = 10 to produce the silhouette plot.
+# set.seed(602) before the call.
+
+set.seed(602)
+# fviz_nbclust(sub5k, kmeans, method = "silhouette", k.max = 8, nstart = 10)
+
+# Which k maximises the average silhouette width?
 # Answer (as a comment):
+chosen_k <- NULL  # replace with your chosen integer
+```
+
+## Task 2: Silhouette plot for the chosen k
+
+```{r task2-fit}
+set.seed(602)
+# TODO: fit k-means with chosen_k, nstart = 25 on sub5k
+km_val <- NULL  # kmeans(sub5k, centers = chosen_k, nstart = 25)
+```
+
+```{r task2-silhouette-plot}
+# TODO: compute the distance matrix for sub5k and produce a silhouette plot
+dist_sub <- NULL  # dist(sub5k, method = "euclidean")
+sil      <- NULL  # silhouette(km_val$cluster, dist_sub)
+
+# Report mean silhouette width
+cat("Mean silhouette width:", round(mean(sil[, 3]), 3), "\n")
+
+# TODO: produce the silhouette plot using fviz_silhouette()
+# fviz_silhouette(sil, palette = "jco", ggtheme = theme_minimal())
+```
+
+## Task 3: Identify the weakest cluster
+
+```{r task3-per-cluster}
+# TODO: compute the mean silhouette width PER CLUSTER
+# summary(sil)$clus.avg.widths or compute manually from sil[, 3]
+
+# Which cluster has the lowest mean silhouette width?
+# What does that tell you about the policyholders in that cluster?
+# Profile that cluster using the original health_sub variables:
+# (age, bmi, income, num_claims, fraud_flag)
+
+# weakest_cluster <- which.min(...)
+# health_sub[rownames(sub5k)[km_val$cluster == weakest_cluster], ] |>
+#   summarise(avg_age = mean(age), avg_claims = mean(num_claims),
+#             pct_fraud = mean(fraud_flag) * 100)
+
+# Answer (as a comment):
+```
+
+## Task 4: Spark k-means — elbow on 500,000 rows
+
+```{r task4-spark-connect}
+library(sparklyr)
+library(dplyr)
+
+# TODO: connect to a local Spark session
+# sc <- spark_connect(master = "local[*]", version = "3.4.1")
+```
+
+```{r task4-spark-data}
+# TODO: copy health_data to Spark and prepare the feature columns
+# health_tbl <- copy_to(sc, health_data, name = "health_ins", overwrite = TRUE)
+#
+# health_spark <- health_tbl |>
+#   mutate(log_income = log1p(income), log_claim = log1p(claim_amount)) |>
+#   select(age, bmi, log_income, premium, num_chronic_conditions,
+#          num_claims, log_claim, support_calls, customer_rating,
+#          app_logins_monthly)
+```
+
+```{r task4-elbow-spark}
+# TODO: run ml_kmeans() for k = 2..6 with init_mode = "k-means||", seed = 602
+# Collect the trainingCost (WCSS) for each k into a tibble.
+# wcss_results <- purrr::map_dfr(2:6, function(k) {
+#   model <- health_spark |>
+#     ml_kmeans(formula = ~., k = k, max_iter = 50,
+#               init_mode = "k-means||", seed = 602)
+#   tibble(k = k, wcss = model$summary$trainingCost)
+# })
+# ggplot(wcss_results, aes(x = k, y = wcss)) + geom_line() + geom_point()
+
+# Which k does the Spark elbow plot suggest?
+# Does it agree with the silhouette method result from Task 1?
+# Answer (as a comment):
+```
+
+```{r task4-profile-spark}
+# TODO: fit the best-k model on the full 500,000-row Spark table,
+# add predictions, and collect a group_by summary showing:
+# n, avg_age, avg_bmi, avg_claims, pct_fraud, pct_churned per cluster.
+
+# spark_disconnect(sc)  # disconnect when done
 ```

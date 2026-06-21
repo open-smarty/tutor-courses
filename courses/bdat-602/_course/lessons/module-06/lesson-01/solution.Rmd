@@ -122,3 +122,67 @@ tfidf_cat |>
 # other categories. Billing and claims share some overlap ("claim" is common
 # in both contexts), but the top terms still separate them well.
 ```
+
+## Task 5: Spark text pipeline
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full,
+                       name = "health_ins", overwrite = TRUE)
+
+complaints_spark <- health_tbl |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = monotonically_increasing_id())
+
+cat("Complaint documents:", sdf_nrow(complaints_spark), "\n")
+# ~90% of 500,000 = ~450,000 documents have complaint notes
+```
+
+```{r task5-spark-tokenise, eval=FALSE}
+tokenised <- ft_tokenizer(
+  complaints_spark,
+  input_col  = "complaint_notes",
+  output_col = "words_raw"
+)
+
+cleaned <- ft_stop_words_remover(
+  tokenised,
+  input_col  = "words_raw",
+  output_col = "words"
+)
+```
+
+```{r task5-spark-tfidf, eval=FALSE}
+# Fit count vectoriser: learns vocabulary from the corpus
+cv_model   <- ft_count_vectorizer(cleaned,
+                                  input_col  = "words",
+                                  output_col = "tf",
+                                  min_df     = 5)
+tf_vectors <- ml_transform(cv_model, cleaned)
+
+# Apply IDF: downweight terms appearing in many documents
+idf_model   <- ft_idf(tf_vectors,
+                      input_col  = "tf",
+                      output_col = "tfidf")
+tfidf_spark <- ml_transform(idf_model, tf_vectors)
+
+vocab <- cv_model$vocabulary
+cat("Vocabulary size:", length(vocab), "\n")
+# With 450,000 complaints but only ~50 unique complaint templates (the simulator
+# uses a small set), the vocabulary is surprisingly small (~200-400 unique terms
+# after stop word removal and min_df=5 filtering).
+# A real insurer's free-text complaints would have a much larger vocabulary
+# (thousands of unique medical and financial terms).
+
+# Schema check: tfidf column is a SparseVector — ready for ml_lda()
+tfidf_spark |> select(doc_id, tfidf) |> glimpse()
+
+spark_disconnect(sc)
+```

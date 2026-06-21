@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r load-packages}
 library(tidyverse)
 library(skimr)
+library(DataExplorer)
 
 # Source the dataset simulator (prevents auto-run)
 options(bdat602.source_only = TRUE)
@@ -75,4 +76,36 @@ mining_tasks <- tribble(
 )
 
 print(mining_tasks)
+```
+
+## Task 5: Automated EDA with DataExplorer
+
+Use a 10,000-row sample for speed (`health_small`).
+
+```{r task5-sample}
+set.seed(602)
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+```{r task5-missing}
+# TODO: call plot_missing() on health_small
+# Which three columns have the highest missingness?
+# Answer (as a comment):
+```
+
+```{r task5-histogram}
+# TODO: call plot_histogram() on health_small
+# Which numeric variable looks most right-skewed?
+# Answer (as a comment):
+```
+
+```{r task5-correlation}
+# TODO: call plot_correlation() on the subset below
+# Which pair of numeric variables has the strongest positive correlation?
+# Answer (as a comment):
+plot_correlation(
+  health_small |> select(age, bmi, income, premium, claim_amount,
+                          num_claims, num_chronic_conditions),
+  title = "Correlation Matrix: Key Numeric Variables"
+)
 ```

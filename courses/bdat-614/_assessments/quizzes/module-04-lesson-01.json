@@ -1,0 +1,66 @@
+{
+  "id": "module-04-lesson-01",
+  "title": "Quiz: The Shewhart Cycle — PDCA and PDSA",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "What is the primary philosophical difference between the Check phase in PDCA and the Study phase in PDSA?",
+      "options": [
+        "Check involves collecting more data; Study only reviews existing data",
+        "Check verifies whether targets were met; Study analyses why results occurred and generates knowledge",
+        "Check is used in manufacturing; Study is restricted to healthcare improvement",
+        "Check and Study are identical — the terms are used interchangeably by Deming"
+      ],
+      "correct": 1,
+      "explanation": "Deming revised PDCA to PDSA because 'Check' implies passive inspection — confirming whether a goal was hit. 'Study' demands deeper scientific analysis: understanding the mechanism behind the result so that the knowledge generated can seed the next cycle and prevent recurrence."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In the PDCA cycle, the Act phase should be performed when:",
+      "options": [
+        "Targets are partially met — Act means adjusting the target downward",
+        "The change is confirmed effective — standardise and deploy at full scale; or if ineffective, use new learning to plan the next cycle",
+        "Management approves the plan document during the planning phase",
+        "The Do phase is complete regardless of whether the results are positive"
+      ],
+      "correct": 1,
+      "explanation": "Act has two branches: (1) if the change worked, standardise it and implement fully; (2) if it did not work, abandon or modify it and use the learning from Study to design a better Plan for the next cycle. Act is never unconditional deployment."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "A hospital runs four PDCA cycles and achieves wait-time reductions of −10 min, −6 min, −3 min, and −1 min. This pattern of decreasing returns per cycle most likely reflects:",
+      "options": [
+        "Poor execution of later cycles due to staff fatigue",
+        "The natural exhaustion of easy-to-fix causes; subsequent cycles address deeper, harder-to-resolve issues",
+        "A fundamental flaw in the PDCA model that makes it unsuitable for healthcare",
+        "Regression to the mean — the early gains were due to random variation"
+      ],
+      "correct": 1,
+      "explanation": "Diminishing returns per cycle are normal and expected in continuous improvement. Early cycles capture low-hanging fruit (high-impact, easily fixed causes). Later cycles address structural or systemic causes requiring more effort for smaller incremental gains. This is not a failure of PDCA; it is the programme working correctly."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Which of the following quality frameworks is best described as a detailed, structured elaboration of the Plan and Do phases of PDCA?",
+      "options": [
+        "Balanced Scorecard",
+        "ISO 14001 Environmental Management",
+        "Six Sigma DMAIC",
+        "Lean Value Stream Mapping"
+      ],
+      "correct": 2,
+      "explanation": "Six Sigma DMAIC (Define-Measure-Analyse-Improve-Control) is essentially an expanded, statistically rigorous version of the Plan and Do phases, with Define/Measure/Analyse mapping to Plan, Improve to Do, and Control to Check/Act. DMAIC is PDCA with explicit statistical tools at every step."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "The recommended practice in PDCA is to test a change at full deployment scale immediately in the Do phase to obtain representative results.",
+      "correct": false,
+      "explanation": "The Do phase should test changes on a small, controlled scale (one machine, one shift, one ward) before full deployment. Small-scale tests limit the risk of a failed change causing widespread disruption, generate faster learning cycles, and allow refinement before commitment. Full-scale rollout comes only after the Act phase confirms the change is effective."
+    }
+  ]
+}

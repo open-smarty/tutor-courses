@@ -1,0 +1,73 @@
+{
+  "id": "module-05-lesson-03",
+  "title": "Quiz: Parametric Survival Models and AFT",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the AFT model log(T) = μ + βX + σε, what does a positive coefficient β > 0 imply about covariate X?",
+      "options": [
+        "Higher X is associated with higher hazard and shorter survival",
+        "Higher X accelerates the event time — patients fail sooner",
+        "Higher X decelerates the event time — patients survive longer",
+        "Higher X has no effect on survival; only the scale σ matters"
+      ],
+      "correct": 2,
+      "explanation": "In the AFT model, β > 0 means that increasing X increases log(T), which means T is larger — patients survive longer. The event time is decelerated (slowed down) by higher X. This contrasts with the Cox PH model, where a positive coefficient means higher hazard (shorter survival). The AFT and PH coefficients have opposite signs (roughly, for the Weibull model exactly: β_PH = −β_AFT × α)."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "A Weibull AFT model for time to relapse gives exp(β̂_treatment) = 1.45. What is the correct interpretation?",
+      "options": [
+        "The treatment reduces the hazard rate by 45%",
+        "Patients on the treatment have a 45% higher probability of relapse",
+        "The median (and all quantiles of) relapse time are 45% longer for treated patients",
+        "The hazard ratio for the treatment is 1.45"
+      ],
+      "correct": 2,
+      "explanation": "In the AFT model, exp(β) is the ratio of survival times (time acceleration factor). exp(β̂_treatment) = 1.45 means treated patients' event times are multiplied by 1.45 relative to untreated — their survival is 45% longer. This applies to all quantiles, not just the median. Option D confuses AFT and PH interpretations; the hazard ratio in the PH parameterisation would be exp(−β_AFT × α) for a Weibull model."
+    },
+    {
+      "id": "q3",
+      "type": "true-false",
+      "text": "The Weibull model is unique among common parametric survival families in that it belongs to both the AFT family and the proportional hazards family.",
+      "correct": true,
+      "explanation": "The Weibull model satisfies both AFT and PH parameterisations simultaneously. In the AFT form: log(T) = μ + βX + σε (ε extreme value). In the PH form: h(t|X) = h₀(t)exp(β_PH X). The relationship between the two sets of coefficients is β_PH = −β_AFT/σ = −β_AFT × α. This dual membership is unique to the Weibull (and by extension the Exponential). Log-normal and log-logistic are AFT models but not PH models."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A fitted Weibull model has shape α = 0.7 and scale λ = 400. What does the shape parameter tell us about the hazard function?",
+      "options": [
+        "The hazard is constant (exponential distribution)",
+        "The hazard is increasing over time",
+        "The hazard is decreasing over time",
+        "The hazard is unimodal — rises then falls"
+      ],
+      "correct": 2,
+      "explanation": "The Weibull hazard h(t) = (α/λ)(t/λ)^{α−1}. When α < 1, the exponent α−1 < 0, so (t/λ)^{α−1} decreases as t increases, making h(t) a decreasing function. This is appropriate for situations where early events are most likely (e.g., post-surgical complications, neonatal mortality). For α = 1 the hazard is constant (exponential). For α > 1 the hazard is increasing."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "When comparing Exponential, Weibull, log-normal, and log-logistic models using AIC, you find: Exponential AIC=1820, Weibull AIC=1795, Log-normal AIC=1788, Log-logistic AIC=1791. Which model is preferred and why?",
+      "options": [
+        "Exponential, because it is the simplest model (Occam's razor)",
+        "Weibull, because it generalises the Exponential",
+        "Log-normal, because it has the lowest AIC",
+        "Log-logistic, because its hazard is non-monotone and more realistic"
+      ],
+      "correct": 2,
+      "explanation": "AIC = −2ℓ + 2k penalises log-likelihood for model complexity. Lower AIC indicates a better balance of fit and parsimony. Log-normal (AIC=1788) is preferred here. Note that log-logistic (1791) is close, suggesting the true hazard may be non-monotone (rising then falling), which neither Exponential nor Weibull can model. AIC selection should be complemented by visual goodness-of-fit checks (KM vs fitted curve plot)."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "In R's survreg(), the 'scale' parameter in the output corresponds to σ in log(T) = μ + βX + σε. The Weibull shape parameter α is then 1/scale.",
+      "correct": true,
+      "explanation": "survreg() reports Log(scale) in the output, where scale = σ in the AFT error parameterisation. The Weibull shape parameter α = 1/σ = 1/scale. So if survreg() reports Log(scale) = −0.25, then scale = exp(−0.25) ≈ 0.78, and α = 1/0.78 ≈ 1.28 > 1 (increasing hazard). This sign-and-scale relationship between survreg() output and the traditional Weibull parameterisation is a common source of confusion."
+    }
+  ]
+}

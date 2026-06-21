@@ -1,0 +1,131 @@
+---
+title: "Exercise: Model Building in Practice — Diamonds, Flights, and Growth Models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r load-packages}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(nycflights13)
+```
+
+```{r load-data}
+data("diamonds", package = "ggplot2")
+data("flights",  package = "nycflights13")
+```
+
+## Task 1: Progressive diamond model — step by step
+
+```{r task1a}
+# TODO: Fit the naive model:  mod1 <- lm(price ~ carat, data = diamonds)
+# Print summary(mod1) and note the R².
+# Use add_residuals(diamonds, mod1) to attach residuals, then plot:
+#   x = carat, y = .resid — colour the points by cut.
+# Describe the two problems you see: fan shape and colour/cut clusters.
+
+```
+
+```{r task1b}
+# TODO: Fit the log-log model: mod2 <- lm(log(price) ~ log(carat), data = diamonds)
+# Attach residuals to diamonds with add_residuals() and plot residuals vs log(carat),
+# colouring by cut.  What pattern remains?
+
+```
+
+```{r task1c}
+# TODO: Fit the full model:
+#   mod3 <- lm(log(price) ~ log(carat) + cut + colour + clarity, data = diamonds)
+# Print summary(mod3).  Are the residuals now random?
+# Plot residuals vs log(carat) — they should scatter evenly around zero.
+
+```
+
+## Task 2: Many-models pipeline — flights by carrier
+
+```{r task2}
+# TODO: Start from the flights dataset.  Filter to complete cases on
+# arr_delay and dep_delay (use drop_na()).
+#
+# Then pipe through:
+#   group_by(carrier) |>
+#   nest() |>
+#   mutate(
+#     model = map(data, ~lm(arr_delay ~ dep_delay, data = .x)),
+#     coefs = map(model, broom::tidy)
+#   ) |>
+#   unnest(coefs)
+#
+# Filter to the dep_delay term only.
+# Print the resulting table sorted by estimate (ascending).
+
+```
+
+```{r task2-plot}
+# TODO: Using the table from above, create a bar chart:
+#   x = carrier (reordered by estimate), y = estimate
+#   Add a horizontal reference line at y = 1.
+# Carriers below 1 make up time; carriers above 1 fall further behind.
+
+```
+
+## Task 3: Non-linear growth model with nls()
+
+```{r task3-data}
+set.seed(602)
+
+# Simulate logistic growth data
+K  <- 1000   # carrying capacity
+r  <- 0.4    # growth rate
+Y0 <- 50     # initial population
+
+t  <- seq(0, 20, by = 1)
+Y  <- K / (1 + ((K - Y0) / Y0) * exp(-r * t)) + rnorm(length(t), sd = 20)
+growth_df <- tibble(t = t, Y = pmax(Y, 0))
+
+# Inspect the data
+ggplot(growth_df, aes(t, Y)) +
+  geom_point(colour = "steelblue", size = 2.5) +
+  labs(title = "Simulated logistic growth data",
+       x = "Time", y = "Population") +
+  theme_minimal()
+```
+
+```{r task3-fit}
+# TODO: Fit a logistic growth model using nls():
+#
+# mod_nls <- nls(
+#   Y ~ K / (1 + ((K - Y0) / Y0) * exp(-r * t)),
+#   data   = growth_df,
+#   start  = list(K = 900, r = 0.5, Y0 = 60)
+# )
+#
+# Print summary(mod_nls).  Extract and print the estimated K, r, Y0.
+
+```
+
+```{r task3-plot}
+# TODO: Add fitted values to growth_df using add_predictions(growth_df, mod_nls).
+# Plot: geom_point() for observed Y, geom_line() for the fitted curve.
+# Label the plot with estimated K (carrying capacity).
+
+```
+
+## Task 4: Residual diagnostics across all three models
+
+```{r task4}
+# TODO: For each of the three models (mod1, mod3, mod_nls) create a
+# residuals-vs-fitted plot.
+#
+# For mod1 and mod3: use add_residuals() from modelr.
+# For mod_nls: use residuals(mod_nls) and fitted(mod_nls) directly.
+#
+# Arrange the three plots side-by-side using patchwork or cowplot,
+# or simply produce them sequentially.
+# Annotate each: which shows fan shape, which looks random, which shows no pattern.
+
+```

@@ -1,0 +1,73 @@
+{
+  "id": "module-05-lesson-01",
+  "title": "Quiz: Survival Functions and Kaplan-Meier Estimation",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "The Kaplan-Meier estimator is defined as Ŝ(t) = ∏_{t_i ≤ t} (1 - d_i/n_i). What does n_i represent at event time t_i?",
+      "options": [
+        "The total number of patients enrolled in the study",
+        "The number of patients who experienced the event by time t_i",
+        "The number of patients still at risk (neither dead nor censored) just before t_i",
+        "The number of censored observations up to time t_i"
+      ],
+      "correct": 2,
+      "explanation": "n_i is the size of the risk set at t_i — the number of patients who have survived (not yet experienced the event) and have not been censored before t_i. This is the denominator in the conditional probability estimate 1 - d_i/n_i. Censored patients leave the risk set at their censoring time, so they correctly contribute information up to the point of censoring."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "The fundamental identity S(t) = exp(-H(t)) follows from the ODE S'(t) = -h(t)S(t), where H(t) = ∫₀ᵗ h(u) du.",
+      "correct": true,
+      "explanation": "By definition, h(t) = f(t)/S(t) = -S'(t)/S(t), which gives S'(t) = -h(t)S(t). This separable ODE with S(0)=1 has solution S(t) = exp(-∫₀ᵗ h(u)du) = exp(-H(t)). This identity is foundational: specifying h(t) fully determines S(t) and vice versa."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In a study with 50 patients, at time t=100 days there are 40 patients at risk and 3 deaths. What is the KM conditional survival estimate at this time point?",
+      "options": [
+        "1 - 3/50 = 0.940",
+        "1 - 3/40 = 0.925",
+        "3/40 = 0.075",
+        "e^{-3/40} ≈ 0.928"
+      ],
+      "correct": 1,
+      "explanation": "The term in the KM product at t_i = 100 is (1 - d_i/n_i) = (1 - 3/40) = 37/40 = 0.925. The KM estimate uses n_i (the risk set size at that time point), not the original sample size. The full KM estimate Ŝ(100) is this term multiplied by all previous conditional survival probabilities."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "A patient is censored at day 200 in a study. How does the KM estimator handle this observation?",
+      "options": [
+        "The patient is excluded from all calculations",
+        "The patient is treated as having experienced the event at day 200",
+        "The patient remains in the risk set for all event times up to day 200, then is removed",
+        "The patient's data is used only to estimate the censoring distribution"
+      ],
+      "correct": 2,
+      "explanation": "The KM estimator handles censoring by including the patient in the risk set n_i for every event time t_i < 200, then removing them at day 200. They contribute information about surviving to day 200, without incorrectly treating day 200 as a death time. This is why the KM estimator is unbiased under non-informative (independent) censoring."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "Greenwood's variance formula for the KM estimator is Var(Ŝ(t)) ≈ Ŝ(t)² × ∑_{t_i ≤ t} d_i / [n_i(n_i − d_i)]. If Ŝ(t) = 0.72 and the Greenwood sum is 0.08, what is the approximate 95% CI half-width?",
+      "options": [
+        "1.96 × 0.08 ≈ 0.157",
+        "1.96 × 0.72 × √0.08 ≈ 0.400",
+        "1.96 × √(0.72² × 0.08) ≈ 0.400",
+        "1.96 × 0.72 × 0.08 ≈ 0.113"
+      ],
+      "correct": 2,
+      "explanation": "Var = Ŝ(t)² × Greenwood_sum = 0.72² × 0.08 = 0.5184 × 0.08 = 0.04147. SE = √0.04147 ≈ 0.2036. Half-width = 1.96 × 0.2036 ≈ 0.399. Equivalently, 1.96 × √(Ŝ² × greenwood_sum) = 1.96 × 0.72 × √0.08 ≈ 0.400. Option C is the correct calculation."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "The log-rank test weights all event times equally, making it most powerful when the hazard ratio between two groups is constant over time (proportional hazards).",
+      "correct": true,
+      "explanation": "The log-rank test statistic sums (O-E) contributions equally across all event times, giving the greatest power when the hazard ratio is constant — i.e., under proportional hazards. When survival curves cross (non-proportional hazards), or when differences are concentrated early or late, weighted alternatives like the Wilcoxon (rho=1) or Fleming-Harrington tests can be more powerful."
+    }
+  ]
+}

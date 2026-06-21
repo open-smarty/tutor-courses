@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-03",
+  "title": "Quiz: Lean Six Sigma — Waste Elimination and Quality Tools",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A hospital triage process has a total lead time of 80 minutes, of which 18 minutes are value-added. What is the process efficiency?",
+      "options": [
+        "22.5%",
+        "77.5%",
+        "18.0%",
+        "55.6%"
+      ],
+      "correct": 0,
+      "explanation": "Process Efficiency = (VA time / Total lead time) × 100 = (18 / 80) × 100 = 22.5%. The remaining 77.5% of elapsed time is non-value-added waste from the customer's perspective."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "In the TIMWOODS mnemonic, which waste category describes producing more output than the customer currently needs?",
+      "options": [
+        "Overproduction",
+        "Overprocessing",
+        "Inventory",
+        "Defects"
+      ],
+      "correct": 0,
+      "explanation": "Overproduction means making more, sooner, or faster than required. It is considered the most harmful waste in lean thinking because it generates all other wastes — excess inventory, additional transport, more waiting, and more motion."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "A Value Stream Map (VSM) records cycle time (CT) and inventory (I) at each process step. What is the primary purpose of creating a VSM 'current state' map?",
+      "options": [
+        "To make flow and waste visible so improvement priorities can be identified",
+        "To replace control charts as the primary SPC monitoring tool",
+        "To document product specifications for the customer",
+        "To count the number of defects per million opportunities"
+      ],
+      "correct": 0,
+      "explanation": "The current-state VSM makes the entire material and information flow visible — including all waiting, transport, and inventory between steps. This visibility is the foundation for identifying which wastes to eliminate in the future-state design."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In the 5S methodology, which step involves creating written standards so that Sort, Set in Order, and Shine are performed consistently?",
+      "options": [
+        "Standardise (Seiketsu)",
+        "Sustain (Shitsuke)",
+        "Sort (Seiri)",
+        "Shine (Seiso)"
+      ],
+      "correct": 0,
+      "explanation": "Standardise (Seiketsu) is the 4th S — it establishes documented procedures and visual controls so that the first three Ss are performed consistently by all team members at all times, creating the conditions needed for Sustain."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Lean Six Sigma combines lean's focus on flow speed and waste removal with Six Sigma's focus on reducing process variation and defect rates.",
+      "correct": true,
+      "explanation": "Lean and Six Sigma are complementary. Lean eliminates waste to compress lead times and improve flow, while Six Sigma reduces variation and defects within the remaining value-adding steps. Lean Six Sigma integrates both under the DMAIC improvement structure."
+    }
+  ]
+}

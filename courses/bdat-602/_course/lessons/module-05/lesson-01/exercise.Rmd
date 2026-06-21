@@ -111,3 +111,61 @@ cat("Decision tree AUC:", round(auc(roc_tree), 3), "\n")
 # Which model wins on F1? On AUC?
 # Answer (as a comment):
 ```
+
+## Task 5: Distributed random forest with Spark (eval=FALSE)
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+# TODO: connect to a local Spark session
+sc <- NULL  # spark_connect(...)
+
+# Generate and copy the FULL 500,000-row dataset to Spark
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full, name = "health_ins", overwrite = TRUE)
+
+# Encode plan_tier as an integer for Spark (Spark cannot auto-encode string columns
+# in the same way R does; ordinal coding is fine here since plan tier has a natural order)
+health_tbl <- health_tbl |>
+  mutate(
+    plan_tier_num = case_when(
+      plan_tier == "Bronze"   ~ 1L,
+      plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L,
+      plan_tier == "Platinum" ~ 4L
+    )
+  )
+```
+
+```{r task5-spark-split, eval=FALSE}
+# TODO: split the Spark table 80/20 using sdf_random_split(seed = 602)
+splits      <- NULL  # sdf_random_split(health_tbl, training = 0.80, test = 0.20, seed = 602)
+train_spark <- NULL  # splits$training
+test_spark  <- NULL  # splits$test
+```
+
+```{r task5-spark-rf, eval=FALSE}
+# TODO: fit ml_random_forest_classifier() with:
+#   formula  = churned ~ age + plan_tier_num + income + num_claims +
+#                        support_calls + auto_pay + customer_rating + deductible
+#   num_trees = 100
+#   feature_subset_strategy = "sqrt"
+#   seed = 602
+spark_rf <- NULL  # ml_random_forest_classifier(train_spark, ...)
+```
+
+```{r task5-spark-eval, eval=FALSE}
+# TODO: get predictions and compute ROC-AUC with ml_binary_classification_evaluator()
+preds <- NULL  # ml_predict(spark_rf, test_spark)
+auc_spark <- NULL  # ml_binary_classification_evaluator(preds, ...)
+
+cat("Spark RF ROC-AUC:", round(auc_spark, 3), "\n")
+# Compare with the local random forest AUC from Task 4:
+# Is the Spark model's AUC higher, lower, or similar?
+# Answer (as a comment):
+
+spark_disconnect(sc)
+```

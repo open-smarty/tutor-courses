@@ -1,0 +1,73 @@
+{
+  "id": "module-05-lesson-02",
+  "title": "Quiz: Cox Proportional Hazards Model",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "In the Cox model h(t|X) = h₀(t)·exp(β₁X₁ + β₂X₂), if a covariate X₁ has estimated coefficient β̂₁ = −0.42, what is the hazard ratio for a one-unit increase in X₁?",
+      "options": [
+        "exp(0.42) ≈ 1.52",
+        "−0.42",
+        "exp(−0.42) ≈ 0.66",
+        "1 − 0.42 = 0.58"
+      ],
+      "correct": 2,
+      "explanation": "The hazard ratio for a one-unit increase in X₁ is HR = exp(β₁) = exp(−0.42) ≈ 0.66. This means patients with X₁ one unit higher have 34% lower instantaneous hazard. The coefficient β₁ is the log-hazard ratio; exp(β₁) converts it to the multiplicative hazard ratio scale."
+    },
+    {
+      "id": "q2",
+      "type": "true-false",
+      "text": "The Cox partial likelihood eliminates the baseline hazard h₀(t) from estimation, so β can be estimated without specifying the form of h₀(t).",
+      "correct": true,
+      "explanation": "This is the key insight behind Cox's partial likelihood. At each event time t_i, the probability that patient i died (given that one death occurred among the risk set) involves the ratio exp(β⊤Xᵢ) / ∑_{j∈R(tᵢ)} exp(β⊤Xⱼ). The baseline hazard h₀(tᵢ) appears in both numerator and denominator and cancels, leaving a function of β only. This makes the Cox model semi-parametric."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "A Cox model for lung cancer includes sex (1=male, 2=female). The output shows: coef(sex) = −0.53, exp(coef) = 0.588, p = 0.002. What is the correct interpretation?",
+      "options": [
+        "Female patients have a 53% lower hazard than males at every time point",
+        "After adjusting for other covariates, females have approximately 41% lower instantaneous risk of death than males at any given time",
+        "Female patients survive on average 0.588 days longer than males",
+        "The model is misspecified because the coefficient is negative"
+      ],
+      "correct": 1,
+      "explanation": "exp(−0.53) ≈ 0.588, so the hazard ratio for female vs male is 0.588. This means females have about 1 − 0.588 = 41.2% lower hazard at every time point, after adjusting for the other covariates in the model. This is a conditional statement — it holds for patients with identical values of all other predictors. The p-value of 0.002 means this difference is statistically significant."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "The proportional hazards assumption states that the hazard ratio between two patients is:",
+      "options": [
+        "Constant over time",
+        "Proportional to the event rate at each time point",
+        "Equal to 1 when covariates are mean-centred",
+        "Determined by the baseline hazard h₀(t)"
+      ],
+      "correct": 0,
+      "explanation": "The PH assumption states that h(t|X)/h(t|X*) = exp(β⊤(X−X*)), which does not depend on t. The hazard ratio is constant over time — the two patients' hazard curves are parallel on the log scale. If a treatment works only for the first six months and then loses effect, the PH assumption is violated and the hazard ratio is time-varying."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "In R, cox.zph() tests the proportional hazards assumption by testing whether the scaled Schoenfeld residuals have a significant linear trend over time. A p-value below 0.05 suggests a violation.",
+      "correct": true,
+      "explanation": "cox.zph() regresses scaled Schoenfeld residuals on a function of time (default: rank of event times). Under PH, the expected residuals should be flat — no trend. A significant slope (p < 0.05) suggests the effect of that covariate changes over time, violating PH. Remedies include stratification (strata() in the model formula), adding a time-by-covariate interaction, or switching to an AFT model."
+    },
+    {
+      "id": "q6",
+      "type": "multiple-choice",
+      "text": "To predict the absolute survival probability S(t|X) for a new patient from a Cox model, you additionally need:",
+      "options": [
+        "Only the estimated coefficients β̂",
+        "The Breslow estimator of the cumulative baseline hazard H₀(t) from basehaz()",
+        "The KM estimate of the marginal survival function",
+        "A parametric distribution for h₀(t) specified at model fitting time"
+      ],
+      "correct": 1,
+      "explanation": "S(t|X) = exp(−H₀(t)·exp(β̂⊤X)). The Cox model only estimates β; the baseline cumulative hazard H₀(t) must be estimated separately. The Breslow estimator, available in R via basehaz(), provides a non-parametric step-function estimate of H₀(t). Absolute survival prediction therefore requires both the fitted coefficients and the Breslow baseline."
+    }
+  ]
+}

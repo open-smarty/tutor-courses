@@ -75,6 +75,63 @@ pr_curve <- pr.curve(
 plot(pr_curve)
 ```
 
+### Handling class imbalance at scale with Spark
+
+For 500,000 rows, SMOTE's kNN step is prohibitively expensive in R. The Spark approach is **class weighting via a weight column** — every minority-class record is assigned a higher weight so the model's loss function penalises missing those records more.
+
+```{r spark-class-weight, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc         <- spark_connect(master = "local[*]", version = "3.4.1")
+health_tbl <- copy_to(sc, simulate_bdat602(n = 500000, seed = 602),
+                      name = "health_ins", overwrite = TRUE)
+
+# Compute class imbalance ratio inside Spark
+churn_rate <- health_tbl |>
+  summarise(rate = mean(churned, na.rm = TRUE)) |>
+  collect() |> pull(rate)
+
+minority_weight <- (1 - churn_rate) / churn_rate   # ~4-5 for 18% churn
+
+# Attach a weight column: minority class gets minority_weight, majority gets 1
+health_tbl <- health_tbl |>
+  mutate(
+    sample_weight  = ifelse(churned == 1, minority_weight, 1.0),
+    plan_tier_num  = case_when(
+      plan_tier == "Bronze"   ~ 1L, plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L, plan_tier == "Platinum" ~ 4L
+    )
+  )
+
+splits      <- sdf_random_split(health_tbl,
+                                training = 0.80, test = 0.20, seed = 602)
+train_spark <- splits$training
+test_spark  <- splits$test
+
+# Weighted random forest
+rf_spark_wt <- train_spark |>
+  ml_random_forest_classifier(
+    formula     = churned ~ age + plan_tier_num + income + num_claims +
+                            support_calls + auto_pay + customer_rating,
+    num_trees   = 100,
+    weight_col  = "sample_weight",
+    seed        = 602
+  )
+
+preds <- ml_predict(rf_spark_wt, test_spark)
+
+auc <- ml_binary_classification_evaluator(
+  preds, label_col = "churned",
+  raw_prediction_col = "rawPrediction", metric_name = "areaUnderROC"
+)
+cat("Weighted Spark RF ROC-AUC:", round(auc, 3), "\n")
+
+spark_disconnect(sc)
+```
+
+**Why not SMOTE in Spark?** SMOTE requires finding k-nearest neighbours in high-dimensional space — an $O(n^2)$ computation that does not distribute efficiently. Class weighting achieves a similar effect (minority records exert more influence on the loss) with $O(n)$ complexity and no synthetic data generation.
+
 ## Example
 
 ```r
@@ -116,7 +173,7 @@ print(cm)
 
 ## Task
 
-Open `exercise.Rmd` and complete the four tasks: (1) document the churn rate and show that a naive "always No" model achieves high accuracy; (2) train a class-weighted random forest and compare recall to the unweighted version; (3) apply SMOTE via `themis::step_smote()` in a `recipes` pipeline; (4) compare models with precision-recall curves and F1 scores at multiple thresholds.
+Open `exercise.Rmd` and complete the five tasks: (1) document the churn rate and show that a naive "always No" model achieves high accuracy; (2) train a class-weighted random forest and compare recall to the unweighted version; (3) apply SMOTE via `themis::step_smote()` in a `recipes` pipeline; (4) compare models with precision-recall curves and F1 scores at multiple thresholds; (5) run a class-weighted random forest on 500,000 rows in Spark using `weight_col` and compare the AUC to the local result.
 
 ## Check
 

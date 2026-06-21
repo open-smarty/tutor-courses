@@ -1,5 +1,5 @@
 ---
-title: "Solution: Mining Rules from the Health Insurance Dataset"
+title: "Solution: Mining Rules at Scale — Spark, Sequences, Filtering, and Visualisation"
 output: html_document
 ---
 
@@ -12,92 +12,122 @@ library(tidyverse)
 library(arules)
 library(arulesViz)
 
-options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
 health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
 ## Task 1: Prepare the transaction object
 
-```{r task1-transactions}
-flag_cols <- c("dental_cover", "vision_cover", "mental_cover", "maternity_cover")
-
+```{r task1-discretise}
 trans_df <- health_data |>
-  select(all_of(flag_cols)) |>
-  mutate(across(everything(), as.logical))
-
-trans <- as(trans_df, "transactions")
-summary(trans)
+  mutate(
+    dental    = ifelse(dental_cover    == 1, "Dental",    NA),
+    vision    = ifelse(vision_cover    == 1, "Vision",    NA),
+    mental    = ifelse(mental_cover    == 1, "Mental",    NA),
+    maternity = ifelse(maternity_cover == 1, "Maternity", NA),
+    age_grp   = cut(age, breaks = c(17, 30, 45, 60, 85),
+                    labels = c("Young", "MidAge", "Senior", "Elderly")),
+    bmi_grp   = cut(bmi, breaks = c(0, 18.5, 25, 30, 100),
+                    labels = c("Underweight", "Normal", "Overweight", "Obese")),
+    fraud_lbl  = ifelse(fraud_flag == 1, "Fraud",   "NoFraud"),
+    churn_lbl  = ifelse(churned    == 1, "Churned", "Retained"),
+    smoker_lbl = ifelse(smoker     == 1, "Smoker",  "NonSmoker")
+  ) |>
+  select(dental, vision, mental, maternity, plan_tier, region,
+         age_grp, bmi_grp, employment_type, smoker_lbl, fraud_lbl, churn_lbl)
 ```
 
-## Task 2: Plot item frequencies
+```{r task1-transactions}
+trans_obj <- as(trans_df, "transactions")
+summary(trans_obj)
 
-```{r task2-item-freq}
-itemFrequencyPlot(
-  trans,
-  topN  = 4,
-  type  = "relative",
-  main  = "Relative Item Frequency — Insurance Add-On Covers",
-  col   = "steelblue",
-  ylim  = c(0, 0.5)
-)
+itemFrequencyPlot(trans_obj, topN = 20, type = "absolute",
+                  main = "Top 20 Items in Insurance Transactions",
+                  col = "steelblue", las = 2, cex.names = 0.75)
+
+inspect(trans_obj[1:3])
 ```
 
-```{r task2-interpret}
-# dental_cover is the most frequent add-on (~35% of policyholders).
-# maternity_cover is the rarest (~13%), because it has a lower probability
-# for male and older female policyholders in the simulator.
-# Rarer items tend to appear in fewer frequent itemsets, so maternity_cover
-# will feature in fewer rules unless paired with a very common item.
-```
+## Task 2: Mine rules and remove redundant rules
 
-## Task 3: Mine association rules
-
-```{r task3-apriori}
+```{r task2-apriori}
 rules <- apriori(
-  trans,
-  parameter = list(supp = 0.05, conf = 0.70, minlen = 2)
+  trans_obj,
+  parameter = list(supp = 0.02, conf = 0.60, minlen = 2, maxlen = 5)
 )
-summary(rules)
+
+non_redundant <- rules[!is.redundant(rules)]
+
+cat("Rules before:", length(rules), "\n")
+cat("Rules after removing redundant:", length(non_redundant), "\n")
 ```
 
-```{r task3-top10}
-inspect(head(sort(rules, by = "lift"), 10))
+```{r task2-top-rules}
+inspect(sort(non_redundant, by = "lift")[1:10])
 ```
 
-```{r task3-dental-rules}
-dental_rules <- subset(rules, rhs %in% "dental_cover=TRUE")
-inspect(sort(dental_rules, by = "lift"))
+## Task 3: Scatter plot and graph plot
+
+```{r task3-scatter}
+plot(non_redundant,
+     measure = c("support", "confidence"),
+     shading = "lift",
+     main    = "Non-Redundant Rules: Support vs Confidence (shade = Lift)",
+     col     = colorRampPalette(c("steelblue", "gold", "red"))(100))
 ```
 
-## Task 4: Scatter plot and actionable recommendations
+```{r task3-graph}
+top30 <- sort(non_redundant, by = "lift")[1:30]
+plot(top30, method = "graph", engine = "htmlwidget")
+# In the graph: circles = items; squares = rules.
+# Arrow item->rule: item is on LHS. Arrow rule->item: item is on RHS.
+# Larger square = higher support; darker = higher lift.
+# The most central items (most arrows) are the strongest "hub" attributes.
+```
 
-```{r task4-scatter}
-plot(
+## Task 4: Statistical significance and a fraud recommendation
+
+```{r task4-significance}
+measures <- interestMeasure(
   rules,
-  method  = "scatter",
-  measure = c("support", "confidence"),
-  shading = "lift",
-  main    = "Association Rules — Insurance Add-On Covers"
+  measure      = c("lift", "conviction", "leverage", "fishersExactTest"),
+  transactions = trans_obj
 )
+rules_df <- cbind(as(rules, "data.frame"), measures)
+
+significant <- rules_df |>
+  filter(lift > 1.5, fishersExactTest < 0.01) |>
+  arrange(desc(lift))
+
+cat("Significant rules (lift>1.5, p<0.01):", nrow(significant), "\n")
+head(significant |>
+  select(rules, support, confidence, lift, fishersExactTest), 10)
 ```
 
-```{r task4-recommendations}
-top3 <- head(sort(rules, by = "lift"), 3)
-inspect(top3)
+```{r task4-fraud-rule}
+# Highest-lift significant fraud rule
+fraud_sig <- significant |>
+  filter(grepl("Fraud", rules)) |>
+  slice_max(lift, n = 1)
 
-# Rule 1: {vision_cover=TRUE} → {dental_cover=TRUE}  (example, lift ~ 1.8-2.0)
-# Recommendation: Target all policyholders who hold vision cover but not dental
-# with a bundled dental add-on offer. The high lift means they are ~2x more
-# likely than average to accept, justifying a targeted (lower-cost) campaign.
+cat("Rule:\n")
+print(fraud_sig$rules)
+cat("\nSupport:", fraud_sig$support,
+    "Confidence:", round(fraud_sig$confidence, 3),
+    "Lift:", round(fraud_sig$lift, 2), "\n")
 
-# Rule 2: {mental_cover=TRUE} → {dental_cover=TRUE}  (example)
-# Recommendation: When a policyholder contacts the insurer to add mental health
-# cover, proactively suggest dental cover at the same time — the co-occurrence
-# rate is high enough to make this a natural upsell moment.
-
-# Rule 3: {vision_cover=TRUE, mental_cover=TRUE} → {dental_cover=TRUE}  (example)
-# Recommendation: Policyholders holding both vision and mental cover are the
-# strongest candidates for a "premium care" bundle including dental. Design a
-# three-add-on bundle product priced attractively for this segment.
+# Business recommendation:
+# Suppose the top fraud rule is:
+# {Unemployed, Young, Obese} => {Fraud}  support=0.012, conf=0.52, lift=4.1
+#
+# Plain-language interpretation:
+# Only 1.2% of records match this profile, but among them 52% are flagged
+# as fraudulent — 4.1x the portfolio-wide fraud rate (~12.7%).
+# At n=500,000, this covers 6,000 claims — a manageable review queue.
+#
+# Recommended action:
+# Route all new claims from Unemployed, Young, Obese policyholders to the
+# manual fraud review queue. The rule is both statistically significant
+# (Fisher p < 0.01) and practically significant (lift > 4), making it a
+# reliable trigger for investigative resources.
 ```

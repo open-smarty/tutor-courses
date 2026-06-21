@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-02",
+  "title": "Quiz: Six Sigma — DPMO, Performance Levels, and DMAIC Roadmap",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A manufacturing line produces 5,000 units per day, each with 8 opportunities for defect. Inspectors find 200 total defects. What is the DPMO?",
+      "options": [
+        "5,000",
+        "40,000",
+        "25,000",
+        "200,000"
+      ],
+      "correct": 0,
+      "explanation": "DPMO = (200 / (5000 × 8)) × 1,000,000 = (200 / 40,000) × 1,000,000 = 5,000. Each unit has 8 distinct defect opportunities, so the denominator is 5,000 × 8 = 40,000 total opportunities."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "The 1.5-sigma shift correction in the Six Sigma sigma-level formula accounts for:",
+      "options": [
+        "Long-run process drift away from the target mean observed in practice",
+        "The safety margin required by ISO quality standards",
+        "The difference between the normal and t-distribution for small samples",
+        "The AQL correction when LTPD is greater than 5%"
+      ],
+      "correct": 0,
+      "explanation": "Empirical studies by Motorola found that long-run processes drift approximately 1.5σ from their short-run mean due to tool wear, raw material variation, and operator changes. Adding 1.5 to the inverse-normal computation gives a realistic long-run sigma level."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "A process with Cp = 2.0 and a perfectly centred mean (no shift) operates at approximately what sigma level in the short run?",
+      "options": [
+        "6 sigma",
+        "4 sigma",
+        "3 sigma",
+        "2 sigma"
+      ],
+      "correct": 0,
+      "explanation": "Short-run sigma level ≈ 3 × Cp = 3 × 2.0 = 6. A centred process with Cp = 2.0 has the process spread equal to one-third the specification width on each side, placing the specification limits exactly 6σ from the mean — the definition of Six Sigma performance."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "In DMAIC, at which phase would a team use a Pareto chart to identify the most common defect categories?",
+      "options": [
+        "Analyze",
+        "Define",
+        "Measure",
+        "Control"
+      ],
+      "correct": 0,
+      "explanation": "The Analyze phase investigates why the problem occurs. A Pareto chart orders defect categories by frequency to identify the 'vital few' causes responsible for most defects — a classic Analyze-phase tool. The Measure phase establishes the baseline; the Analyze phase digs into root causes."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "A process operating at 4 sigma (DPMO ≈ 6,210) already meets the Six Sigma target of 3.4 DPMO.",
+      "correct": false,
+      "explanation": "Six Sigma requires DPMO ≤ 3.4, which corresponds to a sigma level of 6.0. A 4-sigma process has DPMO ≈ 6,210, which is roughly 1,800 times worse than the Six Sigma target. Moving from 4 sigma to 6 sigma requires a reduction of over 6,200 DPMO — a substantial quality improvement effort."
+    }
+  ]
+}

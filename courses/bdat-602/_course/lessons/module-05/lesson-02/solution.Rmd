@@ -157,3 +157,73 @@ ggplot(pr_both, aes(x = recall, y = precision, colour = model)) +
 # diversity to the minority class rather than just reweighting the loss.
 # The best threshold for F1 is typically around 0.25-0.40 for imbalanced churn data.
 ```
+
+## Task 5: Class-weighted Spark random forest
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full, name = "health_ins", overwrite = TRUE)
+```
+
+```{r task5-spark-weights, eval=FALSE}
+churn_rate      <- health_tbl |>
+  summarise(rate = mean(churned, na.rm = TRUE)) |>
+  collect() |> pull(rate)
+
+minority_weight <- (1 - churn_rate) / churn_rate
+cat("Churn rate:", round(churn_rate, 3),
+    "| Minority weight:", round(minority_weight, 2), "\n")
+# Churn ~0.18 → weight ≈ 4.6 — each minority record counts as ~4.6 majority records
+
+health_tbl <- health_tbl |>
+  mutate(
+    sample_weight = ifelse(churned == 1, minority_weight, 1.0),
+    plan_tier_num = case_when(
+      plan_tier == "Bronze"   ~ 1L, plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L, plan_tier == "Platinum" ~ 4L
+    )
+  )
+```
+
+```{r task5-spark-train, eval=FALSE}
+splits      <- sdf_random_split(health_tbl,
+                                training = 0.80, test = 0.20, seed = 602)
+train_spark <- splits$training
+test_spark  <- splits$test
+
+spark_rf_wt <- train_spark |>
+  ml_random_forest_classifier(
+    formula    = churned ~ age + plan_tier_num + income + num_claims +
+                           support_calls + auto_pay + customer_rating,
+    num_trees  = 100,
+    weight_col = "sample_weight",
+    seed       = 602
+  )
+```
+
+```{r task5-spark-eval, eval=FALSE}
+preds_spark <- ml_predict(spark_rf_wt, test_spark)
+
+auc_spark <- ml_binary_classification_evaluator(
+  preds_spark,
+  label_col          = "churned",
+  raw_prediction_col = "rawPrediction",
+  metric_name        = "areaUnderROC"
+)
+cat("Weighted Spark RF ROC-AUC:", round(auc_spark, 3), "\n")
+
+# The Spark AUC is typically similar to or slightly higher than the local weighted RF.
+# With 400,000 training rows (vs. 40,000 locally), the model sees more real minority
+# examples, which partly compensates for not using SMOTE. The key advantage of Spark
+# here is not dramatically better AUC but the ability to train on the full portfolio
+# without memory constraints — critical for production insurance scoring.
+
+spark_disconnect(sc)
+```

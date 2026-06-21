@@ -513,7 +513,7 @@
     }
 
     // Update nav buttons
-    const idx = allLessons.findIndex(x => x.lesson.id === lesson.id);
+    const idx = allLessons.findIndex(x => x.lesson.id === lesson.id && x.mod.id === mod.id);
     $('prev-btn').disabled = idx <= 0;
     $('next-btn').disabled = idx >= allLessons.length - 1;
 
@@ -747,7 +747,7 @@
     updateProgressBar();
 
     // Auto-advance
-    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id && x.mod.id === currentModule.id);
     if (idx < allLessons.length - 1) {
       setTimeout(() => {
         const next = allLessons[idx + 1];
@@ -758,12 +758,12 @@
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   $('prev-btn').addEventListener('click', () => {
-    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id && x.mod.id === currentModule.id);
     if (idx > 0) openLesson(allLessons[idx - 1].mod, allLessons[idx - 1].lesson);
   });
 
   $('next-btn').addEventListener('click', () => {
-    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id);
+    const idx = allLessons.findIndex(x => x.lesson.id === currentLesson.id && x.mod.id === currentModule.id);
     if (idx < allLessons.length - 1) openLesson(allLessons[idx + 1].mod, allLessons[idx + 1].lesson);
   });
 

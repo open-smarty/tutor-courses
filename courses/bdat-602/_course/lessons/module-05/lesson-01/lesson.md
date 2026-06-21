@@ -75,13 +75,77 @@ pred_prob <- predict(rf, test, type = "prob")[, 2]
 roc(test$churned, pred_prob, plot = TRUE)
 ```
 
+### Scaling classification to 500,000 rows with Spark
+
+`rpart` and `randomForest` both run on a single core and load all data into RAM. For the full 500,000-row insurance dataset, `sparklyr` exposes Spark MLlib's distributed implementations:
+
+| R function | Spark MLlib equivalent |
+|---|---|
+| `rpart(..., method = "class")` | `ml_decision_tree_classifier()` |
+| `randomForest(factor(y) ~ ...)` | `ml_random_forest_classifier()` |
+| `predict(model, test)` | `ml_predict(model, test_tbl)` |
+
+```{r spark-classify, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+health_tbl <- copy_to(sc,
+  simulate_bdat602(n = 500000, seed = 602),
+  name = "health_ins", overwrite = TRUE
+)
+
+# Spark requires all predictors to be numeric; factors are handled via formula
+health_tbl <- health_tbl |>
+  mutate(
+    plan_tier_num = case_when(
+      plan_tier == "Bronze"   ~ 1L,
+      plan_tier == "Silver"   ~ 2L,
+      plan_tier == "Gold"     ~ 3L,
+      plan_tier == "Platinum" ~ 4L
+    )
+  )
+
+# Split in Spark (80/20 stratification not directly available — use sdf_random_split)
+splits     <- sdf_random_split(health_tbl, training = 0.80, test = 0.20, seed = 602)
+train_spark <- splits$training
+test_spark  <- splits$test
+
+# Distributed random forest classifier
+rf_spark <- train_spark |>
+  ml_random_forest_classifier(
+    formula      = churned ~ age + plan_tier_num + income + num_claims +
+                             support_calls + auto_pay + customer_rating + deductible,
+    num_trees    = 100,
+    feature_subset_strategy = "sqrt",
+    seed         = 602
+  )
+
+# Predictions
+preds <- ml_predict(rf_spark, test_spark)
+
+# Evaluate with ml_binary_classification_evaluator
+auc <- ml_binary_classification_evaluator(
+  preds,
+  label_col      = "churned",
+  raw_prediction_col = "rawPrediction",
+  metric_name    = "areaUnderROC"
+)
+cat("Spark RF ROC-AUC:", round(auc, 3), "\n")
+
+spark_disconnect(sc)
+```
+
+**Key difference from local RF**: Spark builds trees in parallel across partitions. The `feature_subset_strategy = "sqrt"` mirrors `mtry = floor(sqrt(p))` in `randomForest`. The model object lives in Spark memory — you never bring all 500,000 rows into R.
+
 ## Example
 
-Full worked example in `solution.Rmd` trains both a decision tree and a random forest on the insurance dataset, tunes the tree with `plotcp()`, evaluates both with confusion matrix and ROC-AUC, and plots variable importance.
+Full worked example in `solution.Rmd` trains both a decision tree and a random forest on the insurance dataset, tunes the tree with `plotcp()`, evaluates both with confusion matrix and ROC-AUC, plots variable importance, and compares against the Spark random forest.
 
 ## Task
 
-Open `exercise.Rmd` and complete the four tasks: (1) train a decision tree on `churned` and plot it; (2) tune `cp` using `plotcp()`; (3) train a random forest with `ntree = 200`, plot variable importance; (4) compare decision tree vs. random forest on ROC-AUC and F1 score.
+Open `exercise.Rmd` and complete the five tasks: (1) train a decision tree on `churned` and plot it; (2) tune `cp` using `plotcp()`; (3) train a random forest with `ntree = 200`, plot variable importance; (4) compare decision tree vs. random forest on ROC-AUC and F1 score; (5) run `ml_random_forest_classifier()` on the full 500,000-row dataset in Spark and compare its AUC against the local random forest.
 
 ## Check
 

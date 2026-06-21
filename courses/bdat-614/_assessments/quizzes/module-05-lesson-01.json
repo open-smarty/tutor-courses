@@ -1,0 +1,66 @@
+{
+  "id": "module-05-lesson-01",
+  "title": "Quiz: Acceptance Sampling Plans and OC Curves",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "A single sampling plan is defined by parameters (n, c). If the number of defectives d found in the sample satisfies d > c, what decision is made?",
+      "options": [
+        "Reject the lot",
+        "Accept the lot",
+        "Draw a second sample",
+        "Inspect the entire lot"
+      ],
+      "correct": 0,
+      "explanation": "In a single sampling plan, the lot is rejected whenever the observed number of defectives d exceeds the acceptance number c. If d ≤ c, the lot is accepted."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "Producer risk α is defined as the probability of:",
+      "options": [
+        "Rejecting a lot whose incoming defect rate equals the AQL",
+        "Accepting a lot whose incoming defect rate equals the LTPD",
+        "Accepting a lot whose incoming defect rate equals the AQL",
+        "Rejecting a lot whose incoming defect rate equals the LTPD"
+      ],
+      "correct": 0,
+      "explanation": "Producer risk α is the probability of falsely rejecting a good lot — one with an incoming defect rate at the AQL. It represents the fraction of acceptable lots that the sampling plan will erroneously turn away."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "For a sampling plan (n=100, c=2), you compute P(accept | p=0.05) using the binomial CDF. Which expression is correct?",
+      "options": [
+        "Sum of binom(100, d) × 0.05^d × 0.95^(100-d) for d = 0, 1, 2",
+        "binom.cdf(100, 2, 0.05)",
+        "1 − binom.cdf(2, 100, 0.05)",
+        "binom.pmf(2, 100, 0.05)"
+      ],
+      "correct": 0,
+      "explanation": "P(accept) = P(D ≤ c | n, p) = sum from d=0 to c of C(n,d) × p^d × (1-p)^(n-d). In scipy, this equals binom.cdf(c, n, p) = binom.cdf(2, 100, 0.05)."
+    },
+    {
+      "id": "q4",
+      "type": "multiple-choice",
+      "text": "Two sampling plans have the same AQL and LTPD. Plan A has n=50, c=1; Plan B has n=150, c=3. Which statement best describes the difference in their OC curves?",
+      "options": [
+        "Plan B has a steeper OC curve and better discriminates between good and bad lots",
+        "Plan A has a steeper OC curve because a smaller acceptance number is more stringent",
+        "Both plans have identical OC curves since AQL and LTPD are the same",
+        "Plan B accepts more bad lots because c=3 is larger than c=1"
+      ],
+      "correct": 0,
+      "explanation": "Increasing n (sample size) makes the OC curve steeper, improving discrimination. Plan B with n=150 has a much steeper curve than Plan A with n=50, simultaneously reducing both α and β compared to Plan A, at the cost of a larger inspection sample."
+    },
+    {
+      "id": "q5",
+      "type": "true-false",
+      "text": "Acceptance sampling improves the quality of the items inside an accepted lot.",
+      "correct": false,
+      "explanation": "Acceptance sampling is a decision tool — it decides whether to accept or reject a lot based on sample evidence. It does not improve the quality of individual units inside an accepted lot. Quality improvement requires process control and elimination of root causes of defects."
+    }
+  ]
+}

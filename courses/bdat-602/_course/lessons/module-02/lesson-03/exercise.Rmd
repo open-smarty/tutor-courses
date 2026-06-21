@@ -1,5 +1,5 @@
 ---
-title: "Exercise: Scaling, Encoding, and the recipes Pipeline"
+title: "Exercise: Scaling, Encoding, PCA, and the recipes Pipeline"
 output: html_document
 ---
 
@@ -107,4 +107,54 @@ train_baked |>
 # TODO: list the column names in train_baked that start with "plan_tier"
 # How many dummy columns were created? Which level was the reference?
 names(train_baked)[grepl("plan_tier", names(train_baked))]
+```
+
+## Task 5: PCA for dimensionality reduction
+
+Use a 10,000-row sample so this task runs quickly.
+
+```{r task5-setup}
+set.seed(602)
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+
+pca_vars <- c("age", "bmi", "income", "premium", "deductible",
+              "num_chronic_conditions", "num_visits",
+              "num_prescriptions", "num_hospital_admissions",
+              "num_claims", "avg_past_claim", "claim_amount",
+              "app_logins_monthly", "support_calls", "policy_age_months")
+```
+
+```{r task5-recipe}
+library(broom)
+
+# TODO: build a recipe that normalises then applies step_pca with num_comp = 5
+pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
+  NULL  # step_normalize(...) then step_pca(...)
+
+# TODO: prep and bake
+pca_prep   <- NULL  # prep(pca_rec)
+pca_scores <- NULL  # bake(pca_prep, new_data = NULL)
+
+# Peek at the first few score rows
+head(pca_scores)
+```
+
+```{r task5-scree}
+# TODO: produce a scree plot using tidy(pca_prep, number = 2, type = "variance")
+# Filter to terms == "percent variance" and plot component vs value as a bar chart.
+# How many components are needed to explain at least 60% of total variance?
+# Answer (as a comment):
+```
+
+```{r task5-loadings}
+# TODO: extract loadings with tidy(pca_prep, number = 2, type = "coef")
+# Filter to component == "PC1", arrange by abs(value), and print the top 5 variables.
+# Which variable has the largest positive loading on PC1?
+# Answer (as a comment):
+```
+
+```{r task5-scoreplot}
+# TODO: add plan_tier back to pca_scores and create a scatter plot of PC1 vs PC2,
+# coloured by plan_tier. Do different plan tiers cluster separately?
+# Answer (as a comment):
 ```

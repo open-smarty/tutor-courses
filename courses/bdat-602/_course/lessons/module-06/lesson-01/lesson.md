@@ -87,13 +87,77 @@ tfidf_df |>
   coord_flip() + theme_minimal()
 ```
 
+### Scaling text feature extraction to 500,000 complaints with Spark
+
+`tidytext` processes text row-by-row in R. For 500,000 complaint notes the `unnest_tokens()` step can be slow. Spark provides a distributed text pipeline via **transformer functions** (`ft_*`):
+
+| Transformer | What it does |
+|---|---|
+| `ft_tokenizer()` | Splits each string into a list of words by whitespace |
+| `ft_stop_words_remover()` | Removes common English stop words from each word list |
+| `ft_count_vectorizer()` | Converts word lists to term-frequency sparse vectors |
+| `ft_idf()` | Multiplies TF vectors by inverse document frequency weights |
+
+```{r spark-tfidf, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+health_tbl <- copy_to(
+  sc, simulate_bdat602(n = 500000, seed = 602),
+  name = "health_ins", overwrite = TRUE
+)
+
+# Keep only rows with complaint notes
+complaints_spark <- health_tbl |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = monotonically_increasing_id())
+
+# Step 1: Tokenise (lowercase + split on whitespace)
+tokenised <- complaints_spark |>
+  ft_tokenizer(input_col = "complaint_notes", output_col = "words_raw")
+
+# Step 2: Remove stop words
+cleaned <- tokenised |>
+  ft_stop_words_remover(input_col = "words_raw", output_col = "words")
+
+# Step 3: Count vectoriser — learn vocabulary from training data
+cv_model <- ft_count_vectorizer(cleaned, input_col = "words",
+                                output_col = "tf", min_df = 5)
+# min_df = 5: ignore terms appearing in fewer than 5 documents
+
+tf_vectors <- ml_transform(cv_model, cleaned)
+
+# Step 4: IDF — downweight common terms
+idf_model   <- ft_idf(tf_vectors, input_col = "tf", output_col = "tfidf")
+tfidf_spark <- ml_transform(idf_model, tf_vectors)
+
+# Inspect schema — tfidf column holds a SparseVector per document
+tfidf_spark |> glimpse()
+
+# Retrieve vocabulary to map vector indices back to words
+vocab <- cv_model$vocabulary
+cat("Vocabulary size:", length(vocab), "\n")
+
+# Collect a sample to inspect top terms
+sample_doc <- tfidf_spark |>
+  select(doc_id, complaint_notes, tfidf) |>
+  head(3) |>
+  collect()
+
+spark_disconnect(sc)
+```
+
+**Key difference from tidytext**: Spark produces a *sparse vector* per document (each document is one row with a vector of TF-IDF values indexed by vocabulary position), not a long-format data frame. This format is ready for downstream Spark ML algorithms (`ml_lda()`, `ml_kmeans()`, classification) without any further conversion.
+
 ## Example
 
 Full worked example is in `solution.Rmd`. It processes the `complaint_notes` column, builds TF-IDF scores, and identifies the top discriminating words for each complaint template category.
 
 ## Task
 
-Open `exercise.Rmd` and complete the four tasks: (1) tokenise the complaint notes and count word frequencies; (2) remove stop words and identify the top 20 most common words; (3) compute TF-IDF with `bind_tf_idf()`; (4) visualise the top 10 TF-IDF words per complaint category.
+Open `exercise.Rmd` and complete the five tasks: (1) tokenise the complaint notes and count word frequencies; (2) remove stop words and identify the top 20 most common words; (3) compute TF-IDF with `bind_tf_idf()`; (4) visualise the top 10 TF-IDF words per complaint category; (5) build the equivalent Spark text pipeline using `ft_tokenizer()`, `ft_stop_words_remover()`, `ft_count_vectorizer()`, and `ft_idf()` on the full 500,000-row dataset.
 
 ## Check
 

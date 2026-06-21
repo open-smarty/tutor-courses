@@ -1,0 +1,86 @@
+{
+  "id": "module-06-lesson-01",
+  "title": "Quiz: Model Building in Practice",
+  "passingScore": 70,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple-choice",
+      "text": "When fitting lm(price ~ carat) on the diamonds dataset the R² is approximately 0.85, yet the residual plot shows a strong fan shape. What does the fan shape tell you, and what is the recommended fix?",
+      "options": [
+        "The fan shape indicates a perfect fit; no fix is needed",
+        "The fan shape indicates heteroscedasticity — variance grows with carat. Log-transforming both sides (log(price) ~ log(carat)) stabilises the variance",
+        "The fan shape means the model has too many predictors; you should remove some",
+        "The fan shape is caused by outliers; remove any diamond above 3 carats"
+      ],
+      "correct": 1,
+      "explanation": "A fan-shaped residual plot is a classic sign of heteroscedasticity: variance is not constant. For price and carat, the relationship follows a power law (price ∝ carat^β), so log-transforming both sides linearises the relationship and stabilises variance. R² rises to ≈ 0.93 after this transformation."
+    },
+    {
+      "id": "q2",
+      "type": "multiple-choice",
+      "text": "After fitting log(price) ~ log(carat) the fan shape disappears but residuals still cluster strongly by cut. What is the correct next step in the progressive modelling workflow?",
+      "options": [
+        "Declare the model finished because R² > 0.90",
+        "Add cut, colour, and clarity to the model to absorb the remaining categorical structure",
+        "Switch to a GAM to handle the non-linearity",
+        "Remove all diamonds with cut = 'Fair' as they are outliers"
+      ],
+      "correct": 1,
+      "explanation": "The residual clustering by cut is a signal that cut explains variation not captured by carat alone. The correct action is to add cut (and similarly colour and clarity) to the model. This is the iterative step of progressive model building: inspect residuals, identify remaining structure, add the responsible variable."
+    },
+    {
+      "id": "q3",
+      "type": "multiple-choice",
+      "text": "In the many-models pipeline for nycflights13, you fit lm(arr_delay ~ dep_delay) separately for each carrier. Carrier A has a dep_delay slope of 0.85 and Carrier B has a slope of 1.3. What is the correct interpretation?",
+      "options": [
+        "Carrier A has more delayed flights than Carrier B",
+        "For each extra minute of departure delay, Carrier A recovers 0.15 minutes in the air on average, while Carrier B accumulates an extra 0.3 minutes of arrival delay",
+        "Carrier A has fewer routes and that is why its slope is lower",
+        "A slope below 1 means the model fit is poor for that carrier"
+      ],
+      "correct": 1,
+      "explanation": "The dep_delay slope measures: for every additional minute of departure delay, how many minutes of arrival delay does the carrier accumulate? Slope < 1 means the carrier makes up some time in the air (arrives less late than it departed). Slope > 1 means the carrier falls further behind. The slope does not directly reflect route count or model quality."
+    },
+    {
+      "id": "q4",
+      "type": "true-false",
+      "text": "The nest() + map() + unnest() pipeline in the many-models approach fits all carrier models simultaneously in a single vectorised call, so it is faster than a for-loop in R.",
+      "correct": false,
+      "explanation": "purrr::map() is not parallelised — it is a sequential apply function that calls the supplied function once per list element. It is not faster than an equivalent for-loop in raw execution time. Its advantage is code clarity, composability, and keeping models, data, and coefficients in one organised data frame (list-columns), not speed."
+    },
+    {
+      "id": "q5",
+      "type": "multiple-choice",
+      "text": "You call nls(Y ~ K / (1 + ((K - Y0) / Y0) * exp(-r * t)), data = growth_df, start = list(K = 10, r = 0.5, Y0 = 5)) and receive 'singular gradient matrix at initial parameter estimates'. What is the most likely cause?",
+      "options": [
+        "The logistic growth formula is algebraically incorrect",
+        "The starting values are too far from the true parameter values, causing the optimiser to fail before it can build a reliable gradient",
+        "The dataset is too small for nls() to work",
+        "nls() cannot handle three parameters; you must fix one"
+      ],
+      "correct": 1,
+      "explanation": "Unlike lm(), nls() has no closed-form solution. It iterates from the starting values using a gradient-based algorithm (Gauss-Newton). If the starting values are far from the true solution, the gradient surface can be nearly flat or undefined at that point, causing a 'singular gradient' error. The fix is to use better starting values, for example K ≈ max(Y), Y0 ≈ Y[1], r ≈ 0.5."
+    },
+    {
+      "id": "q6",
+      "type": "true-false",
+      "text": "In progressive model building, you should stop adding predictors as soon as R² exceeds 0.95, regardless of the residual plot.",
+      "correct": false,
+      "explanation": "R² alone is an insufficient stopping criterion. A high R² can coexist with systematic residual patterns (heteroscedasticity, curvature, group clustering) that indicate the model is still misspecified. The correct stopping criterion is that residuals look like random noise — no systematic patterns remain in residual-vs-fitted or residual-vs-predictor plots."
+    },
+    {
+      "id": "q7",
+      "type": "multiple-choice",
+      "text": "broom::tidy() is used in the many-models pipeline. What does it return when applied to an lm() object?",
+      "options": [
+        "A list of raw R objects (coefficients, standard errors, etc.)",
+        "A tidy data frame with one row per coefficient, including estimate, std.error, statistic, and p.value columns",
+        "The model formula as a character string",
+        "A residuals vector of the same length as the input data"
+      ],
+      "correct": 1,
+      "explanation": "broom::tidy() converts model output into a tidy data frame. For an lm() object it returns one row per term (intercept and each predictor) with columns: term, estimate, std.error, statistic, and p.value. This tidy format is what makes unnest(coefs) possible and allows downstream filtering and plotting with standard tidyverse tools."
+    }
+  ]
+}

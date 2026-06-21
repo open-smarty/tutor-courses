@@ -1,0 +1,231 @@
+---
+title: "Solution: Model Building in Practice — Diamonds, Flights, and Growth Models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r load-packages}
+library(tidyverse)
+library(modelr)
+library(broom)
+library(nycflights13)
+```
+
+```{r load-data}
+data("diamonds", package = "ggplot2")
+data("flights",  package = "nycflights13")
+```
+
+## Task 1: Progressive diamond model — step by step
+
+```{r task1a}
+mod1 <- lm(price ~ carat, data = diamonds)
+summary(mod1)
+# R² ≈ 0.85 — looks good at first glance.
+
+diamonds |>
+  add_residuals(mod1) |>
+  ggplot(aes(carat, resid, colour = cut)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title    = "Model 1 residuals: price ~ carat",
+    subtitle = "Fan shape (heteroscedasticity) and cut clusters are clearly visible",
+    x        = "carat", y = "Residual"
+  ) +
+  theme_minimal()
+
+# Problem 1: fan shape — variance grows with carat (heteroscedasticity).
+# Problem 2: residuals cluster by cut and colour — those variables explain
+#            remaining variation that carat alone cannot capture.
+```
+
+```{r task1b}
+mod2 <- lm(log(price) ~ log(carat), data = diamonds)
+summary(mod2)
+# R² rises to ≈ 0.93 after the log-log transformation.
+
+diamonds |>
+  add_residuals(mod2) |>
+  ggplot(aes(log(carat), resid, colour = cut)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title    = "Model 2 residuals: log(price) ~ log(carat)",
+    subtitle = "Fan shape gone, but cut clusters remain — cut must enter the model",
+    x        = "log(carat)", y = "Residual"
+  ) +
+  theme_minimal()
+
+# The fan shape is gone — the log-log transform linearises the power-law
+# relationship and stabilises variance.  However, systematic bands by cut
+# remain; the model still misses the quality dimension.
+```
+
+```{r task1c}
+mod3 <- lm(log(price) ~ log(carat) + cut + colour + clarity, data = diamonds)
+summary(mod3)
+# R² ≈ 0.98 — near-perfect after absorbing the quality variables.
+
+diamonds |>
+  add_residuals(mod3) |>
+  ggplot(aes(log(carat), resid, colour = cut)) +
+  geom_point(alpha = 0.2, size = 0.6) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title    = "Model 3 residuals: log(price) ~ log(carat) + cut + colour + clarity",
+    subtitle = "Residuals are now random — no systematic pattern remains",
+    x        = "log(carat)", y = "Residual"
+  ) +
+  theme_minimal()
+
+# Residuals scatter randomly around zero with no visible banding.
+# This is the stopping criterion: residuals look like noise.
+```
+
+## Task 2: Many-models pipeline — flights by carrier
+
+```{r task2}
+carrier_models <- flights |>
+  drop_na(arr_delay, dep_delay) |>
+  group_by(carrier) |>
+  nest() |>
+  mutate(
+    model = map(data,  ~lm(arr_delay ~ dep_delay, data = .x)),
+    coefs = map(model, broom::tidy)
+  ) |>
+  unnest(coefs)
+
+dep_delay_slopes <- carrier_models |>
+  filter(term == "dep_delay") |>
+  select(carrier, estimate, std.error, statistic, p.value) |>
+  arrange(estimate)
+
+print(dep_delay_slopes)
+
+# Interpretation: carriers with slope < 1 make up time in the air on average;
+# carriers with slope > 1 fall further behind for each extra minute delayed.
+```
+
+```{r task2-plot}
+dep_delay_slopes |>
+  ggplot(aes(x = reorder(carrier, estimate), y = estimate)) +
+  geom_col(fill = "steelblue", alpha = 0.85) +
+  geom_hline(yintercept = 1, linetype = "dashed", colour = "firebrick", linewidth = 0.8) +
+  geom_text(aes(label = round(estimate, 2)), vjust = -0.4, size = 3.2) +
+  labs(
+    title    = "dep_delay slope by carrier: lm(arr_delay ~ dep_delay)",
+    subtitle = "Dashed line at slope = 1.  Below: carrier makes up time.  Above: carrier falls further behind.",
+    x        = "Carrier",
+    y        = "Slope estimate (minutes of arr_delay per minute of dep_delay)"
+  ) +
+  theme_minimal()
+```
+
+## Task 3: Non-linear growth model with nls()
+
+```{r task3-data}
+set.seed(602)
+
+K  <- 1000
+r  <- 0.4
+Y0 <- 50
+
+t  <- seq(0, 20, by = 1)
+Y  <- K / (1 + ((K - Y0) / Y0) * exp(-r * t)) + rnorm(length(t), sd = 20)
+growth_df <- tibble(t = t, Y = pmax(Y, 0))
+
+ggplot(growth_df, aes(t, Y)) +
+  geom_point(colour = "steelblue", size = 2.5) +
+  labs(title = "Simulated logistic growth data",
+       x = "Time", y = "Population") +
+  theme_minimal()
+```
+
+```{r task3-fit}
+mod_nls <- nls(
+  Y ~ K / (1 + ((K - Y0) / Y0) * exp(-r * t)),
+  data  = growth_df,
+  start = list(K = 900, r = 0.5, Y0 = 60)
+)
+
+summary(mod_nls)
+
+K_hat  <- coef(mod_nls)["K"]
+r_hat  <- coef(mod_nls)["r"]
+Y0_hat <- coef(mod_nls)["Y0"]
+
+cat(sprintf("Estimated K  (carrying capacity): %.1f  (true: 1000)\n", K_hat))
+cat(sprintf("Estimated r  (growth rate):       %.3f (true: 0.400)\n", r_hat))
+cat(sprintf("Estimated Y0 (initial population):%.1f  (true: 50)\n",   Y0_hat))
+```
+
+```{r task3-plot}
+growth_df |>
+  add_predictions(mod_nls) |>
+  ggplot(aes(t)) +
+  geom_point(aes(y = Y), colour = "steelblue", size = 2.5) +
+  geom_line(aes(y = pred), colour = "firebrick", linewidth = 1.2) +
+  annotate("text", x = 3, y = K_hat * 0.95,
+           label = sprintf("Estimated K = %.0f", K_hat),
+           colour = "firebrick", hjust = 0, size = 4) +
+  labs(
+    title    = "Logistic growth: observed vs nls() fitted curve",
+    subtitle = "Red curve is the fitted logistic; blue points are simulated observations",
+    x        = "Time", y = "Population"
+  ) +
+  theme_minimal()
+```
+
+## Task 4: Residual diagnostics across all three models
+
+```{r task4}
+# --- Model 1: price ~ carat ---
+p1 <- diamonds |>
+  add_residuals(mod1) |>
+  mutate(fitted = fitted(mod1)) |>
+  ggplot(aes(fitted, resid)) +
+  geom_point(alpha = 0.2, size = 0.5, colour = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "firebrick") +
+  labs(title = "Model 1: price ~ carat",
+       subtitle = "Fan shape (heteroscedasticity)",
+       x = "Fitted values", y = "Residuals") +
+  theme_minimal()
+
+# --- Model 3: log(price) ~ log(carat) + cut + colour + clarity ---
+p3 <- diamonds |>
+  add_residuals(mod3) |>
+  mutate(fitted = fitted(mod3)) |>
+  ggplot(aes(fitted, resid)) +
+  geom_point(alpha = 0.2, size = 0.5, colour = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "firebrick") +
+  labs(title = "Model 3: log(price) ~ log(carat) + cut + colour + clarity",
+       subtitle = "Random scatter — residuals look like noise",
+       x = "Fitted values", y = "Residuals") +
+  theme_minimal()
+
+# --- Non-linear model: logistic growth ---
+p_nls <- tibble(
+  fitted = fitted(mod_nls),
+  resid  = residuals(mod_nls)
+) |>
+  ggplot(aes(fitted, resid)) +
+  geom_point(size = 2.5, colour = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "firebrick") +
+  labs(title = "NLS logistic growth model",
+       subtitle = "No systematic pattern — nls() converged well",
+       x = "Fitted values", y = "Residuals") +
+  theme_minimal()
+
+print(p1)
+print(p3)
+print(p_nls)
+
+# Summary:
+# Model 1 shows a pronounced fan shape — variance grows with fitted values.
+# Model 3 shows random scatter — the progressive additions absorbed all structure.
+# The NLS residuals show no pattern — the logistic curve fits the simulated data well.
+```

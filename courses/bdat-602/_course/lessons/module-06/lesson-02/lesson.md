@@ -96,13 +96,67 @@ perp <- sapply(c(3, 4, 5, 6, 7), function(k) {
 plot(c(3,4,5,6,7), perp, type = "b", xlab = "Topics K", ylab = "Perplexity")
 ```
 
+### Scaling LDA to 500,000 documents with Spark
+
+`topicmodels::LDA()` runs on a single core in R and cannot process 500,000 documents efficiently. Spark MLlib provides a distributed LDA implementation via `ml_lda()`. The input must be a **count vector** per document (from `ft_count_vectorizer()`) — Spark LDA handles frequency weighting internally.
+
+```{r spark-lda, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+health_tbl <- copy_to(
+  sc, simulate_bdat602(n = 500000, seed = 602),
+  name = "health_ins", overwrite = TRUE
+)
+
+# Build count vectors using the Lesson 1 Spark pipeline
+complaints_spark <- health_tbl |>
+  filter(!is.na(complaint_notes)) |>
+  mutate(doc_id = monotonically_increasing_id())
+
+tokenised  <- ft_tokenizer(complaints_spark,
+                            input_col = "complaint_notes", output_col = "words_raw")
+cleaned    <- ft_stop_words_remover(tokenised,
+                                    input_col = "words_raw", output_col = "words")
+cv_model   <- ft_count_vectorizer(cleaned,
+                                   input_col = "words", output_col = "tf", min_df = 5)
+tf_vectors <- ml_transform(cv_model, cleaned)
+
+# Fit Spark LDA (online LDA by default — more scalable than EM)
+lda_spark <- ml_lda(tf_vectors,
+                    features_col = "tf",
+                    k            = 5,
+                    max_iter     = 20,
+                    doc_concentration = rep(1.0 / 5, 5),  # symmetric alpha
+                    topic_concentration = 0.01            # beta
+                   )
+
+# Extract word-topic matrix (equivalent to beta in tidytext)
+vocab      <- cv_model$vocabulary
+topic_mat  <- lda_spark$topics_matrix()   # K × V matrix: rows = topics, cols = words
+
+# Top 10 words for each topic
+apply(topic_mat, 1, function(row) {
+  vocab[order(row, decreasing = TRUE)[1:10]]
+})
+
+spark_disconnect(sc)
+```
+
+**Key differences from `topicmodels::LDA()`**:
+- Spark LDA uses *Online LDA* (variational inference with mini-batches) by default, not Gibbs sampling. Online LDA is faster and streams through the data without loading it all into memory, but may need more iterations for equivalent convergence.
+- `doc_concentration` (α) and `topic_concentration` (β) are the Dirichlet hyperparameters — equivalent to `alpha` and `beta` in `topicmodels`.
+- The output topic-word matrix uses normalised probability distributions (same semantics as `β` from `tidy(lda5, matrix = "beta")`).
+
 ## Example
 
 Full worked example in `solution.Rmd` builds the DTM from the insurance complaint notes, fits a 5-topic LDA model, plots word-topic distributions, assigns topic labels, and produces a perplexity curve over K = 3 to 7.
 
 ## Task
 
-Open `exercise.Rmd` and complete the four tasks: (1) build the DTM from the cleaned word counts; (2) fit a 5-topic LDA model with Gibbs sampling; (3) extract and visualise word-topic probabilities (beta); (4) compute perplexity for K = 3 to 7 and identify the best K.
+Open `exercise.Rmd` and complete the five tasks: (1) build the DTM from the cleaned word counts; (2) fit a 5-topic LDA model with Gibbs sampling; (3) extract and visualise word-topic probabilities (beta); (4) compute perplexity for K = 3 to 7 and identify the best K; (5) fit Spark LDA on the full 500,000-document corpus using `ft_count_vectorizer()` + `ml_lda()` and compare the recovered topics with the topicmodels result.
 
 ## Check
 

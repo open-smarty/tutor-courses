@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```{r load-packages}
 library(tidyverse)
 library(skimr)
+library(DataExplorer)
 
 options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
@@ -72,4 +73,40 @@ mining_tasks <- tribble(
 )
 
 print(mining_tasks)
+```
+
+## Task 5: Automated EDA with DataExplorer
+
+```{r task5-sample}
+set.seed(602)
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+```
+
+```{r task5-missing}
+plot_missing(health_small)
+# The three columns with highest missingness are:
+# 1. complaint_notes (~10%) — only policyholders who lodged a complaint have a value (MNAR)
+# 2. bmi             (~5%)  — missingness linked to whether a GP visit was recorded (MAR)
+# 3. income          (~4%)  — high earners may decline to disclose (MNAR)
+# These three variables will require careful imputation decisions in Module 2.
+```
+
+```{r task5-histogram}
+plot_histogram(health_small)
+# claim_amount is the most right-skewed numeric variable: most claims are zero or small,
+# but a long tail of large claims (>$20,000) pulls the mean far above the median.
+# income also shows strong right skew. Both will need log transformation before clustering or regression.
+```
+
+```{r task5-correlation}
+plot_correlation(
+  health_small |> select(age, bmi, income, premium, claim_amount,
+                          num_claims, num_chronic_conditions),
+  title = "Correlation Matrix: Key Numeric Variables"
+)
+# The strongest positive correlation is between num_claims and claim_amount (~0.6-0.7):
+# policyholders who file more claims naturally accumulate higher total claim costs.
+# premium and coverage_amount are also positively correlated (higher-tier plans charge more
+# and pay out more). num_chronic_conditions correlates moderately with num_claims,
+# confirming that higher medical complexity drives utilisation.
 ```

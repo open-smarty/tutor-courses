@@ -2,7 +2,7 @@
 
 ## Goal
 
-After this lesson you can name and distinguish all six core mining tasks, explain the 4 Vs of Big Data, trace the five-step KDD process, and run a first exploratory analysis on the course dataset using `skimr`.
+After this lesson you can name and distinguish all six core mining tasks, explain the 4 Vs of Big Data, trace the five-step KDD process, run a first exploratory analysis on the course dataset using `skimr`, and generate an automated EDA report with `DataExplorer`.
 
 ## Concept
 
@@ -51,6 +51,45 @@ For files up to ~1 GB, `readr::read_csv()` is fast and returns a tibble. For fil
 
 `skimr::skim()` produces a compact summary: n missing, completion rate, mean, sd, percentiles for numeric columns, and frequency tables for character columns — everything `summary()` gives plus more, in a readable format.
 
+### Automated EDA with DataExplorer
+
+Once you have a first `skim()` summary, `DataExplorer` lets you go deeper with a single function call. Its key functions:
+
+| Function | What it produces |
+|---|---|
+| `plot_missing(df)` | Bar chart of missing-value proportions per column |
+| `plot_histogram(df)` | Histograms for every numeric column |
+| `plot_correlation(df)` | Correlation heatmap for numeric columns |
+| `create_report(df)` | Full HTML report combining all of the above |
+
+```r
+library(DataExplorer)
+
+# Visual missing-value map: immediately shows which columns have gaps
+plot_missing(health_small)
+
+# Distribution shapes: reveals skew, bimodality, outliers
+plot_histogram(health_small)
+
+# Correlation structure: identifies multicollinear pairs before modelling
+plot_correlation(
+  health_small |> select(age, bmi, income, premium, claim_amount, num_claims),
+  title = "Correlation Matrix: Key Numeric Variables"
+)
+
+# One-line full report — generates output/lecture1_eda.html
+create_report(
+  health_small,
+  output_file  = "lecture1_eda.html",
+  output_dir   = "output/reports",
+  report_title = "BDAT 602: Health Insurance EDA"
+)
+```
+
+`plot_missing()` is especially useful at this early stage: it shows at a glance that `bmi` (~5%), `income` (~4%), and `complaint_notes` (~10%) have the highest missingness — which directly motivates the imputation strategies in Module 2.
+
+**Rule**: always run `skim()` first (fast, text-based, good for large datasets in any environment), then `plot_missing()` and `plot_histogram()` for the visual layer, then `plot_correlation()` once you have a target variable in mind.
+
 ## Example
 
 Below we load a 10-row sample of the insurance data and interpret the `skim()` output.
@@ -82,11 +121,12 @@ Key findings from `skim()` output on the full dataset:
 
 ## Task
 
-Open `exercise.Rmd` and complete the four tasks described there:
+Open `exercise.Rmd` and complete the five tasks described there:
 1. Load all required packages.
 2. Generate the insurance dataset and read its structure.
 3. Run `skim()` and identify three interesting findings (one numeric, one character, one about missingness).
 4. Write one sentence for each of the six mining tasks describing what you would mine from this dataset.
+5. Use `DataExplorer` to produce a missing-value plot, a histogram grid, and a correlation heatmap for key numeric variables.
 
 ## Check
 
@@ -96,4 +136,4 @@ npm run check -- bdat-602 module-01 lesson-01
 
 ## Reflection
 
-`skimr::skim()` shows you completion rates and distributions, but it cannot tell you *why* data is missing. Why does knowing the mechanism behind missingness (MCAR, MAR, or MNAR) matter before you choose an imputation strategy?
+`DataExplorer::plot_missing()` and `skimr::skim()` both reveal *that* data is missing and *how much*, but neither tells you *why*. Why does knowing the mechanism behind missingness (MCAR, MAR, or MNAR) matter before you choose an imputation strategy?

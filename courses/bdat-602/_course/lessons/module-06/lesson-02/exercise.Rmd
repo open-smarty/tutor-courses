@@ -117,3 +117,54 @@ tibble(K = 3:7, perplexity = perp_values) |>
 # Does your chosen K match the 5 template categories in the simulator?
 # Answer (as a comment):
 ```
+
+## Task 5: Spark LDA on 500,000 complaint notes (eval=FALSE)
+
+```{r task5-spark-setup, eval=FALSE}
+library(sparklyr)
+library(dplyr)
+
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+
+options(bdat602.source_only = TRUE)
+source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
+health_full <- simulate_bdat602(n = 500000, seed = 602)
+health_tbl  <- copy_to(sc, health_full,
+                       name = "health_ins", overwrite = TRUE)
+
+# TODO: filter to non-NA complaint_notes and assign a document ID
+complaints_spark <- NULL  # health_tbl |> filter(!is.na(complaint_notes)) |>
+                          #   mutate(doc_id = monotonically_increasing_id())
+```
+
+```{r task5-spark-pipeline, eval=FALSE}
+# TODO: build the text pipeline (reuse the Lesson 1 Spark approach)
+# ft_tokenizer -> ft_stop_words_remover -> ft_count_vectorizer (output_col="tf", min_df=5)
+tokenised  <- NULL  # ft_tokenizer(complaints_spark, ...)
+cleaned    <- NULL  # ft_stop_words_remover(tokenised, ...)
+cv_model   <- NULL  # ft_count_vectorizer(cleaned, ..., min_df = 5)
+tf_vectors <- NULL  # ml_transform(cv_model, cleaned)
+```
+
+```{r task5-spark-lda, eval=FALSE}
+# TODO: fit ml_lda() with k = 5, features_col = "tf", max_iter = 20
+lda_spark <- NULL  # ml_lda(tf_vectors, features_col = "tf", k = 5,
+                   #        max_iter = 20,
+                   #        doc_concentration = rep(1.0/5, 5),
+                   #        topic_concentration = 0.01)
+
+# TODO: extract vocabulary and print top 10 words per topic
+vocab     <- cv_model$vocabulary
+topic_mat <- lda_spark$topics_matrix()
+
+top_words_per_topic <- apply(topic_mat, 1, function(row) {
+  vocab[order(row, decreasing = TRUE)[1:10]]
+})
+print(top_words_per_topic)
+
+# Do the Spark LDA topics correspond to the same 5 categories as topicmodels LDA?
+# Why might the topic ordering differ even if the topics are equivalent?
+# Answer (as a comment):
+
+spark_disconnect(sc)
+```

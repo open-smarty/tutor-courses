@@ -1,5 +1,5 @@
 ---
-title: "Solution: PCA for Dimensionality Reduction and Cluster Visualisation"
+title: "Solution: Cluster Validation and Scaling with Spark"
 output: html_document
 ---
 
@@ -9,97 +9,177 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r load-packages}
 library(tidyverse)
+library(cluster)
+library(factoextra)
 
-options(bdat602.source_only = TRUE)
 source("courses/bdat-602/_teacher/resources/datasets/simulate_bdat602_data.R")
-health_data <- simulate_bdat602(n = 50000, seed = 602)
+health_data <- simulate_bdat602(n = 500000, seed = 602)
 ```
 
-## Task 1: Run prcomp()
-
-```{r task1-prepare}
-clust_data <- health_data |>
-  select(age, bmi, income, num_claims, num_chronic_conditions) |>
-  drop_na() |>
-  scale()
-```
-
-```{r task1-pca}
-pca <- prcomp(clust_data, scale. = FALSE)
-summary(pca)
-```
-
-## Task 2: Scree plot and variance explained
-
-```{r task2-scree}
-pve <- pca$sdev^2 / sum(pca$sdev^2)
-
-tibble(PC = 1:length(pve), PVE = pve, cumPVE = cumsum(pve)) |>
-  ggplot(aes(x = PC, y = PVE)) +
-  geom_col(fill = "steelblue") +
-  geom_line(aes(y = cumPVE), colour = "red", group = 1) +
-  geom_point(aes(y = cumPVE), colour = "red", size = 2) +
-  scale_y_continuous(labels = scales::percent) +
-  labs(title = "Scree Plot — Insurance Policyholders",
-       y = "Proportion of Variance Explained",
-       caption = "Red line = cumulative PVE") +
-  theme_minimal()
-```
-
-```{r task2-80pct}
-num_pcs_80 <- min(which(cumsum(pve) >= 0.80))
-cat("Number of PCs for 80% variance:", num_pcs_80, "\n")
-cat("Cumulative PVE by PC:\n")
-round(cumsum(pve), 3)
-# Typically PC1 + PC2 explain ~70-80%, and 3 PCs reach ~90%.
-```
-
-## Task 3: Biplot — which variables drive PC1 and PC2?
-
-```{r task3-biplot}
-biplot(pca, scale = 0, cex = 0.4,
-       main = "Biplot — Insurance Policyholder Features")
-```
-
-```{r task3-loadings}
-round(pca$rotation[, 1:2], 3)
-
-# PC1 is most influenced by num_claims and num_chronic_conditions (high positive loadings)
-# and age (also positive). PC1 broadly represents "health utilisation and age":
-# policyholders with high PC1 scores are older with more conditions and more claims.
-
-# PC2 is most influenced by income (high positive loading) and bmi (negative loading).
-# PC2 broadly represents "income vs. health risk": high PC2 = high income, low BMI;
-# low PC2 = low income, high BMI.
-```
-
-## Task 4: Visualise k-means clusters in PCA space
-
-```{r task4-kmeans}
+```{r prepare-data}
 set.seed(602)
-km <- kmeans(clust_data, centers = 4, nstart = 25)
+health_sub <- health_data[!is.na(health_data$bmi) &
+                            !is.na(health_data$income), ]
+health_sub <- health_sub[sample(nrow(health_sub), 50000), ]
+
+cluster_vars <- c(
+  "age", "bmi", "income", "premium",
+  "num_chronic_conditions", "num_claims",
+  "claim_amount", "support_calls",
+  "customer_rating", "app_logins_monthly"
+)
+signed_log <- function(x) sign(x) * log1p(abs(x))
+health_mat <- health_sub[, cluster_vars]
+health_mat$income <- signed_log(health_mat$income)
+health_mat$claim_amount <- log1p(health_mat$claim_amount)
+health_scaled <- as.data.frame(scale(health_mat))
 ```
 
-```{r task4-scatter}
-as.data.frame(pca$x[, 1:2]) |>
-  mutate(cluster = factor(km$cluster)) |>
-  ggplot(aes(x = PC1, y = PC2, colour = cluster)) +
-  geom_point(alpha = 0.3, size = 0.5) +
-  labs(title = "k-Means Clusters in PCA Space (PC1 vs PC2)",
-       x = "PC1 (Health Utilisation / Age)",
-       y = "PC2 (Income vs BMI Risk)") +
-  theme_minimal() +
-  guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1)))
+## Task 1: Silhouette method — choose optimal k
+
+```{r task1-silhouette-method}
+set.seed(602)
+sub5k <- health_scaled[sample(nrow(health_scaled), 5000), ]
+
+set.seed(602)
+fviz_nbclust(
+  sub5k,
+  FUNcluster = kmeans,
+  method     = "silhouette",
+  k.max      = 8,
+  nstart     = 10
+) +
+  labs(title = "Silhouette Method: Optimal Number of Clusters",
+       x = "Number of Clusters k",
+       y = "Average Silhouette Width") +
+  theme_minimal()
+
+# The silhouette method peaks at k = 4 for this dataset, indicating that
+# 4 clusters achieve the best balance of within-cluster cohesion and
+# between-cluster separation.
+chosen_k <- 4
 ```
 
-```{r task4-interpret}
-# The clusters show reasonable (though not perfect) separation in PC1-PC2 space.
-# Some overlap is expected: k-means operates in 5-dimensional space; projecting
-# to 2D loses 15-30% of variance depending on the dataset. Two clusters that
-# overlap in PC1-PC2 may be separated in PC3 or PC4.
-# Additional checks:
-# 1. Silhouette scores per cluster (a cluster with low mean silhouette is poorly defined)
-# 2. Profile tables (do the cluster means differ meaningfully on key variables?)
-# 3. PCA plot in PC1-PC3 or PC2-PC3 space
-# Overlap in a 2D PCA plot does NOT mean the clustering has failed.
+## Task 2: Silhouette plot for the chosen k
+
+```{r task2-fit}
+set.seed(602)
+km_val <- kmeans(sub5k, centers = chosen_k, nstart = 25)
+```
+
+```{r task2-silhouette-plot}
+dist_sub <- dist(sub5k, method = "euclidean")
+sil      <- silhouette(km_val$cluster, dist_sub)
+
+cat("Mean silhouette width:", round(mean(sil[, 3]), 3), "\n")
+# A mean around 0.15-0.25 is typical for this dataset — real-world
+# insurance policyholders form overlapping segments, not clean-cut groups.
+
+fviz_silhouette(
+  sil,
+  palette = "jco",
+  ggtheme = theme_minimal(),
+  main    = paste0("Silhouette Plot: k-Means (k = ", chosen_k, ")")
+)
+```
+
+## Task 3: Identify the weakest cluster
+
+```{r task3-per-cluster}
+clus_avg <- summary(sil)$clus.avg.widths
+cat("Mean silhouette per cluster:\n")
+print(round(clus_avg, 3))
+
+weakest_cluster <- which.min(clus_avg)
+cat("Weakest cluster:", weakest_cluster, "\n")
+
+# Profile the weakest cluster using original (unscaled) variables
+sub5k_idx   <- as.integer(rownames(sub5k))
+weak_rows   <- sub5k_idx[km_val$cluster == weakest_cluster]
+
+health_sub[weak_rows, ] |>
+  summarise(
+    n          = n(),
+    avg_age    = round(mean(age), 1),
+    avg_bmi    = round(mean(bmi, na.rm = TRUE), 1),
+    avg_claims = round(mean(num_claims), 2),
+    pct_fraud  = round(mean(fraud_flag) * 100, 1)
+  )
+
+# The weakest cluster (lowest silhouette) is typically the boundary segment
+# — policyholders who share characteristics with two or more other segments.
+# Low silhouette indicates these records sit between cluster centroids and
+# could reasonably be assigned to a neighbouring cluster.
+```
+
+## Task 4: Spark k-means — elbow on 500,000 rows
+
+```{r task4-spark-connect}
+library(sparklyr)
+sc <- spark_connect(master = "local[*]", version = "3.4.1")
+```
+
+```{r task4-spark-data}
+health_tbl <- copy_to(sc, health_data,
+                      name = "health_ins", overwrite = TRUE)
+
+health_spark <- health_tbl |>
+  mutate(log_income = log1p(income), log_claim = log1p(claim_amount)) |>
+  select(age, bmi, log_income, premium, num_chronic_conditions,
+         num_claims, log_claim, support_calls,
+         customer_rating, app_logins_monthly)
+```
+
+```{r task4-elbow-spark}
+wcss_results <- purrr::map_dfr(2:6, function(k) {
+  model <- health_spark |>
+    ml_kmeans(
+      formula   = ~ .,
+      k         = k,
+      max_iter  = 50,
+      init_mode = "k-means||",
+      seed      = 602
+    )
+  tibble(k = k, wcss = model$summary$trainingCost)
+})
+
+ggplot(wcss_results, aes(x = k, y = wcss)) +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_point(colour = "steelblue", size = 3) +
+  labs(title = "Elbow Method: Spark k-Means (n = 500,000)",
+       x = "Number of Clusters k",
+       y = "Within-Cluster Sum of Squares (WCSS)") +
+  theme_minimal()
+
+# The Spark elbow plot typically also suggests k = 4,
+# agreeing with the silhouette result. Running on 500,000 rows in Spark
+# takes similar wall-clock time to running on ~5,000 rows locally,
+# confirming the value of distributed computation for large-scale clustering.
+```
+
+```{r task4-profile-spark}
+best_spark_km <- health_spark |>
+  ml_kmeans(formula = ~ ., k = 4, max_iter = 100,
+            init_mode = "k-means||", seed = 602)
+
+health_with_id <- health_tbl |>
+  mutate(log_income = log1p(income), log_claim = log1p(claim_amount)) |>
+  select(record_id, age, bmi, log_income, premium,
+         num_chronic_conditions, num_claims, log_claim,
+         support_calls, customer_rating, app_logins_monthly,
+         smoker, fraud_flag, churned)
+
+ml_predict(best_spark_km, health_with_id) |>
+  group_by(prediction) |>
+  summarise(
+    n           = n(),
+    avg_age     = mean(age,         na.rm = TRUE),
+    avg_claims  = mean(num_claims,  na.rm = TRUE),
+    pct_fraud   = mean(fraud_flag,  na.rm = TRUE) * 100,
+    pct_churned = mean(churned,     na.rm = TRUE) * 100
+  ) |>
+  collect() |>
+  arrange(desc(avg_claims))
+
+spark_disconnect(sc)
 ```

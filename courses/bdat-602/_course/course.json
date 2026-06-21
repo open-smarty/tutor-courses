@@ -84,7 +84,7 @@
         },
         {
           "id": "lesson-03",
-          "title": "Scaling, Encoding, and the recipes Pipeline",
+          "title": "Scaling, Encoding, PCA, and the recipes Pipeline",
           "difficulty": "intermediate",
           "files": {
             "lesson": "_course/lessons/module-02/lesson-03/lesson.md",
@@ -101,11 +101,11 @@
     {
       "id": "module-03",
       "title": "Association Rule Mining",
-      "description": "Discover co-occurrence patterns in transactional data using the Apriori algorithm. Learn support, confidence, and lift, and mine actionable rules from the insurance add-on cover flags.",
+      "description": "Discover co-occurrence and sequential patterns in transactional data. Master support, confidence, lift, conviction, and leverage; trace Apriori and FP-Growth; scale to 500,000 rows with Spark; and translate the strongest rules into actionable business recommendations.",
       "lessons": [
         {
           "id": "lesson-01",
-          "title": "Market Basket Analysis and the Apriori Algorithm",
+          "title": "Rule Metrics, the Apriori Algorithm, and FP-Growth",
           "difficulty": "intermediate",
           "files": {
             "lesson": "_course/lessons/module-03/lesson-01/lesson.md",
@@ -115,12 +115,12 @@
           "quiz": "_assessments/quizzes/module-03-lesson-01.json",
           "task": "_assessments/tasks/module-03-lesson-01.md",
           "required": true,
-          "estimatedMinutes": 35
+          "estimatedMinutes": 40
         },
         {
           "id": "lesson-02",
-          "title": "Mining Rules from the Health Insurance Dataset",
-          "difficulty": "intermediate",
+          "title": "Mining Rules at Scale — Spark, Sequences, Filtering, and Visualisation",
+          "difficulty": "advanced",
           "files": {
             "lesson": "_course/lessons/module-03/lesson-02/lesson.md",
             "exercise": "_course/lessons/module-03/lesson-02/exercise.Rmd",
@@ -129,18 +129,18 @@
           "quiz": "_assessments/quizzes/module-03-lesson-02.json",
           "task": "_assessments/tasks/module-03-lesson-02.md",
           "required": true,
-          "estimatedMinutes": 35
+          "estimatedMinutes": 45
         }
       ]
     },
     {
       "id": "module-04",
-      "title": "Clustering and Dimensionality Reduction",
-      "description": "Segment policyholders into homogeneous groups using k-means and hierarchical clustering, validate cluster quality, and apply PCA to visualise high-dimensional data.",
+      "title": "Cluster Analysis",
+      "description": "Segment policyholders into homogeneous risk profiles using distance-based and density-based algorithms. Cover Euclidean to Gower distance measures, k-means with elbow selection, hierarchical clustering with Ward linkage, DBSCAN for anomaly detection, silhouette validation, and distributed k-means via Spark.",
       "lessons": [
         {
           "id": "lesson-01",
-          "title": "k-Means Clustering",
+          "title": "Distance Measures and k-Means Clustering",
           "difficulty": "intermediate",
           "files": {
             "lesson": "_course/lessons/module-04/lesson-01/lesson.md",
@@ -150,11 +150,11 @@
           "quiz": "_assessments/quizzes/module-04-lesson-01.json",
           "task": "_assessments/tasks/module-04-lesson-01.md",
           "required": true,
-          "estimatedMinutes": 35
+          "estimatedMinutes": 40
         },
         {
           "id": "lesson-02",
-          "title": "Hierarchical Clustering",
+          "title": "Hierarchical Clustering and DBSCAN",
           "difficulty": "intermediate",
           "files": {
             "lesson": "_course/lessons/module-04/lesson-02/lesson.md",
@@ -164,11 +164,11 @@
           "quiz": "_assessments/quizzes/module-04-lesson-02.json",
           "task": "_assessments/tasks/module-04-lesson-02.md",
           "required": true,
-          "estimatedMinutes": 30
+          "estimatedMinutes": 40
         },
         {
           "id": "lesson-03",
-          "title": "PCA for Dimensionality Reduction and Cluster Visualisation",
+          "title": "Cluster Validation and Scaling with Spark",
           "difficulty": "advanced",
           "files": {
             "lesson": "_course/lessons/module-04/lesson-03/lesson.md",
@@ -178,7 +178,7 @@
           "quiz": "_assessments/quizzes/module-04-lesson-03.json",
           "task": "_assessments/tasks/module-04-lesson-03.md",
           "required": true,
-          "estimatedMinutes": 40
+          "estimatedMinutes": 45
         }
       ]
     },

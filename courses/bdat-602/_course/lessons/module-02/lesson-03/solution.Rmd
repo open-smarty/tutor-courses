@@ -1,5 +1,5 @@
 ---
-title: "Solution: Scaling, Encoding, and the recipes Pipeline"
+title: "Solution: Scaling, Encoding, PCA, and the recipes Pipeline"
 output: html_document
 ---
 
@@ -103,4 +103,81 @@ train_baked |>
 names(train_baked)[grepl("plan_tier", names(train_baked))]
 # plan_tier_Gold, plan_tier_Platinum, plan_tier_Silver
 # Reference level: Bronze (dropped)
+```
+
+## Task 5: PCA for dimensionality reduction
+
+```{r task5-setup}
+library(broom)
+
+set.seed(602)
+health_small <- simulate_bdat602(n = 10000, seed = 602)
+
+pca_vars <- c("age", "bmi", "income", "premium", "deductible",
+              "num_chronic_conditions", "num_visits",
+              "num_prescriptions", "num_hospital_admissions",
+              "num_claims", "avg_past_claim", "claim_amount",
+              "app_logins_monthly", "support_calls", "policy_age_months")
+```
+
+```{r task5-recipe}
+pca_rec <- recipe(~ ., data = health_small[, pca_vars]) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(all_numeric_predictors(), num_comp = 5)
+
+pca_prep   <- prep(pca_rec)
+pca_scores <- bake(pca_prep, new_data = NULL)
+
+head(pca_scores)
+# Columns PC1 through PC5; each row is the projection of one policyholder
+# onto the five principal component axes.
+```
+
+```{r task5-scree}
+tidy(pca_prep, number = 2, type = "variance") |>
+  filter(terms == "percent variance") |>
+  ggplot(aes(x = component, y = value)) +
+  geom_col(fill = "steelblue") +
+  geom_line(group = 1, colour = "red") +
+  labs(title = "Scree Plot: Variance Explained by Each PC",
+       x = "Principal Component", y = "% Variance Explained") +
+  theme_minimal()
+
+# Cumulative variance — how many components reach 60%?
+tidy(pca_prep, number = 2, type = "variance") |>
+  filter(terms == "cumulative percent variance") |>
+  filter(value >= 60) |>
+  slice_head(n = 1)
+# Typically 3–4 components reach 60% for this dataset.
+# Each component independently explains less and less: PC1 ~20%, PC2 ~14%, etc.
+```
+
+```{r task5-loadings}
+pc1_loadings <- tidy(pca_prep, number = 2, type = "coef") |>
+  filter(component == "PC1") |>
+  mutate(abs_loading = abs(value)) |>
+  arrange(desc(abs_loading))
+
+head(pc1_loadings, 5)
+
+# PC1 is dominated by claims-utilisation variables:
+# num_claims, claim_amount, avg_past_claim, num_hospital_admissions, num_prescriptions
+# all load positively and strongly. PC1 is a "utilisation intensity" axis —
+# policyholders with high PC1 scores are heavy users of the health system.
+# The variable with the largest positive loading is typically num_claims or claim_amount.
+```
+
+```{r task5-scoreplot}
+pca_scores |>
+  bind_cols(health_small |> select(plan_tier)) |>
+  ggplot(aes(x = PC1, y = PC2, colour = plan_tier)) +
+  geom_point(alpha = 0.2, size = 0.8) +
+  labs(title = "PCA Score Plot: PC1 vs PC2 by Plan Tier",
+       colour = "Plan Tier") +
+  theme_minimal()
+
+# Platinum and Gold policyholders tend to cluster toward higher PC2 scores
+# (higher premium, higher coverage_amount), while Bronze clusters near the origin.
+# On PC1, all tiers overlap substantially — utilisation intensity does not
+# cleanly separate plan tiers, suggesting that risk is distributed across all tiers.
 ```
